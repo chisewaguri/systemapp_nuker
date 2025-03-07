@@ -26,7 +26,7 @@ whiteout_create_systemapp() {
   	busybox chcon --reference="/system" "$MODULES_UPDATE_DIR$1"  
   	# not really required, mountify() does NOT even copy the attribute but ok
   	busybox setfattr -n trusted.overlay.whiteout -v y "$MODULES_UPDATE_DIR$1"
-  	chmod 644 "$MODDIR$1"
+  	chmod 644 "$MODULES_UPDATE_DIR$1"
 }
 
 for line in $( sed '/#/d' "$TEXTFILE" ); do
