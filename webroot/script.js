@@ -97,7 +97,7 @@ document.getElementById("nuke-button").addEventListener("click", async () => {
                 ksuExec(`echo '${JSON.stringify(filteredData, null, 2)}' > /data/adb/modules/system_app_nuker/webroot/assets/app_list.json`);
             });
 
-        await ksuExec(`su -c sh /data/adb/modules/system_app_nuker/nuke.sh nuke`);
+        await ksuExec(`sh /data/adb/modules/system_app_nuker/nuke.sh nuke`);
         ksu.toast("Done! Reboot your device!");
     } catch (error) {
         ksu.toast("Error updating removed apps list");
