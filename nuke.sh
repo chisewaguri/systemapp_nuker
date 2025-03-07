@@ -36,12 +36,13 @@ nuke_system_apps() {
 		whiteout_create_systemapp "$(dirname $apk_path)" > /dev/null 2>&1
 		ls "$MODULES_UPDATE_DIR$apk_path" 2>/dev/null
 	done
-
+  
 	for package_name in $(grep -E '"package_name":' "$TEXTFILE" | sed 's/.*"package_name": "\(.*\)",/\1/'); do
 		if pm list packages | grep -qx "package:$package_name"; then
 			pm uninstall -k --user 0 "$package_name" 2>/dev/null
 		fi
 	done
+
 
 	# special dirs
 	# handle this properly so this script can be used standalone
