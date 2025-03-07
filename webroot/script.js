@@ -30,13 +30,13 @@ async function displayAppList(data) {
     const appListDiv = document.getElementById("app-list");
     appListDiv.innerHTML = "";
     const htmlContent = data.map((pkg) => `
-        <div class="app">
+        <div class="app" data-package-name="${pkg.package_name}" data-app-path="${pkg.app_path}">
             <div class="app-info">
                 <span class="app-name">${pkg.app_name}</span>
                 <span class="app-package">${pkg.package_name}</span>
                 <span class="app-path">${pkg.app_path}</span>
             </div>
-            <input class="app-selector" type="checkbox" value="${pkg.package_name}">
+            <input class="app-selector" type="checkbox">
         </div>
     `).join("");
     appListDiv.innerHTML = htmlContent;
@@ -55,23 +55,43 @@ async function displayAppList(data) {
 // Nuke button
 document.getElementById("nuke-button").addEventListener("click", async () => {
     let selectedPackages = Array.from(document.querySelectorAll(".app-selector:checked"))
-        .map(checkbox => checkbox.value)
-        .join("\n");
+        .map(checkbox => {
+            const appDiv = checkbox.closest('.app');
+            return {
+                package_name: appDiv.dataset.packageName,
+                app_path: appDiv.dataset.appPath,
+                app_name: appDiv.querySelector('.app-name').textContent
+            };
+        });
 
-    if (!selectedPackages) {
+    if (selectedPackages.length === 0) {
         ksu.toast("No apps selected");
         return;
     }
-    
-    let nukeListPath = "/data/adb/modules/system_app_nuker/nuke_list.txt";
-    let writeResult = await ksuExec(`echo \"${selectedPackages}\" > ${nukeListPath}`);
-    if (writeResult.errno !== 0) {
-        console.error("Failed to update nuke list:", writeResult.stderr);
-        return;
+
+    try {
+        const { stdout: existingContent } = await ksuExec('cat /data/adb/modules/system_app_nuker/nuke_list.json');
+        let existingApps = [];
+        try {
+            existingApps = JSON.parse(existingContent || '[]');
+        } catch (e) {
+            console.log("No existing apps or invalid JSON, starting fresh");
+        }
+
+        const allApps = [...existingApps, ...selectedPackages];
+        const uniqueApps = allApps.filter((app, index, self) =>
+            index === self.findIndex(a => a.package_name === app.package_name)
+        );
+
+        const removedApps = JSON.stringify(uniqueApps, null, 2);
+        await ksuExec(`echo '${removedApps}' > /data/adb/modules/system_app_nuker/nuke_list.json`);
+
+        await ksuExec(`su -c sh /data/adb/modules/system_app_nuker/nuke.sh`);
+        ksu.toast("Done! Reboot your device!");
+    } catch (error) {
+        ksu.toast("Error updating removed apps list");
+        console.error("Error:", error);
     }
-    
-    await ksuExec(`su -c sh /data/adb/modules/system_app_nuker/nuke.sh`);
-    ksu.toast("Done! Reboot your device!");
 });
 
 // Function to check if running in MMRL

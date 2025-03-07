@@ -7,7 +7,7 @@
 PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
 MODDIR="/data/adb/modules/system_app_nuker"
 MODULES_UPDATE_DIR="/data/adb/modules_update/system_app_nuker"
-TEXTFILE="$MODDIR/nuke_list.txt"
+TEXTFILE="$MODDIR/nuke_list.json"
 
 # revamped routine
 # here we copy over all the module files to modules_update folder.
@@ -29,29 +29,16 @@ whiteout_create_systemapp() {
   	chmod 644 "$MODDIR$1"
 }
 
-for line in $( sed '/#/d' "$TEXTFILE" ); do
-	apk_path=$(pm path "$line" 2>/dev/null | sed 's/package://')
-
-	# if the APK is in /data/app/, uninstall first
-	# this might be better flagged later.
-	if echo "$apk_path" | grep -q "^/data/app/"; then
-		echo "[*] Detected updated system app for $line in /data/app/, uninstalling update..."
-		pm uninstall -k --user 0 "$line"
-		apk_path=$(pm path "$line" 2>/dev/null | sed 's/package://')  # Re-fetch path after uninstall
-	fi
-
-	pm clear "$line" 2>/dev/null
-	# validate APK path
-	if echo "$apk_path" | grep -Eq "^/(product|vendor|odm|system_ext)/" && ! echo "$apk_path" | grep -q "^/system/"; then
-		apk_path="/system$apk_path"
-	elif ! echo "$apk_path" | grep -q "^/system/"; then
-		echo "[!] Invalid input $apk_path. Skipping..."
-		continue
-	fi
-
+for apk_path in $(grep -E '"app_path":' "$TEXTFILE" | sed 's/.*"app_path": "\(.*\)",/\1/'); do
 	# Create whiteout for apk_path
-	whiteout_create_systemapp "$apk_path" > /dev/null 2>&1
+	whiteout_create_systemapp "$(dirname $apk_path)" > /dev/null 2>&1
 	ls "$MODULES_UPDATE_DIR$line" 2>/dev/null
+done
+
+for package_name in $(grep -E '"package_name":' "$TEXTFILE" | sed 's/.*"package_name": "\(.*\)",/\1/'); do
+	if pm list packages | grep -qx "$package_name"; then
+		pm uninstall -k --user 0 "$package_name" 2>/dev/null
+	fi
 done
 
 # special dirs
