@@ -1,7 +1,6 @@
-id=MMT-Ex
-name=Magisk Module Template Extended
-version=v3.7
-versionCode=19
-author=Zackptg5
-description=Magisk Module Template Extended
-updateJson=https://raw.githubusercontent.com/Zackptg5/MMT-Extended/master/update.json
+id=system_app_nuker
+name=App Nuker
+version=v1.0
+versionCode=100
+author=ChiseWaguri
+description=Simple system app debloater

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KernelSU System App Nuker</title>
+    <script src="script.js" defer></script>
+    <style>
+        body {
+            margin: 0;
+            padding-bottom: 60px; /* Space for the fixed button */
+            text-align: center; /* Center all text */
+        }
+        #app-form {
+            padding: 16px;
+        }
+        #app-list {
+            margin-bottom: 80px; /* Ensure apps don't overlap the button */
+            display: inline-block;
+            text-align: left;
+        }
+        #nuke-button {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 400px;
+            padding: 16px;
+            background-color: blue;
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>System App Nuker</h1>
+    <form id="app-form">
+        <div id="app-list">
+            <!-- System apps will be listed here -->
+        </div>
+    </form>
+    <div id="nuke-button" onclick="submitSelection()">Nuke Selected Apps</div>
+</body>
+</html>
