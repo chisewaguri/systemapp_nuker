@@ -84,6 +84,9 @@ for dir in $targets; do
 	fi
 done
 
+# remove contents of system folder
+rm -rf "$MODDIR/system"
+
 # now we copy over everything from MODDIR to MODULES_UPDATE_DIR
 # the asterisk is important!!
 cp -rf "$MODDIR"/* "$MODULES_UPDATE_DIR"
