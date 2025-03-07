@@ -82,7 +82,7 @@ document.getElementById("nuke-button").addEventListener("click", async () => {
         return;
     }
     
-    await ksuExec(`sh /data/adb/modules/system_app_nuker/nuke.sh`);
+    await ksuExec(`su -c sh /data/adb/modules/system_app_nuker/nuke.sh`);
     ksu.toast("Done! Reboot your device!");
 });
 
