@@ -86,7 +86,7 @@ done
 
 # now we copy over everything from MODDIR to MODULES_UPDATE_DIR
 # the asterisk is important!!
-cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
+cp -rf "$MODDIR"/* "$MODULES_UPDATE_DIR"
 
 # now we flag old module for update
 touch "$MODDIR/update"
