@@ -1,4 +1,5 @@
 MODDIR="/data/adb/modules/system_app_nuker"
+REMOVE_LIST="$MODDIR/nuke_list.json"
 
 aapt() { "$MODDIR/common/aapt" "$@"; }
 
@@ -20,3 +21,10 @@ done
 
 sed -i '$ s/,$//' "$MODDIR/webroot/assets/app_list.json"
 echo "]" >> "$MODDIR/webroot/assets/app_list.json"
+
+# remove system apps if they still exist
+for package_name in $(grep -E '"package_name":' "$REMOVE_LIST" | sed 's/.*"package_name": "\(.*\)",/\1/'); do
+    if pm list packages | grep -qx "package:$package_name"; then
+        pm uninstall -k --user 0 "$package_name" 2>/dev/null
+    fi
+done

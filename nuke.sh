@@ -7,7 +7,7 @@
 PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
 MODDIR="/data/adb/modules/system_app_nuker"
 MODULES_UPDATE_DIR="/data/adb/modules_update/system_app_nuker"
-TEXTFILE="$MODDIR/nuke_list.json"
+REMOVE_LIST="$MODDIR/nuke_list.json"
 
 # revamped routine
 # here we copy over all the module files to modules_update folder.
@@ -31,18 +31,11 @@ whiteout_create_systemapp() {
 }
 
 nuke_system_apps() {
-	for apk_path in $(grep -E '"app_path":' "$TEXTFILE" | sed 's/.*"app_path": "\(.*\)",/\1/'); do
+	for apk_path in $(grep -E '"app_path":' "$REMOVE_LIST" | sed 's/.*"app_path": "\(.*\)",/\1/'); do
 		# Create whiteout for apk_path
 		whiteout_create_systemapp "$(dirname $apk_path)" > /dev/null 2>&1
 		ls "$MODULES_UPDATE_DIR$apk_path" 2>/dev/null
 	done
-  
-	for package_name in $(grep -E '"package_name":' "$TEXTFILE" | sed 's/.*"package_name": "\(.*\)",/\1/'); do
-		if pm list packages | grep -qx "package:$package_name"; then
-			pm uninstall -k --user 0 "$package_name" 2>/dev/null
-		fi
-	done
-
 
 	# special dirs
 	# handle this properly so this script can be used standalone
@@ -76,24 +69,26 @@ nuke_system_apps() {
 }
 
 restore_system_apps() {
-	find "$MODULES_UPDATE_DIR/system" "$MODDIR/system" -type c -maxdepth 3 | while read -r nod; do
+	find "$MODULES_UPDATE_DIR/system" -type c -maxdepth 3 | while read -r nod; do
 		nod_name=$(basename "$nod")
-		if ! grep -q "/$nod_name/" "$TEXTFILE"; then
+		if ! grep -q "/$nod_name/" "$REMOVE_LIST"; then
 			rm -rf "$nod"
 		fi
 	done
-	find $MODULES_UPDATE_DIR/system "$MODDIR/system" -type d -maxdepth 3 | while read -r dir; do
+	find $MODULES_UPDATE_DIR/system -type d -maxdepth 3 | while read -r dir; do
 		if [ -z "$(ls -A "$dir")" ]; then
 			rm -rf "$dir"
 		fi
 	done
 	for dir in system_ext vendor odm product system; do
-		[ -z "$(ls -A "$MODDIR/$dir")" ] && rm -rf "$MODDIR/$dir"
-		[ -z "$(ls -A "$MODDIR/system/$dir")" ] && rm -rf "$MODDIR/system/$dir"
 		[ -z "$(ls -A "$MODULES_UPDATE_DIR/$dir")" ] && rm -rf "$MODULES_UPDATE_DIR/$dir"
 		[ -z "$(ls -A "$MODULES_UPDATE_DIR/system/$dir")" ] && rm -rf "$MODULES_UPDATE_DIR/system/$dir"
 	done
 }
+
+
+# remove contents of system folder
+rm -rf "$MODDIR/system"
 
 touch "$MODDIR/update"
 
