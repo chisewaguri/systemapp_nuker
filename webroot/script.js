@@ -14,35 +14,55 @@ async function ksuExec(command) {
 async function fetchSystemApps() {
     let result = await ksuExec("pm list packages -s");
     if (result.errno !== 0) {
-    	ksu.toast("Failed to fetch system apps");
-        console.error("Failed to fetch system apps:", result.stderr);
+        ksu.toast("Failed to fetch system apps");
         return;
     }
-    let packages = result.stdout.split("\n").map(line => line.replace("package:", "").trim()).filter(pkg => pkg);
-    displayAppList(packages);
-    ksu.toast("System apps loaded");
+
+    let packages = result.stdout.split("\n")
+        .map(line => line.replace("package:", "").trim())
+        .filter(pkg => pkg);
+
+    // Read nuke_list.txt
+    let nukeListResult = await ksuExec("cat /data/adb/modules/system_app_nuker/nuke_list.txt");
+    let nukedPackages = nukeListResult.errno === 0 ? nukeListResult.stdout.split("\n").map(pkg => pkg.trim()) : [];
+
+    displayAppList(packages, nukedPackages);
 }
 
-function displayAppList(packages) {
+function displayAppList(packages, nukedPackages = []) {
     const appListDiv = document.getElementById("app-list");
     appListDiv.innerHTML = "";
-    const htmlContent = packages.map(pkg => `
-        <div class="app">
-            <span>${pkg}</span>
-            <input class="app-selector" type="checkbox" value="${pkg}">
-        </div>
-    `).join("");
-    appListDiv.innerHTML = htmlContent;
+    let fragment = document.createDocumentFragment();
 
-    // Add click handlers to all app divs
-    document.querySelectorAll('.app').forEach(appDiv => {
-        appDiv.addEventListener('click', function(e) {
+    packages.forEach(pkg => {
+        let div = document.createElement("div");
+        div.className = "app";
+
+        let span = document.createElement("span");
+        span.textContent = pkg;
+
+        let checkbox = document.createElement("input");
+        checkbox.className = "app-selector";
+        checkbox.type = "checkbox";
+        checkbox.value = pkg;
+
+        if (nukedPackages.includes(pkg)) {
+            checkbox.checked = true;
+        }
+
+        div.appendChild(span);
+        div.appendChild(checkbox);
+        fragment.appendChild(div);
+
+        // Clicking anywhere on the row toggles the checkbox
+        div.addEventListener('click', function(e) {
             if (e.target.type !== 'checkbox') {
-                const checkbox = this.querySelector('input[type="checkbox"]');
                 checkbox.checked = !checkbox.checked;
             }
         });
     });
+
+    appListDiv.appendChild(fragment);
 }
 
 document.getElementById("nuke-button").addEventListener("click", async () => {
