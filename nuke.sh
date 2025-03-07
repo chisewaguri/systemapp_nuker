@@ -24,11 +24,12 @@ touch $MODULE_DIR/update
 mkdir -p $MODULE_UPDATES_DIR ; cd $MODULE_UPDATES_DIR
 busybox chcon --reference="/system" "$MODULE_UPDATES_DIR"
 
-whiteout_create() {
+whiteout_create_systemapp() {
 	echo "$MODULE_UPDATES_DIR${1%/*}"
 	echo "$MODULE_UPDATES_DIR$1" 
 	mkdir -p "$MODULE_UPDATES_DIR${1%/*}"
-  	busybox mknod "$MODULE_UPDATES_DIR$1" c 0 0
+	rm -rf "$MODULE_UPDATES_DIR${1%/*}"
+  	busybox mknod "$MODULE_UPDATES_DIR${1%/*}" c 0 0
   	busybox chcon --reference="/system" "$MODULE_UPDATES_DIR$1"  
   	# not really required, mountify() does NOT even copy the attribute but ok
   	busybox setfattr -n trusted.overlay.whiteout -v y "$MODULE_UPDATES_DIR$1"
@@ -42,7 +43,7 @@ for line in $( sed '/#/d' "$TEXTFILE" ); do
 		echo "[!] Invalid input $apk_path. Skipping..."
 		continue
 	fi
-	whiteout_create "$apk_path" > /dev/null 2>&1
+	whiteout_create_systemapp "$apk_path" > /dev/null 2>&1
 	ls "$MODULE_UPDATES_DIR$line" 2>/dev/null
 done
 
