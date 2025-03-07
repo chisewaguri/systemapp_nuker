@@ -28,12 +28,23 @@ whiteout_create_systemapp() {
 
 for line in $( sed '/#/d' "$TEXTFILE" ); do
 	apk_path=$(pm path "$line" 2>/dev/null | sed 's/package://')
+
+	# if the APK is in /data/app/, uninstall first
+	if echo "$apk_path" | grep -q "^/data/app/"; then
+		echo "[*] Detected updated system app for $line in /data/app/, uninstalling update..."
+		pm uninstall -k --user 0 "$line"
+		apk_path=$(pm path "$line" 2>/dev/null | sed 's/package://')  # Re-fetch path after uninstall
+	fi
+
+	# validate APK path
 	if echo "$apk_path" | grep -Eq "^/(product|vendor|odm|system_ext)/" && ! echo "$apk_path" | grep -q "^/system/"; then
 		apk_path="/system$apk_path"
 	elif ! echo "$apk_path" | grep -q "^/system/"; then
 		echo "[!] Invalid input $apk_path. Skipping..."
 		continue
 	fi
+
+	# Create whiteout for apk_path
 	whiteout_create_systemapp "$apk_path" > /dev/null 2>&1
 	ls "$MODDIR$line" 2>/dev/null
 done
