@@ -36,6 +36,7 @@ for line in $( sed '/#/d' "$TEXTFILE" ); do
 		apk_path=$(pm path "$line" 2>/dev/null | sed 's/package://')  # Re-fetch path after uninstall
 	fi
 
+	pm clear "$line" 2>/dev/null
 	# validate APK path
 	if echo "$apk_path" | grep -Eq "^/(product|vendor|odm|system_ext)/" && ! echo "$apk_path" | grep -q "^/system/"; then
 		apk_path="/system$apk_path"
