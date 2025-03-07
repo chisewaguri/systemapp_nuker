@@ -1,0 +1,143 @@
+body {
+    background-color: #F5F5F5;
+    padding-top: var(--window-inset-top);
+    padding-bottom: var(--window-inset-bottom);
+    margin: 0;
+}
+
+.content {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
+}
+
+.header {
+    position: fixed;
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    top: 0;
+    height: 80px;
+    z-index: 1;
+}
+
+.header h1 {
+    margin: 0;
+    user-select: none;
+}
+
+.search-container {
+    position: fixed;
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    top: 80px;
+    height: 40px;
+    z-index: 3;
+}
+
+.search-container input {
+    width: calc(100% - 60px);
+    padding: 0 10px;
+    padding-right: 30px;
+    height: 100%;
+    outline-color: #3a75ff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: 0 4px 8px #0003;
+}
+
+.clear-btn {
+    display: none;
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    color: #ccc;
+    transform: translateY(-50%);
+    border: none;
+    background-color: transparent;
+    user-select: none;
+}
+
+#app-list {
+    margin-top: 130px;
+    margin-bottom: 80px;
+    display: flex;
+    padding: 0 10px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    word-wrap: break-word;
+    word-break: break-all;
+}
+
+.app {
+    padding: 10px;
+    display: flex;
+    background-color: #fff;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 10px;
+    box-sizing: border-box;
+    z-index: 2;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.app:active {
+    background-color: #DCDCDC;
+}
+
+#nuke-button-container {
+    position: fixed;
+    bottom: 50px;
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    z-index: 3;
+    transition: transform 0.3s ease-in-out;
+}
+
+#nuke-button {
+    position: relative;
+    bottom: 0;
+    padding: 15px;
+    color: #fff;
+    background-color: #3a75ff;
+    box-shadow: 0 4px 8px #0003;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    border-radius: 15px;
+    user-select: none;
+    transition: background-color 0.2s ease-in-out;
+}
+
+#nuke-button:active {
+    background-color: #2a65e0;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #121212;
+        color: #FFFFFF;
+    }
+
+    .search-container input {
+        background-color: #212121;
+        color: #FFFFFF;
+        border: 1px solid #6E6E6E;
+    }
+
+    .app {
+        background-color: #343434;
+    }
+
+    .app:active {
+        background-color: #454545;
+    }
+}
