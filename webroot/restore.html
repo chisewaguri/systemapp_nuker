@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KernelSU System App Nuker</title>
+    <script type="module" src="restore.js"></script>
+    <link rel="stylesheet" type="text/css" href="/mmrl/insets.css" />
+    <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+    <div class="content">
+        <div class="header">
+            <h1>Restore System App</h1>
+        </div>
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search for an app" autocapitalize="off">
+            <button class="clear-btn" id="clear-btn">&#x2715;</button>
+        </div>
+        <div id="removed-list">
+            <!-- Removed apps will be listed here -->
+        </div>
+        <div class="floating-button-container">
+            <div id="restore-button">Restore</div>
+        </div>
+        <div class="footer">
+            <a href="index.html" class="footer-btn" id="home-btn">
+                <div class="footer-btn-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"/></svg>
+                </div>
+                <label>Home</label>
+            </a>
+            <a class="footer-btn" id="restore-btn">
+                <div class="footer-btn-icon focus-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M360-840h240v40h200v80h-40v172q-17-5-39.5-8.5T680-560q-18 0-40.5 3t-39.5 8v-91h-80v130q-22 16-44 39.5T440-424v-216h-80v360h40q0 39 14 83.5t36 76.5H280q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40Zm320 360q83 0 141.5 58.5T880-280q0 83-58.5 141.5T680-80q-83 0-141.5-58.5T480-280q0-83 58.5-141.5T680-480Zm-20 80v128l86 86 28-28-74-74v-112h-40Z"/></svg>
+                </div>
+                <label>Restore</label>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

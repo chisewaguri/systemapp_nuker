@@ -67,7 +67,7 @@ body {
 #removed-list,
 #app-list {
     margin-top: 130px;
-    margin-bottom: 80px;
+    margin-bottom: 100px;
     display: flex;
     padding: 0 10px;
     flex-direction: column;
@@ -103,6 +103,7 @@ body {
 }
 
 .app-name {
+    font-size: 18px;
     font-weight: bold;
 }
 
@@ -112,10 +113,10 @@ body {
 
 .floating-button-container {
     position: fixed;
-    bottom: 80px;
+    bottom: 95px;
     display: flex;
     width: 100%;
-    justify-content: center;
+    justify-content: flex-end;
     z-index: 3;
     transition: transform 0.3s ease-in-out;
 }
@@ -124,9 +125,10 @@ body {
 #nuke-button {
     position: relative;
     bottom: 0;
+    margin-right: 15px;
     padding: 15px;
     color: #fff;
-    background-color: #3a75ff;
+    background-color: #007bff;
     box-shadow: 0 4px 8px #0003;
     font-size: 18px;
     font-weight: bold;
@@ -138,7 +140,7 @@ body {
 
 #restore-button:active,
 #nuke-button:active {
-    background-color: #2a65e0;
+    background-color: #0060c6;
 }
 
 .footer {
@@ -154,21 +156,39 @@ body {
 }
 
 .footer-btn {
-    padding: 20px;
-    padding-bottom: 30px;
-    background-color: #4c4c4c;
-    color: #fff;
-    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    padding-top: 10px;
+    background-color: #E4E4E4;
     width: 50%;
     text-align: center;
+    align-items: center;
     text-decoration: none;
     cursor: none;
     user-select: none;
     transition: background-color 0.2s ease-in-out;
 }
 
-.footer-btn:active {
-    background-color: #3a3a3a;
+.footer-btn label {
+    text-decoration: none;
+    font-size: 12px;
+    color: #000;
+}
+
+.footer-btn-icon {
+    width: fit-content;
+    padding: 3px 25px;
+    padding-bottom: 1px;
+    border-radius: 50px;
+}
+
+.footer-btn-icon svg {
+    fill:#000;
+}
+
+.focus-btn {
+    background-color: #BEBEBE;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -190,5 +210,21 @@ body {
 
     .app:active {
         background-color: #454545;
+    }
+
+    .footer-btn {
+        background-color: #4c4c4c;
+    }
+
+    .footer-btn label {
+        color: #fff;
+    }
+
+    .focus-btn {
+        background-color: #3a3a3a;
+    }
+
+    .footer-btn-icon svg {
+        fill:#fff;
     }
 }

@@ -9,7 +9,6 @@ async function fetchSystemApps() {
         .then(data => {
             data.sort((a, b) => a.package_name.localeCompare(b.package_name));
             displayAppList(data);
-            ksu.toast("System apps loaded");
         })
         .catch(error => {
             console.error("Failed to fetch system apps:", error);

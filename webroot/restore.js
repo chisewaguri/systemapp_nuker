@@ -84,7 +84,7 @@ document.getElementById('restore-button').addEventListener('click', async () => 
             });
         getRemovedApps();
         await ksuExec(`su -c sh /data/adb/modules/system_app_nuker/nuke.sh restore`);
-        ksu.toast("Selected apps removed from the list!");
+        ksu.toast("Done! Reboot your device!");
     } catch (error) {
         ksu.toast("Error updating removed apps list");
         console.error("Error:", error);
