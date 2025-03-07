@@ -7,34 +7,25 @@
 
 PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
 MODDIR="/data/adb/modules/system_app_nuker"
-MODULE_UPDATES_DIR="/data/adb/modules_update/nuke"
-MODULE_DIR="/data/adb/modules/nuke"
 TEXTFILE="$MODDIR/nuke_list.txt"
 
-# check for module dir
-if [ -d "$MODULE_DIR" ]; then
-	cp "$MODULE_DIR" "$MODULE_UPDATE_DIR"
-else
-	mkdir -p $MODULE_DIR
-fi
-
-# mark module for update
-touch $MODULE_DIR/update
-# create 
-mkdir -p $MODULE_UPDATES_DIR ; cd $MODULE_UPDATES_DIR
-busybox chcon --reference="/system" "$MODULE_UPDATES_DIR"
+# straight up use moddir
+[ -d "$MODDIR/system" ] && rm -rf "$MODDIR/system"
+mkdir -p "$MODDIR/system"
+busybox chcon --reference="/system" "$MODDIR/system"
 
 whiteout_create_systemapp() {
-	echo "$MODULE_UPDATES_DIR${1%/*}"
-	echo "$MODULE_UPDATES_DIR$1" 
-	mkdir -p "$MODULE_UPDATES_DIR${1%/*}"
-	rm -rf "$MODULE_UPDATES_DIR${1%/*}"
-  	busybox mknod "$MODULE_UPDATES_DIR${1%/*}" c 0 0
-  	busybox chcon --reference="/system" "$MODULE_UPDATES_DIR$1"  
+	echo "$MODDIR${1%/*}"
+	echo "$MODDIR$1" 
+	mkdir -p "$MODDIR${1%/*}"
+	rm -rf "$MODDIR${1%/*}"
+  	busybox mknod "$MODDIR${1%/*}" c 0 0
+  	busybox chcon --reference="/system" "$MODDIR$1"  
   	# not really required, mountify() does NOT even copy the attribute but ok
-  	busybox setfattr -n trusted.overlay.whiteout -v y "$MODULE_UPDATES_DIR$1"
-  	chmod 644 "$MODULE_UPDATES_DIR$1"
+  	busybox setfattr -n trusted.overlay.whiteout -v y "$MODDIR$1"
+  	chmod 644 "$MODDIR$1"
 }
+
 for line in $( sed '/#/d' "$TEXTFILE" ); do
 	apk_path=$(pm path "$line" 2>/dev/null | sed 's/package://')
 	if echo "$apk_path" | grep -Eq "^/(product|vendor|odm|system_ext)/" && ! echo "$apk_path" | grep -q "^/system/"; then
@@ -44,7 +35,7 @@ for line in $( sed '/#/d' "$TEXTFILE" ); do
 		continue
 	fi
 	whiteout_create_systemapp "$apk_path" > /dev/null 2>&1
-	ls "$MODULE_UPDATES_DIR$line" 2>/dev/null
+	ls "$MODDIR$line" 2>/dev/null
 done
 
 # special dirs
@@ -58,26 +49,23 @@ system_ext
 vendor"
 
 # this assumes magic mount
+# handle overlayfs KSU later?
 for dir in $targets; do 
-	if [ -d /$dir ] && [ ! -L /$dir ] && [ -d "$MODULE_UPDATES_DIR/system/$dir" ]; then
-		if [ -L "$MODULE_UPDATES_DIR/$dir" ]; then
+	if [ -d /$dir ] && [ ! -L /$dir ] && [ -d "$MODDIR/system/$dir" ]; then
+		if [ -L "$MODDIR/$dir" ]; then
 			# Check if the symlink points to the correct location
-			if [ $(readlink -f $MODULE_UPDATES_DIR/$dir) != $(realpath $MODULE_UPDATES_DIR/system/$dir) ]; then
+			if [ $(readlink -f $MODDIR/$dir) != $(realpath $MODDIR/system/$dir) ]; then
 				echo "[!] Incorrect symlink for /$dir, fixing..."
-				rm -f $MODULE_UPDATES_DIR/$dir
-				ln -sf ./system/$dir $MODULE_UPDATES_DIR/$dir
+				rm -f $MODDIR/$dir
+				ln -sf ./system/$dir $MODDIR/$dir
 			else
 				echo "[+] Symlink for /$dir is correct, skipping..."
 			fi
 		else
 			echo "[+] Creating symlink for /$dir"
-			ln -sf ./system/$dir $MODULE_UPDATES_DIR/$dir
+			ln -sf ./system/$dir $MODDIR/$dir
 		fi
 	fi
 done
-
-# import resources for whiteout module
-cat "$MODDIR/whiteout/module.prop" > "$MODULE_UPDATES_DIR/module.prop"
-cat "$MODDIR/whiteout/action.sh" > "$MODULE_UPDATES_DIR/action.sh"
 
 # EOF
