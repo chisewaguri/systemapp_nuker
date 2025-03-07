@@ -20,9 +20,8 @@ TEXTFILE="$MODDIR/nuke_list.txt"
 busybox chcon --reference="/system" "$MODULES_UPDATE_DIR"
 
 whiteout_create_systemapp() {
-	mkdir -p "$MODULES_UPDATE_DIR${1%/*}"
-	rm -rf "$MODULES_UPDATE_DIR${1%/*}"
-  	busybox mknod "$MODULES_UPDATE_DIR${1%/*}" c 0 0
+	mkdir -p "$MODULES_UPDATE_DIR$1"
+  	busybox mknod "$MODULES_UPDATE_DIR$1" c 0 0
   	busybox chcon --reference="/system" "$MODULES_UPDATE_DIR$1"  
   	# not really required, mountify() does NOT even copy the attribute but ok
   	busybox setfattr -n trusted.overlay.whiteout -v y "$MODULES_UPDATE_DIR$1"
@@ -50,7 +49,7 @@ for line in $( sed '/#/d' "$TEXTFILE" ); do
 	fi
 
 	# Create whiteout for apk_path
-	whiteout_create_systemapp "$apk_path" > /dev/null 2>&1
+	whiteout_create_systemapp "$(dirname $apk_path)" > /dev/null 2>&1
 	ls "$MODULES_UPDATE_DIR$line" 2>/dev/null
 done
 
