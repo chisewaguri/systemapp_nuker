@@ -64,6 +64,7 @@ body {
     user-select: none;
 }
 
+#removed-list,
 #app-list {
     margin-top: 130px;
     margin-bottom: 80px;
@@ -76,6 +77,7 @@ body {
     word-break: break-all;
 }
 
+.removed-app,
 .app {
     padding: 10px;
     display: flex;
@@ -108,9 +110,9 @@ body {
     font-size: 12px;
 }
 
-#nuke-button-container {
+.floating-button-container {
     position: fixed;
-    bottom: 50px;
+    bottom: 80px;
     display: flex;
     width: 100%;
     justify-content: center;
@@ -118,6 +120,7 @@ body {
     transition: transform 0.3s ease-in-out;
 }
 
+#restore-button,
 #nuke-button {
     position: relative;
     bottom: 0;
@@ -133,8 +136,39 @@ body {
     transition: background-color 0.2s ease-in-out;
 }
 
+#restore-button:active,
 #nuke-button:active {
     background-color: #2a65e0;
+}
+
+.footer {
+    position: fixed;
+    bottom: 0;
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    overflow: hidden;
+    z-index: 4;
+}
+
+.footer-btn {
+    padding: 20px;
+    padding-bottom: 30px;
+    background-color: #4c4c4c;
+    color: #fff;
+    font-weight: bold;
+    width: 50%;
+    text-align: center;
+    text-decoration: none;
+    cursor: none;
+    user-select: none;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.footer-btn:active {
+    background-color: #3a3a3a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -149,6 +183,7 @@ body {
         border: 1px solid #6E6E6E;
     }
 
+    .removed-app,
     .app {
         background-color: #343434;
     }

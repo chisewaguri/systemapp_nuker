@@ -1,22 +1,13 @@
 // This is part of system app nuker
 // Inspired by j-hc's zygisk detach that's licensed under Apache 2.0 and backslashxx's mountify.
 
-async function ksuExec(command) {
-    return new Promise((resolve) => {
-        let callbackName = `exec_callback_${Date.now()}`;
-        window[callbackName] = (errno, stdout, stderr) => {
-            resolve({ errno, stdout, stderr });
-            delete window[callbackName];
-        };
-        ksu.exec(command, "{}", callbackName);
-    });
-}
-
+import { ksuExec, setupSearch, setupScrollEvent, checkMMRL } from "./util.js";
 // Fetch system apps
 async function fetchSystemApps() {
     fetch("assets/app_list.json")
         .then(response => response.json())
         .then(data => {
+            data.sort((a, b) => a.package_name.localeCompare(b.package_name));
             displayAppList(data);
             ksu.toast("System apps loaded");
         })
@@ -69,6 +60,18 @@ document.getElementById("nuke-button").addEventListener("click", async () => {
         return;
     }
 
+    // check is the app is already in the list
+    for (const app of selectedPackages) {
+        try {
+            const { stdout: existingContent } = await ksuExec(`grep -q "${app.package_name}" /data/adb/modules/system_app_nuker/nuke_list.json`);
+            if (existingContent) {
+                continue;
+            }
+        } catch (error) {
+            console.error("App is not in the list:", error);
+        }
+    }
+
     try {
         const { stdout: existingContent } = await ksuExec('cat /data/adb/modules/system_app_nuker/nuke_list.json');
         let existingApps = [];
@@ -86,7 +89,16 @@ document.getElementById("nuke-button").addEventListener("click", async () => {
         const removedApps = JSON.stringify(uniqueApps, null, 2);
         await ksuExec(`echo '${removedApps}' > /data/adb/modules/system_app_nuker/nuke_list.json`);
 
-        await ksuExec(`su -c sh /data/adb/modules/system_app_nuker/nuke.sh`);
+        // remove apps from assets/app_list.json
+        fetch("assets/app_list.json")
+            .then(response => response.json())
+            .then(data => {
+                const filteredData = data.filter(app => !uniqueApps.some(uniqueApp => uniqueApp.package_name === app.package_name));
+                displayAppList(filteredData);
+                ksuExec(`echo '${JSON.stringify(filteredData, null, 2)}' > /data/adb/modules/system_app_nuker/webroot/assets/app_list.json`);
+            });
+
+        await ksuExec(`su -c sh /data/adb/modules/system_app_nuker/nuke.sh nuke`);
         ksu.toast("Done! Reboot your device!");
     } catch (error) {
         ksu.toast("Error updating removed apps list");
@@ -94,93 +106,9 @@ document.getElementById("nuke-button").addEventListener("click", async () => {
     }
 });
 
-// Function to check if running in MMRL
-async function checkMMRL() {
-    if (typeof ksu !== 'undefined' && ksu.mmrl) {
-        // Adjust elements position for MMRL
-        document.querySelector('.header').style.top = 'var(--window-inset-top)';
-        document.querySelector('.search-container').style.top = 'calc(var(--window-inset-top) + 80px)';
-        document.getElementById("nuke-button-container").style.bottom = 'calc(var(--window-inset-bottom) + 50px)';
-
-        // Set status bars theme based on device theme
-        try {
-            $system_app_nuker.setLightStatusBars(!window.matchMedia('(prefers-color-scheme: dark)').matches)
-        } catch (error) {
-            console.log("Error setting status bars theme:", error)
-        }
-
-        // Request API permission, supported version: 33045+
-        try {
-            $system_app_nuker.requestAdvancedKernelSUAPI();
-        } catch (error) {
-            console.log("Error requesting API:", error);
-        }
-    }
-}
-
-// Hide or show nuke button
-function hideNukeButton(hide = true) {
-    const nukeButton = document.getElementById("nuke-button-container");
-    if (!hide) {
-        nukeButton.style.transform = 'translateY(0)';
-    } else if (typeof ksu !== 'undefined' && ksu.mmrl) {
-        nukeButton.style.transform = 'translateY(calc(var(--window-inset-bottom) + 120px))';
-    } else {
-        nukeButton.style.transform = 'translateY(120px)';
-    }
-}
-
-// Search functionality
-document.getElementById('search-input').addEventListener('input', (e) => {
-    const searchValue = e.target.value.toLowerCase();
-    const apps = document.querySelectorAll('.app');
-    apps.forEach(app => {
-        const appName = app.querySelector('span.app-name').textContent.toLowerCase();
-        const appPackage = app.querySelector('span.app-package').textContent.toLowerCase();
-        if (appName.includes(searchValue) || appPackage.includes(searchValue)) {
-            app.style.display = 'flex';
-        } else {
-            app.style.display = 'none';
-        }
-    });
-
-    if (document.getElementById('search-input').value.length > 0) {
-        document.getElementById('clear-btn').style.display = 'block';
-    } else {
-        document.getElementById('clear-btn').style.display = 'none';
-    }
-});
-document.getElementById('clear-btn').addEventListener('click', () => {
-    document.getElementById('search-input').value = '';
-    const apps = document.querySelectorAll('.app');
-    apps.forEach(app => {
-        app.style.display = 'flex';
-    });
-    document.getElementById('clear-btn').style.display = 'none';
-});
-
-// Scroll event
-let lastScrollY = window.scrollY;
-let scrollTimeout;
-const scrollThreshold = 40;
-window.addEventListener('scroll', () => {
-    clearTimeout(scrollTimeout);
-    if (window.scrollY > lastScrollY && window.scrollY > scrollThreshold) {
-        hideNukeButton(true);
-    } else if (window.scrollY < lastScrollY) {
-        hideNukeButton(false);
-    }
-
-    // header opacity
-    const scrollRange = 65;
-    const scrollPosition = Math.min(Math.max(window.scrollY, 0), scrollRange);
-    const opacity = 1 - (scrollPosition / scrollRange);
-    document.querySelector('.header').style.opacity = opacity.toString();
-    document.querySelector('.search-container').style.transform = `translateY(-${scrollPosition}px)`;
-    lastScrollY = window.scrollY;
-});
-
 document.addEventListener("DOMContentLoaded", () => {
     fetchSystemApps();
     checkMMRL();
+    setupSearch();
+    setupScrollEvent();
 });

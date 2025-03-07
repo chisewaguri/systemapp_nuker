@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KernelSU System App Nuker</title>
-    <script type="module" src="script.js" defer></script>
+    <script type="module" src="restore.js"></script>
     <link rel="stylesheet" type="text/css" href="/mmrl/insets.css" />
     <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
@@ -17,18 +17,15 @@
             <input type="text" id="search-input" placeholder="Search for an app" autocapitalize="off">
             <button class="clear-btn" id="clear-btn">&#x2715;</button>
         </div>
-        <form id="app-form">
-            <div id="app-list">
-            <!-- System apps will be listed here -->
-            </div>
-        </form>
-        <div class="floating-button-container">
-            <div id="nuke-button">Nuke Selected Apps</div>
+        <div id="removed-list">
+            <!-- Removed apps will be listed here -->
         </div>
-
+        <div class="floating-button-container">
+            <div id="restore-button">Restore Selected Apps</div>
+        </div>
         <div class="footer">
-            <a class="footer-btn" id="home-btn">Home</a>
-            <a href="removed.html" class="footer-btn" id="restore-btn">Restore</a>
+            <a href="index.html" class="footer-btn" id="home-btn">Home</a>
+            <a class="footer-btn" id="restore-btn">Restore</a>
         </div>
     </div>
 </body>
