@@ -11,60 +11,48 @@ async function ksuExec(command) {
         ksu.exec(command, "{}", callbackName);
     });
 }
+
+// Fetch system apps
 async function fetchSystemApps() {
-    let result = await ksuExec("pm list packages -s");
-    if (result.errno !== 0) {
-        ksu.toast("Failed to fetch system apps");
-        return;
-    }
-
-    let packages = result.stdout.split("\n")
-        .map(line => line.replace("package:", "").trim())
-        .filter(pkg => pkg);
-
-    // Read nuke_list.txt
-    let nukeListResult = await ksuExec("cat /data/adb/modules/system_app_nuker/nuke_list.txt");
-    let nukedPackages = nukeListResult.errno === 0 ? nukeListResult.stdout.split("\n").map(pkg => pkg.trim()) : [];
-
-    displayAppList(packages, nukedPackages);
+    fetch("assets/app_list.json")
+        .then(response => response.json())
+        .then(data => {
+            displayAppList(data);
+            ksu.toast("System apps loaded");
+        })
+        .catch(error => {
+            console.error("Failed to fetch system apps:", error);
+        });
 }
 
-function displayAppList(packages, nukedPackages = []) {
+// Display app list
+async function displayAppList(data) {
     const appListDiv = document.getElementById("app-list");
     appListDiv.innerHTML = "";
-    let fragment = document.createDocumentFragment();
+    const htmlContent = data.map((pkg) => `
+        <div class="app">
+            <div class="app-info">
+                <span class="app-name">${pkg.app_name}</span>
+                <span class="app-package">${pkg.package_name}</span>
+                <span class="app-path">${pkg.app_path}</span>
+            </div>
+            <input class="app-selector" type="checkbox" value="${pkg.package_name}">
+        </div>
+    `).join("");
+    appListDiv.innerHTML = htmlContent;
 
-    packages.forEach(pkg => {
-        let div = document.createElement("div");
-        div.className = "app";
-
-        let span = document.createElement("span");
-        span.textContent = pkg;
-
-        let checkbox = document.createElement("input");
-        checkbox.className = "app-selector";
-        checkbox.type = "checkbox";
-        checkbox.value = pkg;
-
-        if (nukedPackages.includes(pkg)) {
-            checkbox.checked = true;
-        }
-
-        div.appendChild(span);
-        div.appendChild(checkbox);
-        fragment.appendChild(div);
-
-        // Clicking anywhere on the row toggles the checkbox
-        div.addEventListener('click', function(e) {
+    // Add click handlers to all app divs
+    document.querySelectorAll('.app').forEach(appDiv => {
+        appDiv.addEventListener('click', function(e) {
             if (e.target.type !== 'checkbox') {
+                const checkbox = this.querySelector('input[type="checkbox"]');
                 checkbox.checked = !checkbox.checked;
             }
         });
     });
-
-    appListDiv.appendChild(fragment);
 }
 
+// Nuke button
 document.getElementById("nuke-button").addEventListener("click", async () => {
     let selectedPackages = Array.from(document.querySelectorAll(".app-selector:checked"))
         .map(checkbox => checkbox.value)
@@ -110,6 +98,7 @@ async function checkMMRL() {
     }
 }
 
+// Hide or show nuke button
 function hideNukeButton(hide = true) {
     const nukeButton = document.getElementById("nuke-button-container");
     if (!hide) {
@@ -126,8 +115,9 @@ document.getElementById('search-input').addEventListener('input', (e) => {
     const searchValue = e.target.value.toLowerCase();
     const apps = document.querySelectorAll('.app');
     apps.forEach(app => {
-        const appName = app.querySelector('span').textContent.toLowerCase();
-        if (appName.includes(searchValue)) {
+        const appName = app.querySelector('span.app-name').textContent.toLowerCase();
+        const appPackage = app.querySelector('span.app-package').textContent.toLowerCase();
+        if (appName.includes(searchValue) || appPackage.includes(searchValue)) {
             app.style.display = 'flex';
         } else {
             app.style.display = 'none';
@@ -140,7 +130,6 @@ document.getElementById('search-input').addEventListener('input', (e) => {
         document.getElementById('clear-btn').style.display = 'none';
     }
 });
-
 document.getElementById('clear-btn').addEventListener('click', () => {
     document.getElementById('search-input').value = '';
     const apps = document.querySelectorAll('.app');

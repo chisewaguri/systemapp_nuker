@@ -70,7 +70,7 @@ body {
     display: flex;
     padding: 0 10px;
     flex-direction: column;
-    justify-content: center;
+    align-items: center;
     gap: 10px;
     word-wrap: break-word;
     word-break: break-all;
@@ -79,9 +79,10 @@ body {
 .app {
     padding: 10px;
     display: flex;
+    width: 100%;
+    max-width: 600px;
     background-color: #fff;
-    justify-content: space-between;
-    align-items: center;
+    align-items: space-between;
     border-radius: 10px;
     box-sizing: border-box;
     z-index: 2;
@@ -90,6 +91,21 @@ body {
 
 .app:active {
     background-color: #DCDCDC;
+}
+
+.app-info {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.app-name {
+    font-weight: bold;
+}
+
+.app-path {
+    font-size: 12px;
 }
 
 #nuke-button-container {
