@@ -53,6 +53,14 @@ create_applist() {
 [ ! -d "$PERSIST_DIR" ] && mkdir -p "$PERSIST_DIR"
 [ ! -f "$PERSIST_DIR/app_list.json" ] && create_applist
 
+# install app that was uninstalled with pm uninstall -k --user 0
+# this make sure that restored app is back
+for pkg in $(pm list packages -u | sed 's/package://'); do 
+    if ! pm list packages | grep -q "$pkg"; then  # Only restore if it's not installed
+        pm install-existing "$pkg" && echo "Restored: $pkg"
+    fi
+done
+
 # remove system apps if they still exist
 for package_name in $(grep -E '"package_name":' "$REMOVE_LIST" | sed 's/.*"package_name": "\(.*\)",/\1/'); do
     if pm list packages | grep -qx "package:$package_name"; then
