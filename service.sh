@@ -53,7 +53,7 @@ create_applist() {
         echo "$APK_PATH" | grep -qE "/system/app|/system/priv-app|/vendor/app|/product/app|/product/priv-app|/system_ext/app|/system_ext/priv-app" || continue
         echo "  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$package_name\", \"app_path\": \"$APK_PATH\"}, " >> "$PERSIST_DIR/app_list.json"
     done
- 
+
     sed -i '$ s/,$//' "$PERSIST_DIR/app_list.json"
     echo "]" >> "$PERSIST_DIR/app_list.json"
 }
