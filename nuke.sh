@@ -106,5 +106,6 @@ case "$1" in
 esac
 
 touch "$MODDIR/update"
+[ -f "$MODULES_UPDATE_DIR/update" ] && rm "$MODULES_UPDATE_DIR/update"
 
 # EOF
