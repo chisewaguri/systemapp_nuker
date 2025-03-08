@@ -1,177 +1,114 @@
 // This is part of system app nuker
 // Inspired by j-hc's zygisk detach that's licensed under Apache 2.0 and backslashxx's mountify.
 
-async function ksuExec(command) {
-    return new Promise((resolve) => {
-        let callbackName = `exec_callback_${Date.now()}`;
-        window[callbackName] = (errno, stdout, stderr) => {
-            resolve({ errno, stdout, stderr });
-            delete window[callbackName];
-        };
-        ksu.exec(command, "{}", callbackName);
-    });
-}
+import { ksuExec, setupSearch, setupScrollEvent, checkMMRL, applyRippleEffect } from "./util.js";
+// Fetch system apps
 async function fetchSystemApps() {
-    let result = await ksuExec("pm list packages -s");
-    if (result.errno !== 0) {
-        ksu.toast("Failed to fetch system apps");
-        return;
-    }
-
-    let packages = result.stdout.split("\n")
-        .map(line => line.replace("package:", "").trim())
-        .filter(pkg => pkg);
-
-    // Read nuke_list.txt
-    let nukeListResult = await ksuExec("cat /data/adb/modules/system_app_nuker/nuke_list.txt");
-    let nukedPackages = nukeListResult.errno === 0 ? nukeListResult.stdout.split("\n").map(pkg => pkg.trim()) : [];
-
-    displayAppList(packages, nukedPackages);
+    ksuExec("cat /data/adb/system_app_nuker/app_list.json")
+        .then(response => {
+            const data = JSON.parse(response.stdout);
+            data.sort((a, b) => a.app_name.localeCompare(b.app_name));
+            displayAppList(data);
+            applyRippleEffect();
+        })
+        .catch(error => {
+            console.error("Failed to fetch system apps:", error);
+        });
 }
 
-function displayAppList(packages, nukedPackages = []) {
+// Display app list
+async function displayAppList(data) {
     const appListDiv = document.getElementById("app-list");
     appListDiv.innerHTML = "";
-    let fragment = document.createDocumentFragment();
+    const htmlContent = data.map((pkg) => `
+        <div class="app ripple-element" data-package-name="${pkg.package_name}" data-app-path="${pkg.app_path}">
+            <div class="app-info">
+                <span class="app-name">${pkg.app_name}</span>
+                <span class="app-package">${pkg.package_name}</span>
+                <span class="app-path">${pkg.app_path}</span>
+            </div>
+            <input class="app-selector" type="checkbox">
+        </div>
+    `).join("");
+    appListDiv.innerHTML = htmlContent;
 
-    packages.forEach(pkg => {
-        let div = document.createElement("div");
-        div.className = "app";
-
-        let span = document.createElement("span");
-        span.textContent = pkg;
-
-        let checkbox = document.createElement("input");
-        checkbox.className = "app-selector";
-        checkbox.type = "checkbox";
-        checkbox.value = pkg;
-
-        if (nukedPackages.includes(pkg)) {
-            checkbox.checked = true;
-        }
-
-        div.appendChild(span);
-        div.appendChild(checkbox);
-        fragment.appendChild(div);
-
-        // Clicking anywhere on the row toggles the checkbox
-        div.addEventListener('click', function(e) {
+    // Add click handlers to all app divs
+    document.querySelectorAll('.app').forEach(appDiv => {
+        appDiv.addEventListener('click', function(e) {
             if (e.target.type !== 'checkbox') {
+                const checkbox = this.querySelector('input[type="checkbox"]');
                 checkbox.checked = !checkbox.checked;
             }
         });
     });
-
-    appListDiv.appendChild(fragment);
 }
 
+// Nuke button
 document.getElementById("nuke-button").addEventListener("click", async () => {
     let selectedPackages = Array.from(document.querySelectorAll(".app-selector:checked"))
-        .map(checkbox => checkbox.value)
-        .join("\n");
+        .map(checkbox => {
+            const appDiv = checkbox.closest('.app');
+            return {
+                package_name: appDiv.dataset.packageName,
+                app_path: appDiv.dataset.appPath,
+                app_name: appDiv.querySelector('.app-name').textContent
+            };
+        });
 
-    if (!selectedPackages) {
+    if (selectedPackages.length === 0) {
         ksu.toast("No apps selected");
         return;
     }
-    
-    let nukeListPath = "/data/adb/modules/system_app_nuker/nuke_list.txt";
-    let writeResult = await ksuExec(`echo \"${selectedPackages}\" > ${nukeListPath}`);
-    if (writeResult.errno !== 0) {
-        console.error("Failed to update nuke list:", writeResult.stderr);
-        return;
-    }
-    
-    await ksuExec(`su -c sh /data/adb/modules/system_app_nuker/nuke.sh`);
-    ksu.toast("Done! Reboot your device!");
-});
 
-// Function to check if running in MMRL
-async function checkMMRL() {
-    if (typeof ksu !== 'undefined' && ksu.mmrl) {
-        // Adjust elements position for MMRL
-        document.querySelector('.header').style.top = 'var(--window-inset-top)';
-        document.querySelector('.search-container').style.top = 'calc(var(--window-inset-top) + 80px)';
-        document.getElementById("nuke-button-container").style.bottom = 'calc(var(--window-inset-bottom) + 50px)';
-
-        // Set status bars theme based on device theme
+    // check is the app is already in the list
+    for (const app of selectedPackages) {
         try {
-            $system_app_nuker.setLightStatusBars(!window.matchMedia('(prefers-color-scheme: dark)').matches)
+            const { stdout: existingContent } = await ksuExec(`grep -q "${app.package_name}" /data/adb/system_app_nuker/nuke_list.json`);
+            if (existingContent) {
+                continue;
+            }
         } catch (error) {
-            console.log("Error setting status bars theme:", error)
+            console.error("App is not in the list:", error);
         }
+    }
 
-        // Request API permission, supported version: 33045+
+    try {
+        const { stdout: existingContent } = await ksuExec('cat /data/adb/system_app_nuker/nuke_list.json');
+        let existingApps = [];
         try {
-            $system_app_nuker.requestAdvancedKernelSUAPI();
-        } catch (error) {
-            console.log("Error requesting API:", error);
+            existingApps = JSON.parse(existingContent || '[]');
+        } catch (e) {
+            console.log("No existing apps or invalid JSON, starting fresh");
         }
+
+        const allApps = [...existingApps, ...selectedPackages];
+        const uniqueApps = allApps.filter((app, index, self) =>
+            index === self.findIndex(a => a.package_name === app.package_name)
+        );
+
+        const removedApps = JSON.stringify(uniqueApps, null, 2);
+        await ksuExec(`echo '${removedApps}' > /data/adb/system_app_nuker/nuke_list.json`);
+
+        // remove apps from assets/app_list.json
+        ksuExec("cat /data/adb/system_app_nuker/app_list.json")
+            .then(response => {
+                const data = JSON.parse(response.stdout);
+                const filteredData = data.filter(app => !uniqueApps.some(uniqueApp => uniqueApp.package_name === app.package_name));
+                displayAppList(filteredData);
+                ksuExec(`echo '${JSON.stringify(filteredData, null, 2)}' > /data/adb/system_app_nuker/app_list.json`);
+            });
+
+        await ksuExec(`su -c sh /data/adb/modules/system_app_nuker/nuke.sh nuke`);
+        ksu.toast("Done! Reboot your device!");
+    } catch (error) {
+        ksu.toast("Error updating removed apps list");
+        console.error("Error:", error);
     }
-}
-
-function hideNukeButton(hide = true) {
-    const nukeButton = document.getElementById("nuke-button-container");
-    if (!hide) {
-        nukeButton.style.transform = 'translateY(0)';
-    } else if (typeof ksu !== 'undefined' && ksu.mmrl) {
-        nukeButton.style.transform = 'translateY(calc(var(--window-inset-bottom) + 120px))';
-    } else {
-        nukeButton.style.transform = 'translateY(120px)';
-    }
-}
-
-// Search functionality
-document.getElementById('search-input').addEventListener('input', (e) => {
-    const searchValue = e.target.value.toLowerCase();
-    const apps = document.querySelectorAll('.app');
-    apps.forEach(app => {
-        const appName = app.querySelector('span').textContent.toLowerCase();
-        if (appName.includes(searchValue)) {
-            app.style.display = 'flex';
-        } else {
-            app.style.display = 'none';
-        }
-    });
-
-    if (document.getElementById('search-input').value.length > 0) {
-        document.getElementById('clear-btn').style.display = 'block';
-    } else {
-        document.getElementById('clear-btn').style.display = 'none';
-    }
-});
-
-document.getElementById('clear-btn').addEventListener('click', () => {
-    document.getElementById('search-input').value = '';
-    const apps = document.querySelectorAll('.app');
-    apps.forEach(app => {
-        app.style.display = 'flex';
-    });
-    document.getElementById('clear-btn').style.display = 'none';
-});
-
-// Scroll event
-let lastScrollY = window.scrollY;
-let scrollTimeout;
-const scrollThreshold = 40;
-window.addEventListener('scroll', () => {
-    clearTimeout(scrollTimeout);
-    if (window.scrollY > lastScrollY && window.scrollY > scrollThreshold) {
-        hideNukeButton(true);
-    } else if (window.scrollY < lastScrollY) {
-        hideNukeButton(false);
-    }
-
-    // header opacity
-    const scrollRange = 65;
-    const scrollPosition = Math.min(Math.max(window.scrollY, 0), scrollRange);
-    const opacity = 1 - (scrollPosition / scrollRange);
-    document.querySelector('.header').style.opacity = opacity.toString();
-    document.querySelector('.search-container').style.transform = `translateY(-${scrollPosition}px)`;
-    lastScrollY = window.scrollY;
 });
 
 document.addEventListener("DOMContentLoaded", () => {
     fetchSystemApps();
     checkMMRL();
+    setupSearch();
+    setupScrollEvent();
 });

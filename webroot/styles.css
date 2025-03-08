@@ -64,61 +64,162 @@ body {
     user-select: none;
 }
 
+#removed-list,
 #app-list {
     margin-top: 130px;
-    margin-bottom: 80px;
+    margin-bottom: 100px;
     display: flex;
     padding: 0 10px;
     flex-direction: column;
-    justify-content: center;
+    align-items: center;
     gap: 10px;
     word-wrap: break-word;
     word-break: break-all;
 }
 
+.removed-app,
 .app {
-    padding: 10px;
+    padding: 8px;
     display: flex;
+    width: 100%;
+    max-width: 900px;
     background-color: #fff;
-    justify-content: space-between;
-    align-items: center;
+    align-items: space-between;
+    border: 2px solid #fff;
     border-radius: 10px;
     box-sizing: border-box;
     z-index: 2;
-    transition: background-color 0.2s ease-in-out;
+    transition: border-color 0.3s ease, background-color 0.2s ease-in-out;
 }
 
-.app:active {
-    background-color: #DCDCDC;
+.app-selector {
+    display: none;
 }
 
-#nuke-button-container {
+.removed-app:has(.app-selector:checked),
+.app:has(.app-selector:checked) {
+    background-color: #ccc;
+    border-color: #007bff;
+}
+
+.app-info {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.app-name {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.app-package {
+    font-weight: bold;
+}
+
+.app-path {
+    font-size: 12px;
+}
+
+.floating-button-container {
     position: fixed;
-    bottom: 50px;
+    bottom: 95px;
+    display: flex;
+    width: 100%;
+    justify-content: flex-end;
+    z-index: 3;
+    transition: transform 0.3s ease-in-out;
+    pointer-events: none;
+}
+
+#restore-button,
+#nuke-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    bottom: 0;
+    margin-right: 15px;
+    padding: 15px;
+    color: #fff;
+    background-color: #007bff;
+    box-shadow: 0 4px 8px #0003;
+    border-radius: 15px;
+    user-select: none;
+    pointer-events: auto;
+}
+
+.footer {
+    position: fixed;
+    bottom: 0;
     display: flex;
     width: 100%;
     justify-content: center;
-    z-index: 3;
-    transition: transform 0.3s ease-in-out;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    overflow: hidden;
+    z-index: 4;
 }
 
-#nuke-button {
-    position: relative;
-    bottom: 0;
+.footer-btn {
+    display: flex;
+    flex-direction: column;
     padding: 15px;
-    color: #fff;
-    background-color: #3a75ff;
-    box-shadow: 0 4px 8px #0003;
-    font-size: 18px;
-    font-weight: bold;
+    padding-top: 10px;
+    background-color: #E4E4E4;
+    width: 50%;
     text-align: center;
-    border-radius: 15px;
+    align-items: center;
+    text-decoration: none;
+    cursor: none;
     user-select: none;
-    transition: background-color 0.2s ease-in-out;
 }
 
-#nuke-button:active {
-    background-color: #2a65e0;
+.footer-btn label {
+    text-decoration: none;
+    font-size: 12px;
+    color: #000;
+}
+
+.footer-btn-icon {
+    width: fit-content;
+    padding: 3px 25px;
+    padding-bottom: 1px;
+    border-radius: 50px;
+}
+
+.footer-btn-icon svg {
+    fill:#000;
+}
+
+.focus-btn {
+    background-color: #BEBEBE;
+}
+
+.ripple-element {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    transform: scale(0);
+    opacity: 1;
+    animation: ripple-animation ease-out forwards;
+    pointer-events: none;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.ripple.end {
+    opacity: 0;
+}
+
+@keyframes ripple-animation {
+    to {
+        transform: scale(3);
+    }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -133,11 +234,30 @@ body {
         border: 1px solid #6E6E6E;
     }
 
+    .removed-app,
     .app {
         background-color: #343434;
+        border-color: #343434;
     }
 
-    .app:active {
-        background-color: #454545;
+    .removed-app:has(.app-selector:checked),
+    .app:has(.app-selector:checked) {
+        background-color: #4D4D4D;
+    }
+
+    .footer-btn {
+        background-color: #4c4c4c;
+    }
+
+    .footer-btn label {
+        color: #fff;
+    }
+
+    .focus-btn {
+        background-color: #3a3a3a;
+    }
+
+    .footer-btn-icon svg {
+        fill:#fff;
     }
 }
