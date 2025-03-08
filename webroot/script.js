@@ -26,6 +26,12 @@ async function displayAppList(data) {
     const appListDiv = document.getElementById("app-list");
     appListDiv.innerHTML = "";
 
+    // Save checkbox states before sorting
+    const checkState = {};
+    document.querySelectorAll(".app-selector").forEach(cb => {
+        checkState[cb.value] = cb.checked;
+    });
+
     // Move checked apps to the top
     data.sort((a, b) => b.checked - a.checked);
 
@@ -40,6 +46,13 @@ async function displayAppList(data) {
         </div>
     `).join("");
     appListDiv.innerHTML = htmlContent;
+
+    // Restore checkbox states
+    document.querySelectorAll(".app-selector").forEach(cb => {
+        if (checkState[cb.value] !== undefined) {
+            cb.checked = checkState[cb.value];
+        }
+    });
 
     // Add click handlers to all app divs
     document.querySelectorAll('.app').forEach(appDiv => {
