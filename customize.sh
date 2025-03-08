@@ -11,7 +11,7 @@ rm -rf "$MODPATH/bin"
 # Migrate old config
 if [ -d "$PERSIST_DIR" ]; then
     # Make sure we don't overwrite previous setup
-    [ -f "$PERSIST_DIR/nuke_list.json" ] && sh "$MODPATH/nuke.sh" nuke skip_symlink &>/dev/null
+    [ -f "$PERSIST_DIR/nuke_list.json" ] && sh "$MODPATH/nuke.sh" skip_symlink &>/dev/null
 else
     mkdir -p "$PERSIST_DIR"
     chmod 755 "$MODPATH/service.sh"

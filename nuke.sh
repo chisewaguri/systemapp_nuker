@@ -91,6 +91,7 @@ nuke_system_apps() {
 # 	done
 # }
 
+[ "$1" = "skip_symlink" ] && skip_symlink=true || skip_symlink=false
 cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
 rm -rf "$MODULES_UPDATE_DIR/system"
 nuke_system_apps
