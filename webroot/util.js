@@ -72,7 +72,7 @@ function hideFloatingButton(hide = true) {
     if (!hide) {
         floatingButton.style.transform = 'translateY(0)';
     } else {
-        floatingButton.style.transform = 'translateY(80px)';
+        floatingButton.style.transform = 'translateY(90px)';
     }
 }
 
