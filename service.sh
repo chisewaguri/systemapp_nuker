@@ -11,6 +11,9 @@ until [ "$(getprop sys.boot_completed)" = "1" ]; do
     sleep 1
 done
 
+# reset bootcount
+echo "BOOTCOUNT=0" > "$MODDIR/count.sh"
+
 create_applist() {
     echo "[" > "$PERSIST_DIR/app_list.json"
 
