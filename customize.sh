@@ -12,8 +12,4 @@ rm -rf "$MODPATH/bin"
 if [ -d "$PERSIST_DIR" ]; then
     # Make sure we don't overwrite previous setup
     [ -f "$PERSIST_DIR/nuke_list.json" ] && sh "$MODPATH/nuke.sh" skip_symlink &>/dev/null
-else
-    mkdir -p "$PERSIST_DIR"
-    chmod 755 "$MODPATH/service.sh"
-    sh "$MODPATH/service.sh" &>/dev/null
 fi
