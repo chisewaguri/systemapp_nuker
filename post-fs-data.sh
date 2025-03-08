@@ -9,10 +9,11 @@ BOOTCOUNT=0
 BOOTCOUNT=$(( BOOTCOUNT + 1))
 
 if [ $BOOTCOUNT -gt 1 ]; then
-        touch $MODDIR/disable
-        rm "$MODDIR/count.sh"
+    touch $MODDIR/disable
+    rm "$MODDIR/count.sh"
 else
-	echo "BOOTCOUNT=1" > "$MODDIR/count.sh"
+    echo "BOOTCOUNT=1" > "$MODDIR/count.sh"
+    chmod 755 "$MODDIR/count.sh"
 fi
 
 # EOF

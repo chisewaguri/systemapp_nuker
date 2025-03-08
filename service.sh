@@ -2,10 +2,7 @@ MODDIR="/data/adb/modules/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
 REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
 
-aapt() { 
-    [ -f "$MODDIR/common/aapt" ] && "$MODDIR/common/aapt" "$@"
-    [ -f "$MODPATH/common/aapt" ] && "$MODPATH/common/aapt" "$@"
-}
+aapt() { "$MODDIR/common/aapt" "$@"; }
 
 until [ "$(getprop sys.boot_completed)" = "1" ]; do
     sleep 1
@@ -13,6 +10,7 @@ done
 
 # reset bootcount
 echo "BOOTCOUNT=0" > "$MODDIR/count.sh"
+chmod 755 "$MODDIR/count.sh"
 
 # check for mounting system
 if [ "$MAGISK_VER_CODE" ] || [ "$KSU_MAGIC_MOUNT" ] || [ "$APATCH_BIND_MOUNT" ]; then
@@ -20,6 +18,7 @@ if [ "$MAGISK_VER_CODE" ] || [ "$KSU_MAGIC_MOUNT" ] || [ "$APATCH_BIND_MOUNT" ];
 else
     echo "MAGIC_MOUNT=false" > $PERSIST_DIR/module_system.sh
 fi
+chmod 755 "$PERSIST_DIR/module_system.sh"
 
 create_applist() {
     echo "[" > "$PERSIST_DIR/app_list.json"
@@ -27,6 +26,9 @@ create_applist() {
     system_app_path="/system/app /system/priv-app /vendor/app /product/app /product/priv-app /system_ext/app /system_ext/priv-app"
     for path in $system_app_path; do
         find "$path" -maxdepth 2 -type f -name "*.apk" | while read APK_PATH; do
+            if grep -q "$APK_PATH" "$PERSIST_DIR/app_list.json"; then
+                continue
+            fi
             [ -z "$PKG_LIST" ] && PKG_LIST=$(pm list packages -f)
             PACKAGE_NAME=$(echo "$PKG_LIST" | grep "$APK_PATH" | awk -F= '{print $2}')
             [ -z "$PACKAGE_NAME" ] && PACKAGE_NAME=$(aapt dump badging "$APK_PATH" 2>/dev/null | grep "package:" | awk -F' ' '{print $2}' | sed "s/^name='\([^']*\)'.*/\1/")
@@ -52,7 +54,6 @@ create_applist() {
         echo "  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$package_name\", \"app_path\": \"$APK_PATH\"}, " >> "$PERSIST_DIR/app_list.json"
     done
  
-
     sed -i '$ s/,$//' "$PERSIST_DIR/app_list.json"
     echo "]" >> "$PERSIST_DIR/app_list.json"
 }
@@ -64,7 +65,7 @@ create_applist() {
 # this make sure that restored app is back
 for pkg in $(pm list packages -u | sed 's/package://'); do 
     if ! pm list packages | grep -q "$pkg"; then  # Only restore if it's not installed
-        pm install-existing "$pkg" && echo "Restored: $pkg"
+        pm install-existing "$pkg"
     fi
 done
 
