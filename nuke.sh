@@ -38,11 +38,11 @@ whiteout_create_systemapp() {
 	path="$1"
 	echo "$path" | grep -q "/system/" || path="/system$1"
 	mkdir -p "$MODULES_UPDATE_DIR${path%/*}"
-  	busybox mknod "$MODULES_UPDATE_DIR$path" c 0 0
-  	busybox chcon --reference="/system" "$MODULES_UPDATE_DIR$path"
-  	# not really required, mountify() does NOT even copy the attribute but ok
-  	busybox setfattr -n trusted.overlay.whiteout -v y "$MODULES_UPDATE_DIR$path"
-  	chmod 644 "$MODDIR$path"
+	busybox mknod "$MODULES_UPDATE_DIR$path" c 0 0
+	busybox chcon --reference="/system" "$MODULES_UPDATE_DIR$path"
+	# not really required, mountify() does NOT even copy the attribute but ok
+	busybox setfattr -n trusted.overlay.whiteout -v y "$MODULES_UPDATE_DIR$path"
+	chmod 644 "$MODDIR$path"
 }
 
 nuke_system_apps() {
@@ -56,25 +56,61 @@ nuke_system_apps() {
 		ls "$MODULES_UPDATE_DIR$apk_path" 2>/dev/null
 	done
 
-	# this assumes magic mount
-	# handle overlayfs KSU later?
-	for dir in $targets; do 
-		if [ -d /$dir ] && [ ! -L /$dir ] && [ -d "$MODULES_UPDATE_DIR/system/$dir" ]; then
+	# this handle magic mount
+	if [ "$MAGIC_MOUNT" = true ]; then
+		for dir in $targets; do
+			# convert hierarchy if different (this is unlikely but we do it anyway)
+			if [ -d "$MODULES_UPDATE_DIR/$dir" ]; then
+				[ -e "$MODULES_UPDATE_DIR/system/$dir" ] & rm -rf "$MODULES_UPDATE_DIR/system/$dir"
+				echo "[*] Moving $dir from Magic Mount to OverlayFS structure..."
+				mv "$MODULES_UPDATE_DIR/system/$dir" "$MODULES_UPDATE_DIR/$dir"
+				echo "[+] Converted $dir to OverlayFS hierarchy"
+			fi
+
+			# handle symlink
+			if [ -d /$dir ] && [ ! -L /$dir ] && [ -d "$MODULES_UPDATE_DIR/system/$dir" ]; then
+				if [ -L "$MODULES_UPDATE_DIR/$dir" ]; then
+					# Check if the symlink points to the correct location
+					if [ $(readlink -f $MODULES_UPDATE_DIR/$dir) != $(realpath $MODULES_UPDATE_DIR/system/$dir) ]; then
+						echo "[!] Incorrect symlink for /$dir, fixing..."
+						rm -f $MODULES_UPDATE_DIR/$dir
+						[ "$skip_symlink" = true ] || ln -sf ./system/$dir $MODULES_UPDATE_DIR/$dir
+					else
+						echo "[+] Symlink for /$dir is correct, skipping..."
+					fi
+				else
+					echo "[+] Creating symlink for /$dir"
+					[ "$skip_symlink" = true ] || ln -sf ./system/$dir $MODULES_UPDATE_DIR/$dir
+				fi
+			fi
+		done
+	# this handle overlayfs
+	elif [ "$MAGIC_MOUNT" = false ]; then
+		for dir in $targets; do
+			# convert hierarchy if diff
+			if [ -d "$MODULES_UPDATE_DIR/system/$dir" ]; then
+				[ -e "$MODULES_UPDATE_DIR/$dir" ] & rm -rf "$MODULES_UPDATE_DIR/$dir"
+				echo "[*] Moving $dir from Magic Mount to OverlayFS structure..."
+				mv "$MODULES_UPDATE_DIR/system/$dir" "$MODULES_UPDATE_DIR/$dir"
+				echo "[+] Converted $dir to OverlayFS hierarchy"
+			fi
+
+			# handle symlink
 			if [ -L "$MODULES_UPDATE_DIR/$dir" ]; then
 				# Check if the symlink points to the correct location
-				if [ $(readlink -f $MODULES_UPDATE_DIR/$dir) != $(realpath $MODULES_UPDATE_DIR/system/$dir) ]; then
+				if [ $(readlink -f $MODULES_UPDATE_DIR/system/$dir) != $(realpath $MODULES_UPDATE_DIR/$dir) ]; then
 					echo "[!] Incorrect symlink for /$dir, fixing..."
-					rm -f $MODULES_UPDATE_DIR/$dir
-					[ "$skip_symlink" = true ] || ln -sf ./system/$dir $MODULES_UPDATE_DIR/$dir
+					rm -f $MODULES_UPDATE_DIR/system/$dir
+					[ "$skip_symlink" = true ] || ln -sf ../$dir $MODULES_UPDATE_DIR/system/$dir
 				else
 					echo "[+] Symlink for /$dir is correct, skipping..."
 				fi
 			else
 				echo "[+] Creating symlink for /$dir"
-				[ "$skip_symlink" = true ] || ln -sf ./system/$dir $MODULES_UPDATE_DIR/$dir
+				[ "$skip_symlink" = true ] || ln -sf ../$dir $MODULES_UPDATE_DIR/system/$dir
 			fi
-		fi
-	done
+		done
+	fi
 }
 
 # restore_system_apps() {
