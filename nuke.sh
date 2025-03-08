@@ -73,37 +73,27 @@ nuke_system_apps() {
 	done
 }
 
-restore_system_apps() {
-	find "$MODULES_UPDATE_DIR/system" -type c -maxdepth 3 | while read -r nod; do
-		nod_name=$(basename "$nod")
-		if ! grep -q "/$nod_name/" "$REMOVE_LIST"; then
-			rm -rf "$nod"
-		fi
-	done
-	find $MODULES_UPDATE_DIR/system -type d -maxdepth 3 | while read -r dir; do
-		if [ -z "$(ls -A "$dir")" ]; then
-			rm -rf "$dir"
-		fi
-	done
-	for dir in system_ext vendor odm product system; do
-		[ -z "$(ls -A "$MODULES_UPDATE_DIR/$dir")" ] && rm -rf "$MODULES_UPDATE_DIR/$dir"
-		[ -z "$(ls -A "$MODULES_UPDATE_DIR/system/$dir")" ] && rm -rf "$MODULES_UPDATE_DIR/system/$dir"
-	done
-}
+# restore_system_apps() {
+# 	find "$MODULES_UPDATE_DIR/system" -type c -maxdepth 3 | while read -r nod; do
+# 		nod_name=$(basename "$nod")
+# 		if ! grep -q "/$nod_name/" "$REMOVE_LIST"; then
+# 			rm -rf "$nod"
+# 		fi
+# 	done
+# 	find $MODULES_UPDATE_DIR/system -type d -maxdepth 3 | while read -r dir; do
+# 		if [ -z "$(ls -A "$dir")" ]; then
+# 			rm -rf "$dir"
+# 		fi
+# 	done
+# 	for dir in system_ext vendor odm product system; do
+# 		[ -z "$(ls -A "$MODULES_UPDATE_DIR/$dir")" ] && rm -rf "$MODULES_UPDATE_DIR/$dir"
+# 		[ -z "$(ls -A "$MODULES_UPDATE_DIR/system/$dir")" ] && rm -rf "$MODULES_UPDATE_DIR/system/$dir"
+# 	done
+# }
 
-case "$1" in
-	restore)
-		cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
-		restore_system_apps
-		rm -rf "$MODDIR/system"
-		;;
-	*)
-		[ "$2" = "skip_symlink" ] && skip_symlink=true || skip_symlink=false
-		nuke_system_apps
-		rm -rf "$MODDIR/system"
-		cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
-		;;
-esac
+cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
+rm -rf "$MODULES_UPDATE_DIR/system"
+nuke_system_apps
 
 touch "$MODDIR/update"
 [ -f "$MODULES_UPDATE_DIR/update" ] && rm "$MODULES_UPDATE_DIR/update"
