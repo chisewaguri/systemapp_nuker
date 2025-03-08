@@ -148,11 +148,14 @@ export function setupScrollEvent() {
             hideFloatingButton(false);
         }
 
-        // header opacity
+        // header opacity and scale
         const scrollRange = 65;
         const scrollPosition = Math.min(Math.max(window.scrollY, 0), scrollRange);
         const opacity = 1 - (scrollPosition / scrollRange);
+        const scale = 0.5 + (opacity * 0.5);
+        const translateY = scrollPosition / 2;
         document.querySelector('.header').style.opacity = opacity.toString();
+        document.querySelector('.header').style.transform = `scale(${scale}) translateY(-${translateY}px)`;
         document.querySelector('.search-container').style.transform = `translateY(-${scrollPosition}px)`;
         lastScrollY = window.scrollY;
         isScrolling = false;
