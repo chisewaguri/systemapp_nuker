@@ -14,6 +14,13 @@ done
 # reset bootcount
 echo "BOOTCOUNT=0" > "$MODDIR/count.sh"
 
+# check for mounting system
+if [ "$MAGISK_VER_CODE" ] || [ "$KSU_MAGIC_MOUNT" ] || [ "$APATCH_BIND_MOUNT" ]; then
+    echo "MAGIC_MOUNT=true" > $PERSIST_DIR/module_system.sh
+else
+    echo "MAGIC_MOUNT=false" > $PERSIST_DIR/module_system.sh
+fi
+
 create_applist() {
     echo "[" > "$PERSIST_DIR/app_list.json"
 

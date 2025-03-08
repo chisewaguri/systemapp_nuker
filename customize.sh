@@ -2,6 +2,13 @@ SKIPUNZIP=0
 MODDIR="/data/adb/modules/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
 
+# check for mounting system
+if [ "$MAGISK_VER_CODE" ] || [ "$KSU_MAGIC_MOUNT" ] || [ "$APATCH_BIND_MOUNT" ]; then
+    echo "MAGIC_MOUNT=true" > $PERSIST_DIR/module_system.sh
+else
+    echo "MAGIC_MOUNT=false" > $PERSIST_DIR/module_system.sh
+fi
+
 mkdir -p "$MODPATH/common"
 mv "$MODPATH/bin/$(getprop ro.product.cpu.abi)/aapt" "$MODPATH/common/aapt"
 set_perm $MODPATH/common/aapt 0 2000 0755
