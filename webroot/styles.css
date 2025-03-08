@@ -130,6 +130,7 @@ body {
     justify-content: flex-end;
     z-index: 3;
     transition: transform 0.3s ease-in-out;
+    pointer-events: none;
 }
 
 #restore-button,
@@ -146,6 +147,7 @@ body {
     box-shadow: 0 4px 8px #0003;
     border-radius: 15px;
     user-select: none;
+    pointer-events: auto;
 }
 
 .footer {
