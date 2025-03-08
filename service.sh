@@ -21,13 +21,6 @@ else
     echo "MAGIC_MOUNT=false" > $PERSIST_DIR/module_system.sh
 fi
 
-ICON_DIR="$PERSIST_DIR/icons"
-# ensure the icon directory exists
-[ ! -d "$ICON_DIR" ] && mkdir -p "$ICON_DIR"
-
-# create symlink for app icon
-[ ! -L "$MODDIR/webroot/icons" ] && ln -sf /data/adb/system_app_nuker/icons $MODDIR/webroot/icons
-
 create_applist() {
     echo "[" > "$PERSIST_DIR/app_list.json"
 
@@ -72,7 +65,12 @@ create_applist() {
 }
 
 [ ! -d "$PERSIST_DIR" ] && mkdir -p "$PERSIST_DIR"
+ICON_DIR="$PERSIST_DIR/icons"
+# ensure the icon directory exists
+[ ! -d "$ICON_DIR" ] && mkdir -p "$ICON_DIR"
 [ ! -f "$PERSIST_DIR/app_list.json" ] && create_applist
+# create symlink for app icon
+[ ! -L "$MODDIR/webroot/icons" ] && ln -sf /data/adb/system_app_nuker/icons $MODDIR/webroot/icons
 
 # install app that was uninstalled with pm uninstall -k --user 0
 # this make sure that restored app is back
