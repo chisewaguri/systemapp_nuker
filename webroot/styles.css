@@ -79,20 +79,27 @@ body {
 
 .removed-app,
 .app {
-    padding: 10px;
+    padding: 8px;
     display: flex;
     width: 100%;
     max-width: 600px;
     background-color: #fff;
     align-items: space-between;
+    border: 2px solid #fff;
     border-radius: 10px;
     box-sizing: border-box;
     z-index: 2;
-    transition: background-color 0.2s ease-in-out;
+    transition: border-color 0.3s ease, background-color 0.2s ease-in-out;
 }
 
-.app:active {
-    background-color: #DCDCDC;
+.app-selector {
+    display: none;
+}
+
+.removed-app:has(.app-selector:checked),
+.app:has(.app-selector:checked) {
+    background-color: #ccc;
+    border-color: #007bff;
 }
 
 .app-info {
@@ -104,6 +111,10 @@ body {
 
 .app-name {
     font-size: 18px;
+    font-weight: bold;
+}
+
+.app-package {
     font-weight: bold;
 }
 
@@ -206,10 +217,12 @@ body {
     .removed-app,
     .app {
         background-color: #343434;
+        border-color: #343434;
     }
 
-    .app:active {
-        background-color: #454545;
+    .removed-app:has(.app-selector:checked),
+    .app:has(.app-selector:checked) {
+        background-color: #4D4D4D;
     }
 
     .footer-btn {
