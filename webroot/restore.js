@@ -6,9 +6,12 @@ function displayRemovedApps(apps) {
     removedAppsDiv.innerHTML = apps.map(app => `
         <div class="removed-app ripple-element" data-package-name="${app.package_name}" data-app-path="${app.app_path}">
             <div class="app-info">
-                <span class="app-name">${app.app_name}</span>
-                <span class="app-package">${app.package_name}</span>
-                <span class="app-path">${app.app_path}</span>
+                <img class="app-icon" src="icons/${app.package_name}.png" onerror="this.src='default.png'" alt="Icon">
+                <div class="app-details">
+                    <span class="app-name"><span>${app.app_name}</span></span>  
+                    <span class="app-package"><span>${app.package_name}</span></span>  
+                    <span class="app-path"><span>${app.app_path}</span></span>  
+                </div>
             </div>
             <input class="app-selector" type="checkbox">
         </div>
@@ -20,6 +23,15 @@ function displayRemovedApps(apps) {
             if (e.target.type !== 'checkbox') {
                 const checkbox = this.querySelector('input[type="checkbox"]');
                 checkbox.checked = !checkbox.checked;
+            }
+        });
+
+        appDiv.querySelectorAll(".app-name span, .app-package span, .app-path span").forEach(el => {
+            const parent = el.parentElement;
+            if (el.scrollWidth > parent.clientWidth) {
+                el.classList.add("scroll");
+                const scrollDistance = el.scrollWidth - parent.clientWidth;
+                el.style.setProperty('--scroll-distance', `${scrollDistance}px`);
             }
         });
     });
