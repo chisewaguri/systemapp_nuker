@@ -95,7 +95,7 @@ cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
 rm -rf "$MODULES_UPDATE_DIR/system"
 nuke_system_apps
 
-touch "$MODDIR/update"
+[ ! -f "$MODDIR/update" ] && touch "$MODDIR/update"
 [ -f "$MODULES_UPDATE_DIR/update" ] && rm "$MODULES_UPDATE_DIR/update"
 
 # EOF
