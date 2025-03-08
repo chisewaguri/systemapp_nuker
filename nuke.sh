@@ -30,10 +30,6 @@ vendor"
 # also this way manager handles the update.
 # this can avoid persistence issues too
 
-# create folder if it doesnt exist
-[ ! -d "$MODULES_UPDATE_DIR" ] && mkdir -p "$MODULES_UPDATE_DIR"
-busybox chcon --reference="/system" "$MODULES_UPDATE_DIR"
-
 whiteout_create_systemapp() {
 	path="$1"
 	echo "$path" | grep -q "/system/" || path="/system$1"
@@ -47,10 +43,6 @@ whiteout_create_systemapp() {
 
 nuke_system_apps() {
 	for apk_path in $(grep -E '"app_path":' "$REMOVE_LIST" | sed 's/.*"app_path": "\(.*\)",/\1/'); do
-		# Skip if the it already exists in modules_update
-		if [ -e "$MODULES_UPDATE_DIR$apk_path" ] || [ -e "$MODULES_UPDATE_DIR/system$apk_path" ]; then
-			continue
-		fi
 		# Create whiteout for apk_path
 		whiteout_create_systemapp "$(dirname $apk_path)" > /dev/null 2>&1
 		ls "$MODULES_UPDATE_DIR$apk_path" 2>/dev/null
@@ -113,30 +105,22 @@ nuke_system_apps() {
 	fi
 }
 
-# restore_system_apps() {
-# 	find "$MODULES_UPDATE_DIR/system" -type c -maxdepth 3 | while read -r nod; do
-# 		nod_name=$(basename "$nod")
-# 		if ! grep -q "/$nod_name/" "$REMOVE_LIST"; then
-# 			rm -rf "$nod"
-# 		fi
-# 	done
-# 	find $MODULES_UPDATE_DIR/system -type d -maxdepth 3 | while read -r dir; do
-# 		if [ -z "$(ls -A "$dir")" ]; then
-# 			rm -rf "$dir"
-# 		fi
-# 	done
-# 	for dir in system_ext vendor odm product system; do
-# 		[ -z "$(ls -A "$MODULES_UPDATE_DIR/$dir")" ] && rm -rf "$MODULES_UPDATE_DIR/$dir"
-# 		[ -z "$(ls -A "$MODULES_UPDATE_DIR/system/$dir")" ] && rm -rf "$MODULES_UPDATE_DIR/system/$dir"
-# 	done
-# }
-
+# skip symlink on installation
 [ "$1" = "skip_symlink" ] && skip_symlink=true || skip_symlink=false
+
+# create folder if it doesnt exist
+[ ! -d "$MODULES_UPDATE_DIR" ] && mkdir -p "$MODULES_UPDATE_DIR"
+busybox chcon --reference="/system" "$MODULES_UPDATE_DIR"
 cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
-rm -rf "$MODULES_UPDATE_DIR/system"
+
+# cleanup all old setup
+for dir in system system_ext vendor product; do
+	rm -rf "$MODULES_UPDATE_DIR/$dir"
+done
 nuke_system_apps
 
-[ ! -f "$MODDIR/update" ] && touch "$MODDIR/update"
-[ -f "$MODULES_UPDATE_DIR/update" ] && rm "$MODULES_UPDATE_DIR/update"
+# no need check before touch and rm, no stderr
+touch "$MODDIR/update"
+rm "$MODULES_UPDATE_DIR/update"
 
 # EOF
