@@ -50,6 +50,7 @@ create_applist() {
     echo "]" >> "$PERSIST_DIR/app_list.json"
 }
 
+[ ! -d "$PERSIST_DIR" ] && mkdir -p "$PERSIST_DIR"
 [ ! -f "$PERSIST_DIR/app_list.json" ] && create_applist
 
 # remove system apps if they still exist
