@@ -61,13 +61,13 @@ nuke_system_apps() {
 				if [ $(readlink -f $MODULES_UPDATE_DIR/$dir) != $(realpath $MODULES_UPDATE_DIR/system/$dir) ]; then
 					echo "[!] Incorrect symlink for /$dir, fixing..."
 					rm -f $MODULES_UPDATE_DIR/$dir
-					ln -sf ./system/$dir $MODULES_UPDATE_DIR/$dir
+					[ "$skip_symlink" = true ] || ln -sf ./system/$dir $MODULES_UPDATE_DIR/$dir
 				else
 					echo "[+] Symlink for /$dir is correct, skipping..."
 				fi
 			else
 				echo "[+] Creating symlink for /$dir"
-				ln -sf ./system/$dir $MODULES_UPDATE_DIR/$dir
+				[ "$skip_symlink" = true ] || ln -sf ./system/$dir $MODULES_UPDATE_DIR/$dir
 			fi
 		fi
 	done
@@ -95,6 +95,7 @@ touch "$MODDIR/update"
 
 case "$1" in
 	nuke)
+		[ "$2" = "skip_symlink" ] && skip_symlink=true || skip_symlink=false
 		nuke_system_apps
 		rm -rf "$MODDIR/system"
 		cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
