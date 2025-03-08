@@ -29,6 +29,20 @@ create_applist() {
         done
     done
 
+    # Fallback for no package name found
+    for package_name in $(pm list packages -s | sed 's/package://g'); do
+        if grep -q "\"$package_name\"" "$PERSIST_DIR/app_list.json"; then
+            continue
+        fi
+        APP_NAME=$(aapt dump badging "$package_name" 2>/dev/null | grep "application-label:" | sed "s/application-label://g; s/'//g")
+        [ -z "$APP_NAME" ] && APP_NAME="$package_name"
+        
+        APK_PATH=$(pm path $package_name | sed 's/package://g')
+        echo "$APK_PATH" | grep -qE "/system/app|/system/priv-app|/vendor/app|/product/app|/product/priv-app|/system_ext/app|/system_ext/priv-app" || continue
+        echo "  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$package_name\", \"app_path\": \"$APK_PATH\"}, " >> "$PERSIST_DIR/app_list.json"
+    done
+ 
+
     sed -i '$ s/,$//' "$PERSIST_DIR/app_list.json"
     echo "]" >> "$PERSIST_DIR/app_list.json"
 }
