@@ -14,6 +14,13 @@ done
 # reset bootcount
 echo "BOOTCOUNT=0" > "$MODDIR/count.sh"
 
+# check for mounting system
+if [ -n "$MAGISK_VER_CODE" ] || [ -n "$KSU_MAGIC_MOUNT" ] || [ -n "$APATCH_BIND_MOUNT" ]; then
+    echo "MAGIC_MOUNT=true" > $PERSIST_DIR/module_system.sh
+else
+    echo "MAGIC_MOUNT=false" > $PERSIST_DIR/module_system.sh
+fi
+
 ICON_DIR="$PERSIST_DIR/icons"
 # ensure the icon directory exists
 [ ! -d "$ICON_DIR" ] && mkdir -p "$ICON_DIR"
