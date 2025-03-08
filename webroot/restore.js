@@ -1,10 +1,10 @@
-import { ksuExec, setupSearch, setupScrollEvent, checkMMRL } from "./util.js";
+import { ksuExec, setupSearch, setupScrollEvent, checkMMRL, applyRippleEffect } from "./util.js";
 
 function displayRemovedApps(apps) {
     const removedAppsDiv = document.getElementById('removed-list');
     removedAppsDiv.innerHTML = "";
     removedAppsDiv.innerHTML = apps.map(app => `
-        <div class="removed-app" data-package-name="${app.package_name}" data-app-path="${app.app_path}">
+        <div class="removed-app ripple-element" data-package-name="${app.package_name}" data-app-path="${app.app_path}">
             <div class="app-info">
                 <span class="app-name">${app.app_name}</span>
                 <span class="app-package">${app.package_name}</span>
@@ -31,6 +31,7 @@ function getRemovedApps() {
             const removedApps = JSON.parse(result.stdout);
             removedApps.sort((a, b) => a.app_name.localeCompare(b.app_name));
             displayRemovedApps(removedApps);
+            applyRippleEffect();
         })
         .catch(error => {
             console.error("Failed to get removed apps:", error);

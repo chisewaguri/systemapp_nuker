@@ -1,7 +1,7 @@
 // This is part of system app nuker
 // Inspired by j-hc's zygisk detach that's licensed under Apache 2.0 and backslashxx's mountify.
 
-import { ksuExec, setupSearch, setupScrollEvent, checkMMRL } from "./util.js";
+import { ksuExec, setupSearch, setupScrollEvent, checkMMRL, applyRippleEffect } from "./util.js";
 // Fetch system apps
 async function fetchSystemApps() {
     fetch("assets/app_list.json")
@@ -9,6 +9,7 @@ async function fetchSystemApps() {
         .then(data => {
             data.sort((a, b) => a.app_name.localeCompare(b.app_name));
             displayAppList(data);
+            applyRippleEffect();
         })
         .catch(error => {
             console.error("Failed to fetch system apps:", error);
@@ -20,7 +21,7 @@ async function displayAppList(data) {
     const appListDiv = document.getElementById("app-list");
     appListDiv.innerHTML = "";
     const htmlContent = data.map((pkg) => `
-        <div class="app" data-package-name="${pkg.package_name}" data-app-path="${pkg.app_path}">
+        <div class="app ripple-element" data-package-name="${pkg.package_name}" data-app-path="${pkg.app_path}">
             <div class="app-info">
                 <span class="app-name">${pkg.app_name}</span>
                 <span class="app-package">${pkg.package_name}</span>

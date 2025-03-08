@@ -146,12 +146,6 @@ body {
     box-shadow: 0 4px 8px #0003;
     border-radius: 15px;
     user-select: none;
-    transition: background-color 0.2s ease-in-out;
-}
-
-#restore-button:active,
-#nuke-button:active {
-    background-color: #0060c6;
 }
 
 .footer {
@@ -178,7 +172,6 @@ body {
     text-decoration: none;
     cursor: none;
     user-select: none;
-    transition: background-color 0.2s ease-in-out;
 }
 
 .footer-btn label {
@@ -200,6 +193,31 @@ body {
 
 .focus-btn {
     background-color: #BEBEBE;
+}
+
+.ripple-element {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    transform: scale(0);
+    opacity: 1;
+    animation: ripple-animation ease-out forwards;
+    pointer-events: none;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.ripple.end {
+    opacity: 0;
+}
+
+@keyframes ripple-animation {
+    to {
+        transform: scale(3);
+    }
 }
 
 @media (prefers-color-scheme: dark) {
