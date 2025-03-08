@@ -25,6 +25,10 @@ async function fetchSystemApps() {
 async function displayAppList(data) {
     const appListDiv = document.getElementById("app-list");
     appListDiv.innerHTML = "";
+
+    // Move checked apps to the top
+    data.sort((a, b) => b.checked - a.checked);
+
     const htmlContent = data.map((pkg) => `
         <div class="app ripple-element" data-package-name="${pkg.package_name}" data-app-path="${pkg.app_path}">
             <div class="app-info">
