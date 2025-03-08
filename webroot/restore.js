@@ -29,7 +29,7 @@ function getRemovedApps() {
     ksuExec('cat /data/adb/modules/system_app_nuker/nuke_list.json')
         .then(result => {
             const removedApps = JSON.parse(result.stdout);
-            removedApps.sort((a, b) => a.package_name.localeCompare(b.package_name));
+            removedApps.sort((a, b) => a.app_name.localeCompare(b.app_name));
             displayRemovedApps(removedApps);
         })
         .catch(error => {

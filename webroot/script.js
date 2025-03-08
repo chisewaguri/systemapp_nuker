@@ -7,7 +7,7 @@ async function fetchSystemApps() {
     fetch("assets/app_list.json")
         .then(response => response.json())
         .then(data => {
-            data.sort((a, b) => a.package_name.localeCompare(b.package_name));
+            data.sort((a, b) => a.app_name.localeCompare(b.app_name));
             displayAppList(data);
         })
         .catch(error => {

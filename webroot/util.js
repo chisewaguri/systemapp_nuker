@@ -11,6 +11,7 @@ export async function ksuExec(command) {
 
 export function setupSearch() {
     document.getElementById('search-input').addEventListener('input', (e) => {
+        window.scrollTo(0, 0);
         const searchValue = e.target.value.toLowerCase();
         const apps = document.querySelectorAll('.app, .removed-app');
         apps.forEach(app => {
@@ -30,6 +31,7 @@ export function setupSearch() {
         }
     });
     document.getElementById('clear-btn').addEventListener('click', () => {
+        window.scrollTo(0, 0);
         document.getElementById('search-input').value = '';
         const apps = document.querySelectorAll('.app, .removed-app');
         apps.forEach(app => {
