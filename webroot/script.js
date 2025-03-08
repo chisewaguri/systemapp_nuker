@@ -4,16 +4,21 @@
 import { ksuExec, setupSearch, setupScrollEvent, checkMMRL, applyRippleEffect } from "./util.js";
 // Fetch system apps
 async function fetchSystemApps() {
-    ksuExec("cat /data/adb/system_app_nuker/app_list.json")
-        .then(response => {
-            const data = JSON.parse(response.stdout);
-            data.sort((a, b) => a.app_name.localeCompare(b.app_name));
-            displayAppList(data);
-            applyRippleEffect();
-        })
-        .catch(error => {
-            console.error("Failed to fetch system apps:", error);
-        });
+    try {
+        const response = await ksuExec("cat /data/adb/system_app_nuker/app_list.json");
+        let data = [];
+        try {
+            data = JSON.parse(response.stdout);
+        } catch (error) {
+            console.warn("app_list.json is empty or invalid, using empty array.");
+        }
+
+        data.sort((a, b) => a.app_name.localeCompare(b.app_name));
+        displayAppList(data);
+        applyRippleEffect();
+    } catch (error) {
+        console.error("Failed to fetch system apps:", error);
+    }
 }
 
 // Display app list
