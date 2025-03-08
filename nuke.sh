@@ -7,7 +7,18 @@
 PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
 MODDIR="/data/adb/modules/system_app_nuker"
 MODULES_UPDATE_DIR="/data/adb/modules_update/system_app_nuker"
-REMOVE_LIST="$MODDIR/nuke_list.json"
+PERSIST_DIR="/data/adb/system_app_nuker"
+REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
+
+# special dirs
+# handle this properly so this script can be used standalone
+# so yeah, symlinks.
+IFS="
+"
+targets="odm
+product
+system_ext
+vendor"
 
 # revamped routine
 # here we copy over all the module files to modules_update folder.
@@ -32,20 +43,14 @@ whiteout_create_systemapp() {
 
 nuke_system_apps() {
 	for apk_path in $(grep -E '"app_path":' "$REMOVE_LIST" | sed 's/.*"app_path": "\(.*\)",/\1/'); do
+		# Skip if the it already exists in modules_update
+		if [ -e "$MODULES_UPDATE_DIR$apk_path" ] || [ -e "$MODULES_UPDATE_DIR/system$apk_path" ]; then
+			continue
+		fi
 		# Create whiteout for apk_path
 		whiteout_create_systemapp "$(dirname $apk_path)" > /dev/null 2>&1
 		ls "$MODULES_UPDATE_DIR$apk_path" 2>/dev/null
 	done
-
-	# special dirs
-	# handle this properly so this script can be used standalone
-	# so yeah, symlinks.
-	IFS="
-	"
-	targets="odm
-	product
-	system_ext
-	vendor"
 
 	# this assumes magic mount
 	# handle overlayfs KSU later?

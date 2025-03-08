@@ -26,7 +26,7 @@ function displayRemovedApps(apps) {
 }
 
 function getRemovedApps() {
-    ksuExec('cat /data/adb/modules/system_app_nuker/nuke_list.json')
+    ksuExec('cat /data/adb/system_app_nuker/nuke_list.json')
         .then(result => {
             const removedApps = JSON.parse(result.stdout);
             removedApps.sort((a, b) => a.app_name.localeCompare(b.app_name));
@@ -55,7 +55,7 @@ document.getElementById('restore-button').addEventListener('click', async () => 
     }
 
     try {
-        const { stdout: existingContent } = await ksuExec('cat /data/adb/modules/system_app_nuker/nuke_list.json');
+        const { stdout: existingContent } = await ksuExec('cat /data/adb/system_app_nuker/nuke_list.json');
         let existingApps = [];
         try {
             existingApps = JSON.parse(existingContent || '[]');
@@ -66,25 +66,22 @@ document.getElementById('restore-button').addEventListener('click', async () => 
         }
 
         const selectedPackageNames = selectedPackages.map(app => app.package_name);
-        const remainingApps = existingApps.filter(app => 
-            !selectedPackageNames.includes(app.package_name)
-        );
-
+        const remainingApps = existingApps.filter(app => !selectedPackageNames.includes(app.package_name));
         const removedApps = JSON.stringify(remainingApps, null, 2);
-        await ksuExec(`echo '${removedApps}' > /data/adb/modules/system_app_nuker/nuke_list.json`);
+        await ksuExec(`echo '${removedApps}' > /data/adb/system_app_nuker/nuke_list.json`);
 
         // Get the current app list
-        fetch("assets/app_list.json")
-            .then(response => response.json())
-            .then(data => {
+        ksuExec("cat /data/adb/system_app_nuker/app_list.json")
+            .then(response => {
+                const data = JSON.parse(response.stdout);
                 const updatedData = [...data, ...selectedPackages];
                 const uniqueData = updatedData.filter((app, index, self) =>
                     index === self.findIndex(a => a.package_name === app.package_name)
                 );
-                ksuExec(`echo '${JSON.stringify(uniqueData, null, 2)}' > /data/adb/modules/system_app_nuker/webroot/assets/app_list.json`);
+                ksuExec(`echo '${JSON.stringify(uniqueData, null, 2)}' > /data/adb/system_app_nuker/app_list.json`);
             });
         getRemovedApps();
-        await ksuExec(`sh /data/adb/modules/system_app_nuker/nuke.sh restore`);
+        await ksuExec(`su -c sh /data/adb/modules/system_app_nuker/nuke.sh restore`);
         ksu.toast("Done! Reboot your device!");
     } catch (error) {
         ksu.toast("Error updating removed apps list");
