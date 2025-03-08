@@ -32,7 +32,7 @@ busybox chcon --reference="/system" "$MODULES_UPDATE_DIR"
 
 whiteout_create_systemapp() {
 	path="$1"
-	echo "$path" | grep -q "system" || path="/system$1"
+	echo "$path" | grep -q "/system/" || path="/system$1"
 	mkdir -p "$MODULES_UPDATE_DIR${path%/*}"
   	busybox mknod "$MODULES_UPDATE_DIR$path" c 0 0
   	busybox chcon --reference="/system" "$MODULES_UPDATE_DIR$path"
