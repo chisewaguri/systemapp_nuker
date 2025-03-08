@@ -86,20 +86,18 @@ restore_system_apps() {
 	done
 }
 
-
-# remove contents of system folder
-rm -rf "$MODDIR/system"
-
 touch "$MODDIR/update"
 
 case "$1" in
 	nuke)
 		nuke_system_apps
+		rm -rf "$MODDIR/system"
 		cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
 		;;
 	restore)
 		cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
 		restore_system_apps
+		rm -rf "$MODDIR/system"
 		;;
 esac
 
