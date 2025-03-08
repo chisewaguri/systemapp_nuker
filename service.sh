@@ -2,7 +2,7 @@ MODDIR="/data/adb/modules/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
 REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
 
-aapt() { 
+aapt() {
     [ -f "$MODDIR/common/aapt" ] && "$MODDIR/common/aapt" "$@"
     [ -f "$MODPATH/common/aapt" ] && "$MODPATH/common/aapt" "$@"
 }
@@ -13,6 +13,13 @@ done
 
 # reset bootcount
 echo "BOOTCOUNT=0" > "$MODDIR/count.sh"
+
+ICON_DIR="$PERSIST_DIR/icons"
+# ensure the icon directory exists
+[ ! -d "$ICON_DIR" ] && mkdir -p "$ICON_DIR"
+
+# create symlink for app icon
+[ ! -L "$MODDIR/webroot/icons" ] && ln -sf /data/adb/system_app_nuker/icons $MODDIR/webroot/icons
 
 create_applist() {
     echo "[" > "$PERSIST_DIR/app_list.json"
@@ -29,6 +36,14 @@ create_applist() {
             [ -z "$APP_NAME" ] && APP_NAME="$PACKAGE_NAME"
 
             echo "  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$PACKAGE_NAME\", \"app_path\": \"$APK_PATH\"}," >> "$PERSIST_DIR/app_list.json"
+            ICON_PATH=$(aapt dump badging "$APK_PATH" 2>/dev/null | grep "application:" | awk -F "icon=" '{print $2}' | sed "s/'//g")
+
+            # Extract the icon if it exists
+            ICON_FILE="$ICON_DIR/$PACKAGE_NAME.png"
+
+            if [ -n "$ICON_PATH" ]; then
+                unzip -p "$APK_PATH" "$ICON_PATH" > "$ICON_FILE"
+            fi
         done
     done
 
@@ -39,12 +54,11 @@ create_applist() {
         fi
         APP_NAME=$(aapt dump badging "$package_name" 2>/dev/null | grep "application-label:" | sed "s/application-label://g; s/'//g")
         [ -z "$APP_NAME" ] && APP_NAME="$package_name"
-        
+
         APK_PATH=$(pm path $package_name | sed 's/package://g')
         echo "$APK_PATH" | grep -qE "/system/app|/system/priv-app|/vendor/app|/product/app|/product/priv-app|/system_ext/app|/system_ext/priv-app" || continue
         echo "  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$package_name\", \"app_path\": \"$APK_PATH\"}, " >> "$PERSIST_DIR/app_list.json"
     done
- 
 
     sed -i '$ s/,$//' "$PERSIST_DIR/app_list.json"
     echo "]" >> "$PERSIST_DIR/app_list.json"
@@ -55,15 +69,17 @@ create_applist() {
 
 # install app that was uninstalled with pm uninstall -k --user 0
 # this make sure that restored app is back
-for pkg in $(pm list packages -u | sed 's/package://'); do 
+for pkg in $(pm list packages -u | sed 's/package://'); do
     if ! pm list packages | grep -q "$pkg"; then  # Only restore if it's not installed
         pm install-existing "$pkg" && echo "Restored: $pkg"
     fi
 done
 
 # remove system apps if they still exist
-for package_name in $(grep -E '"package_name":' "$REMOVE_LIST" | sed 's/.*"package_name": "\(.*\)",/\1/'); do
-    if pm list packages | grep -qx "package:$package_name"; then
-        pm uninstall -k --user 0 "$package_name" 2>/dev/null
-    fi
-done
+if [ -f "$REMOVE_LIST" ]; then
+    for package_name in $(grep -E '"package_name":' "$REMOVE_LIST" | sed 's/.*"package_name": "\(.*\)",/\1/'); do
+        if pm list packages | grep -qx "package:$package_name"; then
+            pm uninstall -k --user 0 "$package_name" 2>/dev/null
+        fi
+    done
+fi

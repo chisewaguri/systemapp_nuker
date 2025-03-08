@@ -104,22 +104,77 @@ body {
 
 .app-info {
     display: flex;
-    width: 100%;
+    align-items: center;
+    gap: 10px;
+}
+
+.app-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+/* Container for text */
+.app-name,
+.app-package,
+.app-path {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    position: relative;
+    max-width: 250px;
+}
+
+/* Inner span: applies animation only if text is too long */
+.app-name span,
+.app-package span,
+.app-path span {
+    display: inline-block;
+    padding-right: 10px;
+    animation: none;
+}
+
+@media (min-width: 0) { 
+    .app-name span.scroll,
+    .app-package span.scroll,
+    .app-path span.scroll {
+        animation: textScroll 10s ease-in-out infinite;
+    }
+}
+
+/* scrolling keyframe */
+@keyframes textScroll {
+    0%, 10% { transform: translateX(0); } 
+    55% { transform: translateX(-25%); }
+    100% { transform: translateX(0); }
+}
+
+.app-details {
+    display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    flex-grow: 1;
 }
 
 .app-name {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: bold;
 }
 
 .app-package {
-    font-weight: bold;
+    font-size: 14px;
+    color: #aaaaaa;
 }
 
 .app-path {
     font-size: 12px;
+    color: #777777;
+    word-wrap: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    max-width: 90%;
 }
 
 .floating-button-container {
