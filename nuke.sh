@@ -91,8 +91,6 @@ restore_system_apps() {
 	done
 }
 
-touch "$MODDIR/update"
-
 case "$1" in
 	nuke)
 		[ "$2" = "skip_symlink" ] && skip_symlink=true || skip_symlink=false
@@ -106,5 +104,7 @@ case "$1" in
 		rm -rf "$MODDIR/system"
 		;;
 esac
+
+touch "$MODDIR/update"
 
 # EOF
