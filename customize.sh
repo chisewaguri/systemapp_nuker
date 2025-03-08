@@ -10,6 +10,11 @@ rm -rf "$MODPATH/bin"
 
 # Migrate old config
 if [ -d "$PERSIST_DIR" ]; then
+    # Remove applist on installation
+    # Add /my_bigball handling in the future(?)
+    [ -f "$PERSIST_DIR/app_list.json" ] && rm -f "$PERSIST_DIR/app_list.json"
     # Make sure we don't overwrite previous setup
     [ -f "$PERSIST_DIR/nuke_list.json" ] && sh "$MODPATH/nuke.sh" skip_symlink &>/dev/null
 fi
+
+# EOF
