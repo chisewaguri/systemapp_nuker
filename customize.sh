@@ -49,8 +49,6 @@ rm -rf "$MODPATH/bin"
 
 if [ -n "$KSU" ] || [ -n "$APATCH" ]; then
     rm -rf $MODPATH/action.sh
-else
-    set_perm $MODPATH/action.sh 0 2000 0755
 fi
 
 # generate dummy.zip for triggering module update
