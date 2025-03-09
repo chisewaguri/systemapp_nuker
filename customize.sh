@@ -47,7 +47,11 @@ set_perm $MODPATH/common/aapt 0 2000 0755
 set_perm $MODPATH/nuke.sh 0 2000 0755
 rm -rf "$MODPATH/bin"
 
-[ -z "$MAGISK_VER_CODE" ] && rm -rf $MODPATH/action.sh || set_perm $MODPATH/action.sh 0 2000 0755
+if [ -n "$KSU" ] || [ -n "$APATCH" ]; then
+    rm -rf $MODPATH/action.sh
+else
+    set_perm $MODPATH/action.sh 0 2000 0755
+fi
 
 # generate dummy.zip for triggering module update
 zip -j "$MODPATH/dummy.zip" "$MODPATH/module.prop"
