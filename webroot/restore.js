@@ -1,5 +1,7 @@
 import { ksuExec, setupSearch, setupScrollEvent, checkMMRL, applyRippleEffect } from "./util.js";
 
+let nukeList = [], isShellRunning = false;
+
 function displayRemovedApps(apps) {
     const removedAppsDiv = document.getElementById('removed-list');
     removedAppsDiv.innerHTML = "";
@@ -38,11 +40,12 @@ function displayRemovedApps(apps) {
 }
 
 function getRemovedApps() {
-    ksuExec('cat /data/adb/system_app_nuker/nuke_list.json')
-        .then(result => {
-            const removedApps = JSON.parse(result.stdout);
-            removedApps.sort((a, b) => a.app_name.localeCompare(b.app_name));
-            displayRemovedApps(removedApps);
+    fetch("nuke_list.json")
+        .then(response => response.json())
+        .then(data => {
+            data.sort((a, b) => a.app_name.localeCompare(b.app_name));
+            nukeList = data;
+            displayRemovedApps(data);
             applyRippleEffect();
         })
         .catch(error => {
@@ -51,6 +54,8 @@ function getRemovedApps() {
 }
 
 document.getElementById('restore-button').addEventListener('click', async () => {
+    if (isShellRunning) return;
+
     let selectedPackages = Array.from(document.querySelectorAll(".app-selector:checked"))
         .map(checkbox => {
             const appDiv = checkbox.closest('.removed-app');
@@ -67,25 +72,15 @@ document.getElementById('restore-button').addEventListener('click', async () => 
     }
 
     try {
-        const { stdout: existingContent } = await ksuExec('cat /data/adb/system_app_nuker/nuke_list.json');
-        let existingApps = [];
-        try {
-            existingApps = JSON.parse(existingContent || '[]');
-        } catch (e) {
-            console.log("No existing apps or invalid JSON, starting fresh");
-            ksu.toast("Error reading existing apps list");
-            return;
-        }
-
         const selectedPackageNames = selectedPackages.map(app => app.package_name);
-        const remainingApps = existingApps.filter(app => !selectedPackageNames.includes(app.package_name));
+        const remainingApps = nukeList.filter(app => !selectedPackageNames.includes(app.package_name));
         const removedApps = JSON.stringify(remainingApps, null, 2);
         await ksuExec(`echo '${removedApps}' > /data/adb/system_app_nuker/nuke_list.json`);
 
         // Get the current app list
-        ksuExec("cat /data/adb/system_app_nuker/app_list.json")
-            .then(response => {
-                const data = JSON.parse(response.stdout);
+        fetch("app_list.json")
+            .then(response => response.json())
+            .then(data => {
                 const updatedData = [...data, ...selectedPackages];
                 const uniqueData = updatedData.filter((app, index, self) =>
                     index === self.findIndex(a => a.package_name === app.package_name)
@@ -93,9 +88,12 @@ document.getElementById('restore-button').addEventListener('click', async () => 
                 ksuExec(`echo '${JSON.stringify(uniqueData, null, 2)}' > /data/adb/system_app_nuker/app_list.json`);
             });
         getRemovedApps();
+        isShellRunning = true;
         await ksuExec(`
             PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
-            busybox nsenter -t1 -m /data/adb/modules/system_app_nuker/nuke.sh`);
+            busybox nsenter -t1 -m /data/adb/modules/system_app_nuker/nuke.sh
+        `);
+        isShellRunning = false;
         ksu.toast("Done! Reboot your device!");
     } catch (error) {
         ksu.toast("Error updating removed apps list");
