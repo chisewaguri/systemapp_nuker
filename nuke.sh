@@ -24,11 +24,43 @@ product
 system_ext
 vendor"
 
-# revamped routine
-# here we copy over all the module files to modules_update folder.
-# this is better than deleting system over and over
-# also this way manager handles the update.
-# this can avoid persistence issues too
+handle_symlink() {
+    if [ "$MAGIC_MOUNT" = true ]; then
+        # handle magic mount
+        if [ -d /$1 ] && [ ! -L /$1 ] && [ -d "$MODULES_UPDATE_DIR/system/$1" ]; then
+            if [ -L "$MODULES_UPDATE_DIR/$1" ]; then
+                # Check if the symlink points to the correct location
+                if [ $(readlink -f $MODULES_UPDATE_DIR/$1) != $(realpath $MODULES_UPDATE_DIR/system/$1) ]; then
+                    echo "[!] Incorrect symlink for /$1, fixing..."
+                    rm -f $MODULES_UPDATE_DIR/$1
+                    [ "$skip_symlink" = true ] || ln -sf ./system/$1 $MODULES_UPDATE_DIR/$1
+                else
+                    echo "[+] Symlink for /$1 is correct, skipping..."
+                fi
+            else
+                echo "[+] Creating symlink for /$1"
+                [ "$skip_symlink" = true ] || ln -sf ./system/$1 $MODULES_UPDATE_DIR/$1
+            fi
+        fi
+    else
+        # handle overlayfs
+        if [ ! -d "$MODULES_UPDATE_DIR/system/$1" ]; then
+            # No partition found in the module update directory
+            return
+        fi
+
+        if [ -L "/system/$1" ] && [ "$(readlink -f /system/$1)" = "/$1" ]; then
+            echo "[*] Handling partition /$1"
+
+            # Move out of system/ to avoid being overlaid
+            [ -e "$MODULES_UPDATE_DIR/$1" ] && rm -rf "$MODULES_UPDATE_DIR/$1"
+            mv -f "$MODULES_UPDATE_DIR/system/$1" "$MODULES_UPDATE_DIR/$1"
+
+            # Create a relative symlink
+            ln -sf ../$1 "$MODULES_UPDATE_DIR/system/$1"
+        fi
+    fi
+}
 
 whiteout_create_systemapp() {
     path="$1"
@@ -47,66 +79,16 @@ nuke_system_apps() {
         whiteout_create_systemapp "$(dirname $apk_path)" > /dev/null 2>&1
         ls "$MODULES_UPDATE_DIR$apk_path" 2>/dev/null
     done
-
-    # this handle magic mount
-    if [ "$MAGIC_MOUNT" = true ]; then
-        for dir in $targets; do
-            # convert hierarchy if different (this is unlikely but we do it anyway)
-            if [ -d "$MODULES_UPDATE_DIR/$dir" ]; then
-                [ -e "$MODULES_UPDATE_DIR/system/$dir" ] & rm -rf "$MODULES_UPDATE_DIR/system/$dir"
-                echo "[*] Moving $dir from Magic Mount to OverlayFS structure..."
-                mv "$MODULES_UPDATE_DIR/system/$dir" "$MODULES_UPDATE_DIR/$dir"
-                echo "[+] Converted $dir to OverlayFS hierarchy"
-            fi
-
-            # handle symlink
-            if [ -d /$dir ] && [ ! -L /$dir ] && [ -d "$MODULES_UPDATE_DIR/system/$dir" ]; then
-                if [ -L "$MODULES_UPDATE_DIR/$dir" ]; then
-                    # Check if the symlink points to the correct location
-                    if [ $(readlink -f $MODULES_UPDATE_DIR/$dir) != $(realpath $MODULES_UPDATE_DIR/system/$dir) ]; then
-                        echo "[!] Incorrect symlink for /$dir, fixing..."
-                        rm -f $MODULES_UPDATE_DIR/$dir
-                        [ "$skip_symlink" = true ] || ln -sf ./system/$dir $MODULES_UPDATE_DIR/$dir
-                    else
-                        echo "[+] Symlink for /$dir is correct, skipping..."
-                    fi
-                else
-                    echo "[+] Creating symlink for /$dir"
-                    [ "$skip_symlink" = true ] || ln -sf ./system/$dir $MODULES_UPDATE_DIR/$dir
-                fi
-            fi
-        done
-    # this handle overlayfs
-    elif [ "$MAGIC_MOUNT" = false ]; then
-        for dir in $targets; do
-            # convert hierarchy if diff
-            if [ -d "$MODULES_UPDATE_DIR/system/$dir" ]; then
-                [ -e "$MODULES_UPDATE_DIR/$dir" ] & rm -rf "$MODULES_UPDATE_DIR/$dir"
-                echo "[*] Moving $dir from Magic Mount to OverlayFS structure..."
-                mv "$MODULES_UPDATE_DIR/system/$dir" "$MODULES_UPDATE_DIR/$dir"
-                echo "[+] Converted $dir to OverlayFS hierarchy"
-            fi
-
-            # handle symlink
-            if [ -L "$MODULES_UPDATE_DIR/$dir" ]; then
-                # Check if the symlink points to the correct location
-                if [ $(readlink -f $MODULES_UPDATE_DIR/system/$dir) != $(realpath $MODULES_UPDATE_DIR/$dir) ]; then
-                    echo "[!] Incorrect symlink for /$dir, fixing..."
-                    rm -f $MODULES_UPDATE_DIR/system/$dir
-                    [ "$skip_symlink" = true ] || ln -sf ../$dir $MODULES_UPDATE_DIR/system/$dir
-                else
-                    echo "[+] Symlink for /$dir is correct, skipping..."
-                fi
-            else
-                echo "[+] Creating symlink for /$dir"
-                [ "$skip_symlink" = true ] || ln -sf ../$dir $MODULES_UPDATE_DIR/system/$dir
-            fi
-        done
-    fi
 }
 
 # skip symlink on installation
 [ "$1" = "skip_symlink" ] && skip_symlink=true || skip_symlink=false
+
+# revamped routine
+# here we copy over all the module files to modules_update folder.
+# this is better than deleting system over and over
+# also this way manager handles the update.
+# this can avoid persistence issues too
 
 # create folder if it doesnt exist
 [ ! -d "$MODULES_UPDATE_DIR" ] && mkdir -p "$MODULES_UPDATE_DIR"
@@ -118,6 +100,11 @@ for dir in system system_ext vendor product; do
     rm -rf "$MODULES_UPDATE_DIR/$dir"
 done
 nuke_system_apps
+
+# handle symlink and hierarchy
+for dir in $targets; do
+    handle_symlink "$dir"
+done
 
 # no need check before touch and rm, no stderr
 touch "$MODDIR/update"
