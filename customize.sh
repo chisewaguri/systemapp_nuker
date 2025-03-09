@@ -1,3 +1,7 @@
+#!/bin/sh
+# customize.sh
+# this is part of system app nuker
+
 SKIPUNZIP=0
 MODDIR="/data/adb/modules/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
@@ -21,6 +25,9 @@ set_perm $MODPATH/nuke.sh 0 2000 0755
 rm -rf "$MODPATH/bin"
 
 [ -z "$MAGISK_VER_CODE" ] && rm -rf $MODPATH/action.sh || set_perm $MODPATH/action.sh 0 2000 0755
+
+# generate dummy.zip for triggering module update
+zip -j "$MODPATH/dummy.zip" "$MODPATH/module.prop"
 
 # Migrate old config
 [ -f "$PERSIST_DIR/nuke_list.json" ] && sh "$MODPATH/nuke.sh" skip_symlink &>/dev/null
