@@ -2,6 +2,9 @@ SKIPUNZIP=0
 MODDIR="/data/adb/modules/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
 
+# remove applist if icons dir doesnt exit
+[ ! -d "$PERSIST_DIR/icons" ] && [ -f "$PERSIST_DIR/app_list.json" ] && rm -rf "$PERSIST_DIR/app_list.json"
+
 # check for mounting system
 if [ -n "$MAGISK_VER_CODE" ] || [ -n "$KSU_MAGIC_MOUNT" ] || [ -n "$APATCH_BIND_MOUNT" ]; then
     echo "MAGIC_MOUNT=true" > $PERSIST_DIR/module_system.sh
