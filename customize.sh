@@ -17,6 +17,8 @@ set_perm $MODPATH/common/aapt 0 2000 0755
 set_perm $MODPATH/nuke.sh 0 2000 0755
 rm -rf "$MODPATH/bin"
 
+[ -z "$MAGISK_VER_CODE" ] && rm -rf $MODPATH/action.sh || set_perm $MODPATH/action.sh 0 2000 0755
+
 # Migrate old config
 [ -f "$PERSIST_DIR/nuke_list.json" ] && sh "$MODPATH/nuke.sh" skip_symlink &>/dev/null
 
