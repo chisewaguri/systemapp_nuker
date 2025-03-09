@@ -9,12 +9,35 @@ PERSIST_DIR="/data/adb/system_app_nuker"
 # remove applist if icons dir doesnt exit
 [ ! -d "$PERSIST_DIR/icons" ] && [ -f "$PERSIST_DIR/app_list.json" ] && rm -rf "$PERSIST_DIR/app_list.json"
 
+# some bullshit just to use clear
+if [ "$MMRL" = "true" ] || { [ "$KSU" = "true" ] && [ "$KSU_VER_CODE" -ge 11998 ]; } ||
+    { [ "$KSU_NEXT" = "true" ] && [ "$KSU_VER_CODE" -ge 12144 ]; } ||
+    { [ "$APATCH" = "true" ] && [ "$APATCH_VER_CODE" -ge 11022 ]; }; then
+        clear
+        loops=20
+        while [ $loops -gt 1 ]; do
+            for i in '[-]' '[\]' '[|]' '[/]'; do
+                echo "$i Checking mounting system..."
+                sleep 0.1
+                clear
+                loops=$((loops - 1))
+            done
+        done
+else
+    # sleep a bit to make it look like something is happening!!
+    sleep 2
+fi
 # check for mounting system
 if [ -n "$MAGISK_VER_CODE" ] || [ -n "$KSU_MAGIC_MOUNT" ] || [ -n "$APATCH_BIND_MOUNT" ]; then
-    echo "MAGIC_MOUNT=true" > $PERSIST_DIR/module_system.sh
+    echo "MAGIC_MOUNT=true" > "$PERSIST_DIR/module_system.sh"
+    echo "[+] Magic mount detected, using magic mount configuration..."
+    sleep 1
 else
-    echo "MAGIC_MOUNT=false" > $PERSIST_DIR/module_system.sh
+    echo "MAGIC_MOUNT=false" > "$PERSIST_DIR/module_system.sh"
+    echo "[+] No magic mount detected, using overlayfs configuration..."
+    sleep 1
 fi
+echo ""
 
 set_perm "$PERSIST_DIR/module_system.sh" 0 2000 0755
 
