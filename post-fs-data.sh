@@ -11,6 +11,7 @@ BOOTCOUNT=$(( BOOTCOUNT + 1))
 if [ $BOOTCOUNT -gt 1 ]; then
     touch $MODDIR/disable
     rm "$MODDIR/count.sh"
+    stop; reboot
 else
     echo "BOOTCOUNT=1" > "$MODDIR/count.sh"
     chmod 755 "$MODDIR/count.sh"
