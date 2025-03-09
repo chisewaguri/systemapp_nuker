@@ -66,7 +66,7 @@ whiteout_create_systemapp() {
     path="$1"
     echo "$path" | grep -q "/system/" || path="/system$1"
     mkdir -p "$MODULES_UPDATE_DIR${path%/*}"
-    chmod 644 "$MODULES_UPDATE_DIR${path%/*}"
+    chmod 755 "$MODULES_UPDATE_DIR${path%/*}"
     busybox mknod "$MODULES_UPDATE_DIR$path" c 0 0
     busybox chcon --reference="/system" "$MODULES_UPDATE_DIR$path"
     # not really required, mountify() does NOT even copy the attribute but ok
