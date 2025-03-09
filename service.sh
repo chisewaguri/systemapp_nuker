@@ -10,24 +10,21 @@ until [ "$(getprop sys.boot_completed)" = "1" ]; do
     sleep 1
 done
 
+[ ! -d "$PERSIST_DIR" ] && mkdir -p "$PERSIST_DIR"
+
 # reset bootcount
 echo "BOOTCOUNT=0" > "$MODDIR/count.sh"
 chmod 755 "$MODDIR/count.sh"
 
 # check for mounting system
-if [ -n "$MAGISK_VER_CODE" ] || [ -n "$KSU_MAGIC_MOUNT" ] || [ -n "$APATCH_BIND_MOUNT" ]; then
-    echo "MAGIC_MOUNT=true" > $PERSIST_DIR/module_system.sh
-else
-    echo "MAGIC_MOUNT=false" > $PERSIST_DIR/module_system.sh
-fi
-chmod 755 "$PERSIST_DIR/module_system.sh"
-
-# check for mounting system
-if [ -n "$MAGISK_VER_CODE" ] || [ -n "$KSU_MAGIC_MOUNT" ] || [ -n "$APATCH_BIND_MOUNT" ]; then
-    echo "MAGIC_MOUNT=true" > $PERSIST_DIR/module_system.sh
-else
-    echo "MAGIC_MOUNT=false" > $PERSIST_DIR/module_system.sh
-fi
+[ ! -f "$PERSIST_DIR/module_system.sh" ] && (
+    if [ -n "$MAGISK_VER_CODE" ] || [ -n "$KSU_MAGIC_MOUNT" ] || [ -n "$APATCH_BIND_MOUNT" ]; then
+        echo "MAGIC_MOUNT=true" > $PERSIST_DIR/module_system.sh
+    else
+        echo "MAGIC_MOUNT=false" > $PERSIST_DIR/module_system.sh
+    fi
+    chmod 755 "$PERSIST_DIR/module_system.sh"
+)
 
 create_applist() {
     echo "[" > "$PERSIST_DIR/app_list.json"
@@ -47,8 +44,8 @@ create_applist() {
             [ -z "$APP_NAME" ] && APP_NAME="$PACKAGE_NAME"
 
             echo "  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$PACKAGE_NAME\", \"app_path\": \"$APK_PATH\"}," >> "$PERSIST_DIR/app_list.json"
+            
             ICON_PATH=$(aapt dump badging "$APK_PATH" 2>/dev/null | grep "application:" | awk -F "icon=" '{print $2}' | sed "s/'//g")
-
             # Extract the icon if it exists
             ICON_FILE="$ICON_DIR/$PACKAGE_NAME.png"
 
@@ -75,7 +72,6 @@ create_applist() {
     echo "]" >> "$PERSIST_DIR/app_list.json"
 }
 
-[ ! -d "$PERSIST_DIR" ] && mkdir -p "$PERSIST_DIR"
 ICON_DIR="$PERSIST_DIR/icons"
 # ensure the icon directory exists
 [ ! -d "$ICON_DIR" ] && mkdir -p "$ICON_DIR"
