@@ -90,6 +90,15 @@ nuke_system_apps() {
 # also this way manager handles the update.
 # this can avoid persistence issues too
 
+# flag module for update
+if [ "$MAGIC_MOUNT" = true ]; then
+    touch "$MODDIR/update"
+elif [ -n $KSU ]; then
+    ksud module install "$MODDIR/dummy.zip"
+elif [ -n "$APATCH" ]; then
+    apd module install "$MODDIR/dummy.zip"
+fi
+
 # create folder if it doesnt exist
 [ ! -d "$MODULES_UPDATE_DIR" ] && mkdir -p "$MODULES_UPDATE_DIR"
 busybox chcon --reference="/system" "$MODULES_UPDATE_DIR"
@@ -107,7 +116,6 @@ for dir in $targets; do
 done
 
 # no need check before touch and rm, no stderr
-touch "$MODDIR/update"
 rm "$MODULES_UPDATE_DIR/update"
 
 # EOF
