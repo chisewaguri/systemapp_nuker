@@ -106,6 +106,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+    width: 100%;
 }
 
 .app-icon {
@@ -124,7 +125,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     position: relative;
-    max-width: 250px;
+    max-width: calc(100% - 20px);
 }
 
 /* Inner span: applies animation only if text is too long */
