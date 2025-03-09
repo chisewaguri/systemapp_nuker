@@ -18,10 +18,10 @@ chmod 755 "$MODDIR/count.sh"
 
 # check for mounting system
 [ ! -f "$PERSIST_DIR/module_system.sh" ] && (
-    if [ -n "$MAGISK_VER_CODE" ] || [ -n "$KSU_MAGIC_MOUNT" ] || [ -n "$APATCH_BIND_MOUNT" ]; then
-        echo "MAGIC_MOUNT=true" > $PERSIST_DIR/module_system.sh
+    if { [ "$KSU" = true ] && [ ! "$KSU_MAGIC_MOUNT" = true ]; } || { [ "$APATCH" = true ] && [ ! "$APATCH_BIND_MOUNT" = true ]; }; then
+        echo "MAGIC_MOUNT=false" > "$PERSIST_DIR/module_system.sh"
     else
-        echo "MAGIC_MOUNT=false" > $PERSIST_DIR/module_system.sh
+        echo "MAGIC_MOUNT=true" > "$PERSIST_DIR/module_system.sh"
     fi
     chmod 755 "$PERSIST_DIR/module_system.sh"
 )

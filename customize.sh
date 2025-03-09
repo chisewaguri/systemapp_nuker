@@ -28,13 +28,13 @@ else
     sleep 2
 fi
 # check for mounting system
-if [ -n "$MAGISK_VER_CODE" ] || [ -n "$KSU_MAGIC_MOUNT" ] || [ -n "$APATCH_BIND_MOUNT" ]; then
-    echo "MAGIC_MOUNT=true" > "$PERSIST_DIR/module_system.sh"
-    echo "[+] Magic mount detected, using magic mount configuration..."
-    sleep 1
-else
+if { [ "$KSU" = true ] && [ ! "$KSU_MAGIC_MOUNT" = true ]; } || { [ "$APATCH" = true ] && [ ! "$APATCH_BIND_MOUNT" = true ]; }; then
     echo "MAGIC_MOUNT=false" > "$PERSIST_DIR/module_system.sh"
     echo "[+] No magic mount detected, using overlayfs configuration..."
+    sleep 1
+else
+    echo "MAGIC_MOUNT=true" > "$PERSIST_DIR/module_system.sh"
+    echo "[+] Magic mount detected, using magic mount configuration..."
     sleep 1
 fi
 echo ""
