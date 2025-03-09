@@ -17,7 +17,7 @@ if [ $BOOTCOUNT -gt 1 ]; then
     touch $MODDIR/disable
     # remove whiteouts
     for dir in system system_ext vendor product; do
-        rm -rf "$MODULES_UPDATE_DIR/$dir"
+        rm -rf "$MODDIR/$dir"
     done
     # remove applist
     rm -rf "$PERSIST_DIR/*"
