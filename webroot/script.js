@@ -61,7 +61,7 @@ async function displayAppList(data) {
                 const adjustedScroll = scrollAmount + 10;
                 
                 // Adjust animation speed based on text length (longer text = slower scrolling)
-                const scrollTime = Math.max(5, adjustedScroll / 10); // Min 5s, longer for large text
+                const scrollTime = Math.max(3, adjustedScroll / 15); // Min 3s, longer for large text
                 
                 el.style.setProperty('--scroll-distance', `-${adjustedScroll}px`);
                 el.style.setProperty('--scroll-time', `${scrollTime}s`);
