@@ -87,7 +87,7 @@ create_applist() {
 # install app that was uninstalled with pm uninstall -k --user 0
 # this make sure that restored app is back
 for pkg in $(grep -E '"package_name":' "$APP_LIST" | sed 's/.*"package_name": "\(.*\)",/\1/'); do
-    if ! pm list packages | grep -qx "package:$pkg"; then
+    if ! pm path "$pkg"; then
         pm install-existing "$pkg"
     fi
 done
