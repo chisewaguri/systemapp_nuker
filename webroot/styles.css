@@ -110,9 +110,9 @@ body {
 }
 
 .app-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
     object-fit: cover;
     flex-shrink: 0;
 }
@@ -156,26 +156,33 @@ body {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
+    min-width: 0;
 }
 
 .app-name {
     font-size: 16px;
     font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .app-package {
-    font-size: 14px;
+    font-size: 13px;
     color: #aaaaaa;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .app-path {
-    font-size: 12px;
     color: #777777;
-    word-wrap: break-word;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
-    max-width: 90%;
+    font-size: 12px;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
 }
 
 .floating-button-container {
