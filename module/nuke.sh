@@ -103,6 +103,7 @@ if [ ! -f "$MODDIR/update" ]; then
     fi
 else
     echo ""[+] Module already flagged for update, skipping...
+fi
 
 # create folder if it doesnt exist
 [ ! -d "$MODULES_UPDATE_DIR" ] && mkdir -p "$MODULES_UPDATE_DIR"
