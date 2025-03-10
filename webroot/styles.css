@@ -141,15 +141,14 @@ body {
     .app-name span.scroll,
     .app-package span.scroll,
     .app-path span.scroll {
-        animation: textScroll 10s ease-in-out infinite;
+        animation: textScroll var(--scroll-time) linear infinite alternate;
     }
 }
 
-/* scrolling keyframe */
+/* scrolling keyframe (now uses --scroll-distance) */
 @keyframes textScroll {
-    0%, 10% { transform: translateX(0); } 
-    55% { transform: translateX(-25%); }
-    100% { transform: translateX(0); }
+    0% { transform: translateX(0); } 
+    100% { transform: translateX(var(--scroll-distance)); }
 }
 
 .app-details {

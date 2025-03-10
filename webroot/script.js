@@ -52,10 +52,19 @@ async function displayAppList(data) {
 
         appDiv.querySelectorAll(".app-name span, .app-package span, .app-path span").forEach(el => {
             const parent = el.parentElement;
-            if (el.scrollWidth > parent.clientWidth) {
+            const scrollAmount = el.scrollWidth - parent.clientWidth;
+        
+            if (scrollAmount > 0) {
                 el.classList.add("scroll");
-                const scrollDistance = el.scrollWidth - parent.clientWidth;
-                el.style.setProperty('--scroll-distance', `${scrollDistance}px`);
+        
+                // Ensure the full text scrolls by adding a small buffer (+10px)
+                const adjustedScroll = scrollAmount + 10;
+                
+                // Adjust animation speed based on text length (longer text = slower scrolling)
+                const scrollTime = Math.max(5, adjustedScroll / 10); // Min 5s, longer for large text
+                
+                el.style.setProperty('--scroll-distance', `-${adjustedScroll}px`);
+                el.style.setProperty('--scroll-time', `${scrollTime}s`);
             }
         });
     });
