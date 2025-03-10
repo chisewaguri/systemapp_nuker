@@ -40,7 +40,6 @@ else
     echo "[+] Magic mount detected, using magic mount configuration..."
     sleep 1
 fi
-echo ""
 
 set_perm "$PERSIST_DIR/module_system.sh" 0 2000 0755
 
@@ -54,11 +53,13 @@ rm -rf "$MODPATH/bin"
 zip -j "$MODPATH/dummy.zip" "$MODPATH/module.prop"
 
 # Migrate old config
-[ -f "$PERSIST_DIR/nuke_list.json" ] && sh "$MODPATH/nuke.sh" skip_symlink &>/dev/null
+[ -f "$PERSIST_DIR/nuke_list.json" ] && sh "$MODPATH/nuke.sh" skip_symlink
 
 # removes action.sh on non-magisk env
 if [ -n "$KSU" ] || [ -n "$APATCH" ]; then
     rm -rf "$MODPATH/action.sh"
 fi
+
+echo ""
 
 # EOF

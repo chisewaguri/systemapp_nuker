@@ -94,6 +94,7 @@ nuke_system_apps() {
 # flag module for update
 # check if module already flagged for update
 if [ ! -f "$MODDIR/update" ]; then
+    echo "[+] Flagging module for update..."
     if [ "$MAGIC_MOUNT" = true ]; then
         touch "$MODDIR/update"
     elif [ -n $KSU ]; then
@@ -102,7 +103,7 @@ if [ ! -f "$MODDIR/update" ]; then
         apd module install "$MODDIR/dummy.zip"
     fi
 else
-    echo "[+] Module already flagged for update, skipping..."
+    echo "[-] Module already flagged for update, skipping..."
 fi
 
 # create folder if it doesnt exist
