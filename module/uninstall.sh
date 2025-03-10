@@ -8,9 +8,9 @@ REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
 [ -d "$MODULES_UPDATE_DIR" ] && rm -rf "$MODULES_UPDATE_DIR"
 
 # Install apps that are uninstalled
-for pkg in $(grep -E '"package_name":' "$REMOVE_LIST" | sed 's/.*"package_name": "\(.*\)",/\1/'); do
-    if ! pm path "$pkg"; then
-        pm install-existing "$pkg"
+for pkg in $(grep "\"package_name\":" "$APP_LIST" | awk -F"\"" '{print $8}'); do
+    if ! pm path "$pkg" >/dev/null 2>&1; then
+        pm install-existing "$pkg" >/dev/null 2>&1
     fi
 done
 
