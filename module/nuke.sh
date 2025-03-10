@@ -33,13 +33,13 @@ handle_symlink() {
                 if [ $(readlink -f $MODULES_UPDATE_DIR/$1) != $(realpath $MODULES_UPDATE_DIR/system/$1) ]; then
                     echo "[!] Incorrect symlink for /$1, fixing..."
                     rm -f $MODULES_UPDATE_DIR/$1
-                    [ "$skip_symlink" = true ] || ln -sf ./system/$1 $MODULES_UPDATE_DIR/$1
+                    ln -sf ./system/$1 $MODULES_UPDATE_DIR/$1
                 else
                     echo "[+] Symlink for /$1 is correct, skipping..."
                 fi
             else
                 echo "[+] Creating symlink for /$1"
-                [ "$skip_symlink" = true ] || ln -sf ./system/$1 $MODULES_UPDATE_DIR/$1
+                ln -sf ./system/$1 $MODULES_UPDATE_DIR/$1
             fi
         fi
     else
@@ -117,9 +117,11 @@ done
 nuke_system_apps
 
 # handle symlink and hierarchy
-for dir in $targets; do
-    handle_symlink "$dir"
-done
+if [ ! "$skip_symlink" = true ]; then
+    for dir in $targets; do
+        handle_symlink "$dir"
+    done
+fi
 
 # no need check before touch and rm, no stderr
 rm "$MODULES_UPDATE_DIR/update"
