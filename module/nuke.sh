@@ -92,13 +92,17 @@ nuke_system_apps() {
 # this can avoid persistence issues too
 
 # flag module for update
-if [ "$MAGIC_MOUNT" = true ]; then
-    touch "$MODDIR/update"
-elif [ -n $KSU ]; then
-    ksud module install "$MODDIR/dummy.zip"
-elif [ -n "$APATCH" ]; then
-    apd module install "$MODDIR/dummy.zip"
-fi
+# check if module already flagged for update
+if [ ! -f "$MODDIR/update" ]; then
+    if [ "$MAGIC_MOUNT" = true ]; then
+        touch "$MODDIR/update"
+    elif [ -n $KSU ]; then
+        ksud module install "$MODDIR/dummy.zip"
+    elif [ -n "$APATCH" ]; then
+        apd module install "$MODDIR/dummy.zip"
+    fi
+else
+    echo ""[+] Module already flagged for update, skipping...
 
 # create folder if it doesnt exist
 [ ! -d "$MODULES_UPDATE_DIR" ] && mkdir -p "$MODULES_UPDATE_DIR"
