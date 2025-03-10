@@ -16,12 +16,19 @@ manual_download() {
 }
 
 download() {
-    if command -v curl >/dev/null 2>&1; then
-        timeout 10 curl -Ls "$1"
-    else
-        timeout 10 busybox wget --no-check-certificate -qO- "$1"
-    fi
+    for attempt in {1..3}; do  # Try up to 3 times
+        if command -v curl >/dev/null 2>&1; then
+            timeout 10 curl -Ls "$1" && return 0
+        elif command -v busybox wget >/dev/null 2>&1; then
+            timeout 10 busybox wget --no-check-certificate -qO- "$1" && return 0
+        fi
+        echo "[!] Download failed, retrying ($attempt/3)..."
+        sleep 3
+    done
+    echo "[!] Download failed after 3 attempts. Please check your internet." >&2
+    return 1
 }
+
 
 get_webui() {
     echo "- Downloading KSU WebUI Standalone..."
