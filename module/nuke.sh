@@ -102,7 +102,7 @@ if [ ! -f "$MODDIR/update" ]; then
         apd module install "$MODDIR/dummy.zip"
     fi
 else
-    echo ""[+] Module already flagged for update, skipping...
+    echo "[+] Module already flagged for update, skipping..."
 fi
 
 # create folder if it doesnt exist
