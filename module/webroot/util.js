@@ -1,6 +1,6 @@
 let appList = [], nukeList = [], isShellRunning = false;
 
-export async function ksuExec(command) {
+async function ksuExec(command) {
     return new Promise((resolve) => {
         let callbackName = `exec_callback_${Date.now()}`;
         window[callbackName] = (errno, stdout, stderr) => {
@@ -65,7 +65,7 @@ export async function fetchAppList(file, display = false) {
 }
 
 // Display app list
-export async function displayAppList(data) {
+async function displayAppList(data) {
     const appListDiv = document.getElementById("app-list");
     appListDiv.innerHTML = "";
 
@@ -188,7 +188,7 @@ export async function updateAppList(isNuke = false) {
 }
 
 // Function to apply ripple effect
-export function applyRippleEffect() {
+function applyRippleEffect() {
     document.querySelectorAll('.ripple-element').forEach(element => {
         if (element.dataset.rippleListener !== "true") {
             element.addEventListener("pointerdown", function (event) {
