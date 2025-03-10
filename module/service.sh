@@ -86,17 +86,15 @@ create_applist() {
 
 # install app that was uninstalled with pm uninstall -k --user 0
 # this make sure that restored app is back
-for pkg in $(grep -E '"package_name":' "$APP_LIST" | sed 's/.*"package_name": "\(.*\)",/\1/'); do
-    if ! pm path "$pkg"; then
-        pm install-existing "$pkg"
+for pkg in $(grep -o "\"package_name\":.*" "$APP_LIST" | awk -F"\"" '{print $4}'); do
+    if ! pm path "$pkg" >/dev/null 2>&1; then
+        pm install-existing "$pkg" >/dev/null 2>&1
     fi
 done
 
 # remove system apps if they still exist
-if [ -f "$REMOVE_LIST" ]; then
-    for package_name in $(grep -E '"package_name":' "$REMOVE_LIST" | sed 's/.*"package_name": "\(.*\)",/\1/'); do
-        if pm list packages | grep -qx "package:$package_name"; then
-            pm uninstall -k --user 0 "$package_name" 2>/dev/null
-        fi
-    done
-fi
+for package_name in $(grep -o "\"package_name\":.*" "$REMOVE_LIST" | awk -F"\"" '{print $4}'); do
+    if pm list packages | grep -qx "package:$package_name"; then
+        pm uninstall -k --user 0 "$package_name" 2>/dev/null
+    fi
+done
