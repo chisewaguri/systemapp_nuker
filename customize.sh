@@ -6,6 +6,9 @@ SKIPUNZIP=0
 MODDIR="/data/adb/modules/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
 
+# exit when modpath is undefined
+[ -z "$MODPATH" ] && exit 1
+
 # remove applist if icons dir doesnt exit
 [ ! -d "$PERSIST_DIR/icons" ] && [ -f "$PERSIST_DIR/app_list.json" ] && rm -rf "$PERSIST_DIR/app_list.json"
 
@@ -55,7 +58,7 @@ zip -j "$MODPATH/dummy.zip" "$MODPATH/module.prop"
 
 # removes action.sh on non-magisk env
 if [ -n "$KSU" ] || [ -n "$APATCH" ]; then
-    rm -rf $MODPATH/action.sh
+    rm -rf "$MODPATH/action.sh"
 fi
 
 # EOF
