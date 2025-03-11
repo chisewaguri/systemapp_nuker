@@ -106,25 +106,27 @@ else
     echo "[-] Module already flagged for update, skipping..."
 fi
 
-# create folder if it doesnt exist
-[ ! -d "$MODULES_UPDATE_DIR" ] && mkdir -p "$MODULES_UPDATE_DIR"
-busybox chcon --reference="/system" "$MODULES_UPDATE_DIR"
-cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
-
-# cleanup all old setup
-for dir in system system_ext vendor product; do
-    rm -rf "$MODULES_UPDATE_DIR/$dir"
-done
-nuke_system_apps
-
 # handle symlink and hierarchy
-if [ ! "$skip_symlink" = true ]; then
+if [ "$skip_symlink" = true ]; then
+    nuke_system_apps
+else
+    # create folder if it doesnt exist
+    [ ! -d "$MODULES_UPDATE_DIR" ] && mkdir -p "$MODULES_UPDATE_DIR"
+    busybox chcon --reference="/system" "$MODULES_UPDATE_DIR"
+    cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
+
+    # cleanup all old setup
+    for dir in system system_ext vendor product; do
+        rm -rf "$MODULES_UPDATE_DIR/$dir"
+    done
+
+    nuke_system_apps
+
     for dir in $targets; do
         handle_symlink "$dir"
     done
 fi
 
-# no need check before touch and rm, no stderr
 rm "$MODULES_UPDATE_DIR/update"
 
 # EOF
