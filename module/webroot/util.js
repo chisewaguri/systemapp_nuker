@@ -72,7 +72,15 @@ async function displayAppList(data) {
     const htmlContent = data.map((pkg) => `
         <div class="app ripple-element" data-package-name="${pkg.package_name}" data-app-path="${pkg.app_path}">
             <div class="app-info">
-                <img class="app-icon" src="icons/${pkg.package_name}.png" onerror="this.src='default.png'" alt="Icon">
+                <div class="app-icon-container">
+                    <div class="icon-loading">Loading...</div>
+                    <img class="app-icon" 
+                        src="icons/${pkg.package_name}.png" 
+                        style="opacity: 0;" 
+                        onload="this.style.opacity='1'; this.previousElementSibling.style.display='none';" 
+                        onerror="this.src='default.png'; this.style.opacity='1'; this.previousElementSibling.style.display='none';" 
+                        alt="Icon">
+                </div>
                 <div class="app-details">
                     <span class="app-name"><span>${pkg.app_name}</span></span>  
                     <span class="app-package"><span>${pkg.package_name}</span></span>  
@@ -82,7 +90,7 @@ async function displayAppList(data) {
             <input class="app-selector" type="checkbox">
         </div>
     `).join("");
-    
+        
     appListDiv.innerHTML = htmlContent;
 
     // Add click handlers to all app divs
