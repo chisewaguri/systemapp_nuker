@@ -407,6 +407,35 @@ function hideFloatingButton(hide = true) {
     }
 }
 
+// Setup confirmation dialog
+export function setupConfirmationDialog() {
+    const modal = document.getElementById('confirmation-modal');
+    const closeButton = modal.querySelector('.close-modal');
+    const cancelButton = document.getElementById('cancel-action');
+    const confirmButton = document.getElementById('confirm-action');
+    
+    // Close modal functions
+    const closeModal = () => {
+        modal.style.display = 'none';
+    };
+    
+    closeButton.addEventListener('click', closeModal);
+    cancelButton.addEventListener('click', closeModal);
+    
+    // Confirm action
+    confirmButton.addEventListener('click', async () => {
+        closeModal();
+        await updateAppList(); // Perform the actual app removal
+    });
+    
+    // Close when clicking outside
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+}
+
 let isScrolling = false;
 export function setupScrollEvent() {
     let lastScrollY = window.scrollY;

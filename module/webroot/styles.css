@@ -214,6 +214,32 @@ body {
     max-width: 100%;
 }
 
+.warning-text {
+    color: #f44336;
+    font-weight: bold;
+    margin-bottom: 16px;
+}
+
+.selected-apps-list {
+    max-height: 150px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+.selected-apps-list ul {
+    margin: 5px 0;
+    padding-left: 20px;
+}
+
+.selected-apps-list li {
+    margin-bottom: 4px;
+    font-size: 14px;
+    word-break: break-all;
+}
+
 .floating-button-container {
     position: fixed;
     bottom: 95px;
@@ -325,7 +351,7 @@ button,
 .modal-content {
     position: relative;
     background-color: #f5f5f5;
-    margin: 15% auto;
+    margin: 50% auto;
     width: 90%;
     max-width: 500px;
     border-radius: 12px;
@@ -408,17 +434,6 @@ button,
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     animation: fadeIn 0.2s ease-in-out;
-}
-
-.modal-content {
-position: relative;
-background-color: #f5f5f5;
-margin: 15% auto;
-width: 90%;
-max-width: 500px;
-border-radius: 12px;
-box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-animation: slideIn 0.2s ease-in-out;
 }
 
 .modal-header {
@@ -624,26 +639,6 @@ to { transform: translateY(0); opacity: 1; }
     .menu-btn:active {
         background-color: rgba(255, 255, 255, 0.1);
     }
-
-    .modal-content {
-        background-color: #212121;
-        color: #ffffff;
-    }
-    
-    .modal-header {
-        border-bottom: 1px solid #333;
-    }
-    
-    #package-list-input {
-        background-color: #333;
-        color: #fff;
-        border-color: #555;
-    }
-    
-    .modal-btn {
-        background-color: #444;
-        color: #fff;
-    }
     
     .action-btn:hover {
         background-color: rgba(255, 255, 255, 0.1);
@@ -652,5 +647,13 @@ to { transform: translateY(0); opacity: 1; }
     .icon-loading {
         background-color: #444;
         color: #aaa;
+    }
+
+    .warning-text {
+        color: #ff6b6b;
+    }
+    
+    .selected-apps-list {
+        background-color: rgba(255, 255, 255, 0.05);
     }
 }
