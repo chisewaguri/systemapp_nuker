@@ -3,7 +3,7 @@
 # this is part of system app nuker
 # this is modified from tricky-addon's action
 
-PATH=/data/data/com.termux/files/usr/bin:/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:/data/adb/magisk:$PATH
+ORG_PATH=$PATH
 MODPATH="/data/adb/modules/system_app_nuker"
 TMP_DIR="$MODPATH/common/tmp"
 APK_PATH="$TMP_DIR/base.apk"
@@ -11,11 +11,13 @@ APK_PATH="$TMP_DIR/base.apk"
 manual_download() {
     echo "$1"
     sleep 3
+    PATH=$ORG_PATH
     am start -a android.intent.action.VIEW -d "https://github.com/5ec1cff/KsuWebUIStandalone/releases"
     exit 1
 }
 
 download() {
+    PATH=/data/data/com.termux/files/usr/bin:/data/adb/magisk:/data/adb/magisk:$PATH
     for attempt in {1..3}; do  # Try up to 3 times
         if command -v curl >/dev/null 2>&1; then
             timeout 10 curl -Ls "$1" && return 0
@@ -47,6 +49,7 @@ get_webui() {
     rm -f "$APK_PATH"
 
     echo "- Launching WebUI..."
+    PATH=$ORG_PATH
     am start -n "io.github.a13e300.ksuwebui/.WebUIActivity" -e id "system_app_nuker"
 }
 
