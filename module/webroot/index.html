@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KernelSU System App Nuker</title>
+    <title>System App Nuker</title>
     <script type="module" src="script.js" defer></script>
     <link rel="stylesheet" type="text/css" href="/mmrl/insets.css" />
     <link rel="stylesheet" type="text/css" href="styles.css">
@@ -12,6 +12,22 @@
     <div class="content">
         <div class="header">
             <h1>System App Nuker</h1>
+            <!-- Three-dot menu button -->
+            <div class="menu-container">
+                <button id="menu-button" class="menu-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                        <path d="M480-160q-33 0-56.5-23.5T400-240q0-33 23.5-56.5T480-320q33 0 56.5 23.5T560-240q0 33-23.5 56.5T480-160Zm0-240q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm0-240q-33 0-56.5-23.5T400-720q0-33 23.5-56.5T480-800q33 0 56.5 23.5T560-720q0 33-23.5 56.5T480-640Z"/>
+                    </svg>
+                </button>
+                <div id="menu-dropdown" class="menu-dropdown">
+                    <div class="menu-item" id="import-option">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
+                            <path d="M440-280h80v-160h160v-80H520v-160h-80v160H280v80h160v160ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Z"/>
+                        </svg>
+                        <span>Import Package List</span>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="search-container">
             <input type="text" id="search-input" placeholder="Search for an app" autocapitalize="off">
@@ -38,6 +54,22 @@
                 </div>
                 <label>Restore</label>
             </a>
+        </div>
+        <div id="import-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Import Package List</h2>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <p>Paste a list of package names (one per line):</p>
+                    <textarea id="package-list-input" placeholder="com.example.app1&#10;com.example.app2&#10;com.example.app3"></textarea>
+                    <div class="modal-actions">
+                        <button id="cancel-import" class="modal-btn">Cancel</button>
+                        <button id="confirm-import" class="modal-btn confirm-btn">Import</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </body>
