@@ -205,31 +205,19 @@ export function setupMenuAndImport() {
     const confirmButton = document.getElementById('confirm-import');
     const packageListInput = document.getElementById('package-list-input');
     
+    // Apply ripple effect to import modal buttons
+    applyRippleEffect();
+    
     // Toggle menu dropdown
     menuButton.addEventListener('click', (event) => {
         event.stopPropagation();
-        event.preventDefault(); // Prevent any default behavior
-        
-        // Force reset the scrolling state
-        isScrolling = false;
-        
-        // Toggle dropdown with a slight delay to ensure UI updates properly
-        setTimeout(() => {
-            menuDropdown.classList.toggle('show');
-            
-            // Force the browser to redraw the element
-            menuDropdown.style.display = 'none';
-            menuDropdown.offsetHeight; // Trigger reflow
-            menuDropdown.style.display = menuDropdown.classList.contains('show') ? 'block' : 'none';
-        }, 10);
+        isScrolling = false; // Reset scrolling state
+        menuDropdown.classList.toggle('show');
     });
     
     // Close dropdown when clicking elsewhere
-    document.addEventListener('click', (event) => {
-        // Only close if click is outside the menu and menu button
-        if (!menuButton.contains(event.target) && !menuDropdown.contains(event.target)) {
-            menuDropdown.classList.remove('show');
-        }
+    document.addEventListener('click', () => {
+        menuDropdown.classList.remove('show');
     });
     
     // Import option click
@@ -413,6 +401,9 @@ export function setupConfirmationDialog() {
     const closeButton = modal.querySelector('.close-modal');
     const cancelButton = document.getElementById('cancel-action');
     const confirmButton = document.getElementById('confirm-action');
+    
+    // Apply ripple effect to modal buttons
+    applyRippleEffect();
     
     // Close modal functions
     const closeModal = () => {

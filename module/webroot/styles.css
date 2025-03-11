@@ -406,6 +406,8 @@ button,
     border: none;
     background-color: #f0f0f0;
     cursor: pointer;
+    position: relative;
+    overflow: hidden;
 }
 
 .confirm-btn {
@@ -652,8 +654,36 @@ to { transform: translateY(0); opacity: 1; }
     .warning-text {
         color: #ff6b6b;
     }
+
+    .modal-content {
+        background-color: #212121;
+        color: #ffffff;
+    }
+    
+    .modal-header {
+        border-bottom: 1px solid #333;
+    }
+    
+    #package-list-input {
+        background-color: #333;
+        color: #fff;
+        border-color: #555;
+    }
+    
+    .modal-btn {
+        background-color: #444;
+        color: #fff;
+    }
+    
+    .confirm-btn {
+        background-color: #0066cc; /* Darker blue for dark mode */
+    }
     
     .selected-apps-list {
         background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .warning-text {
+        color: #ff6b6b; /* More visible red for dark mode */
     }
 }
