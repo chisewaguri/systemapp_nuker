@@ -217,10 +217,31 @@ body {
     color: inherit;
     cursor: pointer;
     padding: 8px;
-    border-radius: 50%;
+    border-radius: 8px;
     width: 40px;
     height: 40px;
-    margin: auto 0; /* center vertically within its container */
+    overflow: hidden;
+    position: relative;
+    
+    /* remove unwanted highlights */
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+/* prevent blue highlights on buttons */
+button, 
+[role="button"] {
+    -webkit-tap-highlight-color: transparent !important;
+    outline: none !important;
+} position: relative;
+
+.menu-btn .ripple {
+    border-radius: 8px !important;
+    transform-origin: center;
 }
 
 .menu-btn:active {
