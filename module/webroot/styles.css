@@ -21,12 +21,16 @@ body {
     align-items: center;
     top: 0;
     height: 80px;
-    z-index: 1;
+    z-index: 5;
+    padding: 0 16px;
+    box-sizing: border-box;
 }
 
 .header h1 {
     margin: 0;
     user-select: none;
+    flex: 1;
+    text-align: center;
 }
 
 .search-container {
@@ -196,10 +200,11 @@ body {
 }
 
 .menu-container {
-    position: absolute;
-    right: 16px;
-    top: 50%;
-    transform: translateY(-50%);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 6;
 }
 
 .menu-btn {
@@ -223,13 +228,14 @@ body {
 /* Menu dropdown */
 .menu-dropdown {
     display: none;
-    position: absolute;
+    position: fixed;
     right: 0;
-    top: 45px;
+    top: 100%;
+    margin-top: 5px;
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    z-index: 5;
+    z-index: 10;
     min-width: 200px;
     animation: menuFadeIn 0.2s ease;
 }
