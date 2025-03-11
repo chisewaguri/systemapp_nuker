@@ -228,16 +228,17 @@ body {
 /* Menu dropdown */
 .menu-dropdown {
     display: none;
-    position: fixed;
-    right: 0;
-    top: 100%;
+    position: absolute !important;
+    right: 16px !important;
+    top: 40px !important;
     margin-top: 5px;
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    z-index: 10;
+    z-index: 100 !important;
     min-width: 200px;
     animation: menuFadeIn 0.2s ease;
+    transform: none !important;
 }
 
 .menu-dropdown.show {

@@ -200,12 +200,28 @@ export function setupMenuAndImport() {
     // Toggle menu dropdown
     menuButton.addEventListener('click', (event) => {
         event.stopPropagation();
-        menuDropdown.classList.toggle('show');
+        event.preventDefault(); // Prevent any default behavior
+        
+        // Force reset the scrolling state
+        isScrolling = false;
+        
+        // Toggle dropdown with a slight delay to ensure UI updates properly
+        setTimeout(() => {
+            menuDropdown.classList.toggle('show');
+            
+            // Force the browser to redraw the element
+            menuDropdown.style.display = 'none';
+            menuDropdown.offsetHeight; // Trigger reflow
+            menuDropdown.style.display = menuDropdown.classList.contains('show') ? 'block' : 'none';
+        }, 10);
     });
     
     // Close dropdown when clicking elsewhere
-    document.addEventListener('click', () => {
-        menuDropdown.classList.remove('show');
+    document.addEventListener('click', (event) => {
+        // Only close if click is outside the menu and menu button
+        if (!menuButton.contains(event.target) && !menuDropdown.contains(event.target)) {
+            menuDropdown.classList.remove('show');
+        }
     });
     
     // Import option click
