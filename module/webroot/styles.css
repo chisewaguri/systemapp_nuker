@@ -17,13 +17,12 @@ body {
     position: fixed;
     display: flex;
     width: 100%;
-    justify-content: center;
-    align-items: center;
     top: 0;
     height: 80px;
     z-index: 5;
-    padding: 0 16px;
+    padding: 0;
     box-sizing: border-box;
+    align-items: center;
 }
 
 .header h1 {
@@ -31,6 +30,8 @@ body {
     user-select: none;
     flex: 1;
     text-align: center;
+    font-size: 24px; /* specify an exact font size */
+    line-height: 80px; /* match the header height */
 }
 
 .search-container {
@@ -200,12 +201,13 @@ body {
 }
 
 .menu-container {
-    position: relative;
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%); /* Center vertically */
+    height: 40px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    z-index: 6;
-    height: 100%; /* take full height of the header */
 }
 
 .menu-btn {
@@ -216,20 +218,13 @@ body {
     border: none;
     color: inherit;
     cursor: pointer;
-    padding: 8px;
+    padding: 0;
     border-radius: 8px;
     width: 40px;
     height: 40px;
-    overflow: hidden;
-    position: relative;
-    
-    /* remove unwanted highlights */
     outline: none !important;
     -webkit-tap-highlight-color: transparent !important;
     user-select: none;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    touch-action: manipulation;
 }
 
 /* prevent blue highlights on buttons */
@@ -237,7 +232,7 @@ button,
 [role="button"] {
     -webkit-tap-highlight-color: transparent !important;
     outline: none !important;
-} position: relative;
+}
 
 .menu-btn .ripple {
     border-radius: 8px !important;
