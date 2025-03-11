@@ -187,6 +187,109 @@ export async function updateAppList(isNuke = false) {
     }
 }
 
+export function setupMenuAndImport() {
+    const menuButton = document.getElementById('menu-button');
+    const menuDropdown = document.getElementById('menu-dropdown');
+    const importOption = document.getElementById('import-option');
+    const modal = document.getElementById('import-modal');
+    const closeButton = document.querySelector('.close-modal');
+    const cancelButton = document.getElementById('cancel-import');
+    const confirmButton = document.getElementById('confirm-import');
+    const packageListInput = document.getElementById('package-list-input');
+    
+    // Toggle menu dropdown
+    menuButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        menuDropdown.classList.toggle('show');
+    });
+    
+    // Close dropdown when clicking elsewhere
+    document.addEventListener('click', () => {
+        menuDropdown.classList.remove('show');
+    });
+    
+    // Import option click
+    importOption.addEventListener('click', () => {
+        menuDropdown.classList.remove('show');
+        modal.style.display = 'block';
+        packageListInput.focus();
+    });
+    
+    // Close modal functions
+    const closeModal = () => {
+        modal.style.display = 'none';
+        packageListInput.value = '';
+    };
+    
+    closeButton.addEventListener('click', closeModal);
+    cancelButton.addEventListener('click', closeModal);
+    
+    // Close when clicking outside the modal
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+    
+    // Process import
+    confirmButton.addEventListener('click', async () => {
+        const packageText = packageListInput.value.trim();
+        if (!packageText) {
+            ksu.toast("No packages to import");
+            return;
+        }
+        
+        // Parse package names (one per line)
+        const packageNames = packageText.split('\n')
+            .map(pkg => pkg.trim())
+            .filter(pkg => pkg && /^[a-zA-Z0-9_.]+$/.test(pkg)); // Basic validation
+        
+        if (packageNames.length === 0) {
+            ksu.toast("No valid package names found");
+            return;
+        }
+        
+        // Find these packages in the app list
+        const packagesToNuke = appList.filter(app => 
+            packageNames.includes(app.package_name)
+        );
+        
+        // If no packages found
+        if (packagesToNuke.length === 0) {
+            ksu.toast(`None of the ${packageNames.length} package(s) found in system apps`);
+            closeModal();
+            return;
+        }
+        
+        // Packages that weren't found
+        const notFound = packageNames.filter(pkg => 
+            !appList.some(app => app.package_name === pkg)
+        );
+        
+        if (notFound.length > 0) {
+            ksu.toast(`${packagesToNuke.length} package(s) found, ${notFound.length} not found`);
+        } else {
+            ksu.toast(`${packagesToNuke.length} package(s) found and selected`);
+        }
+        
+        // Update UI to select these apps
+        document.querySelectorAll('.app').forEach(appDiv => {
+            const packageName = appDiv.dataset.packageName;
+            const checkbox = appDiv.querySelector('.app-selector');
+            
+            if (packageNames.includes(packageName)) {
+                checkbox.checked = true;
+                // Scroll to first selected app
+                if (packageName === packagesToNuke[0].package_name) {
+                    setTimeout(() => appDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                }
+            }
+        });
+        
+        closeModal();
+    });
+}
+
 // Function to apply ripple effect
 function applyRippleEffect() {
     document.querySelectorAll('.ripple-element').forEach(element => {
