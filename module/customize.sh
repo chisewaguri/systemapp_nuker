@@ -49,9 +49,6 @@ set_perm $MODPATH/common/aapt 0 2000 0755
 set_perm $MODPATH/nuke.sh 0 2000 0755
 rm -rf "$MODPATH/bin"
 
-# generate dummy.zip for triggering module update
-zip -j "$MODPATH/dummy.zip" "$MODPATH/module.prop"
-
 # Migrate old config
 [ -f "$PERSIST_DIR/nuke_list.json" ] && sh "$MODPATH/nuke.sh" skip_symlink
 
