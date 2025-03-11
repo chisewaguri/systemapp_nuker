@@ -5,6 +5,10 @@ body {
     margin: 0;
 }
 
+.no-scroll {
+    overflow: hidden;
+}
+
 .content {
     display: flex;
     width: 100%;
@@ -22,6 +26,7 @@ body {
     z-index: 5;
     padding: 0;
     box-sizing: border-box;
+    justify-content: space-between;
     align-items: center;
 }
 
@@ -30,8 +35,53 @@ body {
     user-select: none;
     flex: 1;
     text-align: center;
-    font-size: 24px; /* specify an exact font size */
-    line-height: 80px; /* match the header height */
+    font-size: 24px;
+}
+
+.menu {
+    position: absolute;
+    right: 10px;
+}
+
+.menu-container {
+    position: relative;
+}
+
+.menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #F5F5F5;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    user-select: none;
+}
+
+.menu-dropdown {
+    position: absolute;
+    right: 0;
+    white-space: nowrap;
+    display: none;
+    opacity: 0;
+    background-color: #fff;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform-origin: top right;
+}
+
+.menu-item {
+    display: flex;
+    background-color: #fff;
+    align-items: center;
+    padding: 12px 16px;
+    user-select: none;
+}
+
+.menu-item svg {
+    margin-right: 12px;
 }
 
 .search-container {
@@ -229,6 +279,11 @@ body {
     border-radius: 4px;
 }
 
+.selected-apps-list p {
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
 .selected-apps-list ul {
     margin: 5px 0;
     padding-left: 20px;
@@ -251,255 +306,88 @@ body {
     pointer-events: none;
 }
 
-.menu-container {
-    position: absolute;
-    right: 16px;
-    top: 50%;
-    transform: translateY(-50%); /* Center vertically */
-    height: 40px;
-    display: flex;
-    align-items: center;
-}
-
-.menu-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: transparent;
-    border: none;
-    color: inherit;
-    cursor: pointer;
-    padding: 0;
-    border-radius: 8px;
-    width: 40px;
-    height: 40px;
-    outline: none !important;
-    -webkit-tap-highlight-color: transparent !important;
-    user-select: none;
-}
-
-/* prevent blue highlights on buttons */
-button, 
-[role="button"] {
-    -webkit-tap-highlight-color: transparent !important;
-    outline: none !important;
-}
-
-.menu-btn .ripple {
-    border-radius: 8px !important;
-    transform-origin: center;
-}
-
-.menu-btn:active {
-    background-color: rgba(0, 0, 0, 0.1);
-}
-
-/* Menu dropdown */
-.menu-dropdown {
-    display: none;
-    position: absolute !important;
-    right: 16px !important;
-    top: 40px !important;
-    margin-top: 5px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    z-index: 100 !important;
-    min-width: 200px;
-    animation: menuFadeIn 0.2s ease;
-    transform: none !important;
-}
-
-.menu-dropdown.show {
-    display: block;
-}
-
-.menu-item {
-    display: flex;
-    align-items: center;
-    padding: 12px 16px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.menu-item:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-}
-
-.menu-item svg {
-    margin-right: 12px;
-}
-
-@keyframes menuFadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
 /* Modal styles */
 .modal {
     display: none;
     position: fixed;
+    align-items: center;
+    justify-content: center;
     z-index: 10;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    animation: fadeIn 0.2s ease-in-out;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .modal-content {
     position: relative;
-    background-color: #f5f5f5;
-    margin: 50% auto;
+    background-color: #ffffff;
     width: 90%;
     max-width: 500px;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    animation: slideIn 0.2s ease-in-out;
+    transition: transform 0.3s ease-in-out;
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px;
+    padding: 10px 20px;
     border-bottom: 1px solid #e0e0e0;
 }
 
 .modal-header h2 {
     margin: 0;
     font-size: 18px;
+    user-select: none;
 }
 
 .close-modal {
     font-size: 24px;
-    cursor: pointer;
     user-select: none;
 }
 
 .modal-body {
     padding: 20px;
+    padding-top: 0;
 }
 
 #package-list-input {
     width: 100%;
     min-height: 150px;
     padding: 12px;
+    background-color: #f3f3f3;
     border-radius: 8px;
     border: 1px solid #ccc;
     box-sizing: border-box;
+    outline-color: #3a75ff;
     font-family: monospace;
-    margin: 10px 0 20px 0;
-    resize: vertical;
+    resize: none;
 }
 
 .modal-actions {
+    margin-top: 10px;
     display: flex;
-    justify-content: flex-end;
-    gap: 12px;
+    gap: 10px;
 }
 
 .modal-btn {
-    padding: 8px 16px;
-    border-radius: 6px;
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
     border: none;
     background-color: #f0f0f0;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
 }
 
 .confirm-btn {
     background-color: #007bff;
     color: white;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideIn {
-    from { transform: translateY(-20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-/* Modal styles */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 10;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    animation: fadeIn 0.2s ease-in-out;
-}
-
-.modal-header {
-display: flex;
-justify-content: space-between;
-align-items: center;
-padding: 16px 20px;
-border-bottom: 1px solid #e0e0e0;
-}
-
-.modal-header h2 {
-margin: 0;
-font-size: 18px;
-}
-
-.close-modal {
-font-size: 24px;
-cursor: pointer;
-user-select: none;
-}
-
-.modal-body {
-padding: 20px;
-}
-
-#package-list-input {
-width: 100%;
-min-height: 150px;
-padding: 12px;
-border-radius: 8px;
-border: 1px solid #ccc;
-box-sizing: border-box;
-font-family: monospace;
-margin: 10px 0 20px 0;
-resize: vertical;
-}
-
-.modal-actions {
-display: flex;
-justify-content: flex-end;
-gap: 12px;
-}
-
-.modal-btn {
-padding: 8px 16px;
-border-radius: 6px;
-border: none;
-background-color: #f0f0f0;
-cursor: pointer;
-}
-
-.confirm-btn {
-background-color: #007bff;
-color: white;
-}
-
-@keyframes fadeIn {
-from { opacity: 0; }
-to { opacity: 1; }
-}
-
-@keyframes slideIn {
-from { transform: translateY(-20px); opacity: 0; }
-to { transform: translateY(0); opacity: 1; }
 }
 
 #restore-button,
@@ -629,21 +517,17 @@ to { transform: translateY(0); opacity: 1; }
     .footer-btn-icon svg {
         fill:#fff;
     }
-    
+
+    .menu-btn {
+        background-color: #121212;
+    }
+
     .menu-dropdown {
         background-color: #333;
     }
-    
-    .menu-item:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    .menu-btn:active {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    .action-btn:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+
+    .menu-item {
+        background-color: #333;
     }
 
     .icon-loading {

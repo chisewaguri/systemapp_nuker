@@ -1,4 +1,4 @@
-let appList = [], nukeList = [], isShellRunning = false;
+export let appList = [], nukeList = [], isShellRunning = false;
 
 async function ksuExec(command) {
     return new Promise((resolve) => {
@@ -9,6 +9,14 @@ async function ksuExec(command) {
         };
         ksu.exec(command, "{}", callbackName);
     });
+}
+
+export function toast(message) {
+    try {
+        ksu.toast(message);
+    } catch (error) {
+        console.log("Error showing toast:", error);
+    }
 }
 
 export function setupSearch() {
@@ -151,8 +159,58 @@ export async function updateAppList(isNuke = false) {
 
     // Skip if none selected
     if (selectedPackages.length === 0) {
-        ksu.toast("No apps selected");
+        toast("No apps selected");
         return;
+    }
+
+    // Show confirmation dialog if nuke apps
+    if (!isNuke) {
+        // Return a new Promise that resolves when user makes a choice
+        const confirmed = await new Promise((resolve, reject) => {
+            // Populate the confirmation dialog
+            const confirmationModal = document.getElementById("confirmation-modal");
+            const modalContent = confirmationModal.querySelector(".modal-content");
+            const selectedAppsList = document.getElementById("selected-apps-confirm");
+            selectedAppsList.innerHTML = selectedPackages.map(app => 
+                `<li><strong>${app.app_name}</strong> <small>(${app.package_name})</small></li>`
+            ).join("");
+        
+            // Show the confirmation dialog
+            confirmationModal.style.display = "flex";
+            document.body.classList.add("no-scroll");
+            setTimeout(() => {
+                confirmationModal.style.opacity = "1";
+            }, 10);
+
+            function closeModal(confirmed = false) {
+                document.body.classList.remove("no-scroll");
+                confirmationModal.style.opacity = "0";
+                setTimeout(() => {
+                    confirmationModal.style.display = "none";
+                    resolve(confirmed); // Resolve the promise with user's choice
+                }, 300);
+            }
+
+            // Cancel buttons
+            document.querySelectorAll('.close-modal, #cancel-action').forEach(button => {
+                button.addEventListener('click', () => closeModal(false));
+            });
+
+            // Click outside
+            confirmationModal.addEventListener('click', (event) => {
+                if (!modalContent.contains(event.target)) {
+                    closeModal(false);
+                }
+            });
+
+            // Confirm button
+            document.getElementById('confirm-action').addEventListener('click', () => {
+                closeModal(true);
+            });
+        });
+
+        // If user cancelled, return early
+        if (!confirmed) return;
     }
 
     try {
@@ -188,122 +246,15 @@ export async function updateAppList(isNuke = false) {
             busybox nsenter -t1 -m /data/adb/modules/system_app_nuker/nuke.sh
         `);
         isShellRunning = false;
-        ksu.toast("Done! Reboot your device!");
+        toast("Done! Reboot your device!");
     } catch (error) {
-        ksu.toast("Error updating removed apps list");
+        toast("Error updating removed apps list");
         console.error("Error:", error);
     }
 }
 
-export function setupMenuAndImport() {
-    const menuButton = document.getElementById('menu-button');
-    const menuDropdown = document.getElementById('menu-dropdown');
-    const importOption = document.getElementById('import-option');
-    const modal = document.getElementById('import-modal');
-    const closeButton = document.querySelector('.close-modal');
-    const cancelButton = document.getElementById('cancel-import');
-    const confirmButton = document.getElementById('confirm-import');
-    const packageListInput = document.getElementById('package-list-input');
-    
-    // Apply ripple effect to import modal buttons
-    applyRippleEffect();
-    
-    // Toggle menu dropdown
-    menuButton.addEventListener('click', (event) => {
-        event.stopPropagation();
-        isScrolling = false; // Reset scrolling state
-        menuDropdown.classList.toggle('show');
-    });
-    
-    // Close dropdown when clicking elsewhere
-    document.addEventListener('click', () => {
-        menuDropdown.classList.remove('show');
-    });
-    
-    // Import option click
-    importOption.addEventListener('click', () => {
-        menuDropdown.classList.remove('show');
-        modal.style.display = 'block';
-        packageListInput.focus();
-    });
-    
-    // Close modal functions
-    const closeModal = () => {
-        modal.style.display = 'none';
-        packageListInput.value = '';
-    };
-    
-    closeButton.addEventListener('click', closeModal);
-    cancelButton.addEventListener('click', closeModal);
-    
-    // Close when clicking outside the modal
-    window.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            closeModal();
-        }
-    });
-    
-    // Process import
-    confirmButton.addEventListener('click', async () => {
-        const packageText = packageListInput.value.trim();
-        if (!packageText) {
-            ksu.toast("No packages to import");
-            return;
-        }
-        
-        // Parse package names (one per line)
-        const packageNames = packageText.split('\n')
-            .map(pkg => pkg.trim())
-            .filter(pkg => pkg && /^[a-zA-Z0-9_.]+$/.test(pkg)); // Basic validation
-        
-        if (packageNames.length === 0) {
-            ksu.toast("No valid package names found");
-            return;
-        }
-        
-        // Find these packages in the app list
-        const packagesToNuke = appList.filter(app => 
-            packageNames.includes(app.package_name)
-        );
-        
-        // If no packages found
-        if (packagesToNuke.length === 0) {
-            ksu.toast(`None of the ${packageNames.length} package(s) found in system apps`);
-            closeModal();
-            return;
-        }
-        
-        // Packages that weren't found
-        const notFound = packageNames.filter(pkg => 
-            !appList.some(app => app.package_name === pkg)
-        );
-        
-        if (notFound.length > 0) {
-            ksu.toast(`${packagesToNuke.length} package(s) found, ${notFound.length} not found`);
-        } else {
-            ksu.toast(`${packagesToNuke.length} package(s) found and selected`);
-        }
-        
-        // Update UI to select these apps
-        document.querySelectorAll('.app').forEach(appDiv => {
-            const packageName = appDiv.dataset.packageName;
-            const checkbox = appDiv.querySelector('.app-selector');
-            
-            if (packageNames.includes(packageName)) {
-                checkbox.checked = true;
-                // Scroll to first selected app
-                if (packageName === packagesToNuke[0].package_name) {
-                    setTimeout(() => appDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
-                }
-            }
-        });
-        
-        closeModal();
-    });
-}
-
 // Function to apply ripple effect
-function applyRippleEffect() {
+export function applyRippleEffect() {
     document.querySelectorAll('.ripple-element').forEach(element => {
         if (element.dataset.rippleListener !== "true") {
             element.addEventListener("pointerdown", function (event) {
@@ -393,38 +344,6 @@ function hideFloatingButton(hide = true) {
     } else {
         floatingButton.style.transform = 'translateY(90px)';
     }
-}
-
-// Setup confirmation dialog
-export function setupConfirmationDialog() {
-    const modal = document.getElementById('confirmation-modal');
-    const closeButton = modal.querySelector('.close-modal');
-    const cancelButton = document.getElementById('cancel-action');
-    const confirmButton = document.getElementById('confirm-action');
-    
-    // Apply ripple effect to modal buttons
-    applyRippleEffect();
-    
-    // Close modal functions
-    const closeModal = () => {
-        modal.style.display = 'none';
-    };
-    
-    closeButton.addEventListener('click', closeModal);
-    cancelButton.addEventListener('click', closeModal);
-    
-    // Confirm action
-    confirmButton.addEventListener('click', async () => {
-        closeModal();
-        await updateAppList(); // Perform the actual app removal
-    });
-    
-    // Close when clicking outside
-    window.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            closeModal();
-        }
-    });
 }
 
 let isScrolling = false;
