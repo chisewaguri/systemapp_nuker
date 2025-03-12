@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4.2.2
       with:
         fetch-depth: 0
 
@@ -30,7 +30,7 @@ jobs:
         COMMIT_NUM=$(git rev-list --count HEAD)
         COMMIT_HASH=$(git rev-parse --short HEAD)
         VERSION=$(grep '^version=' module/module.prop | cut -d '=' -f 2)
-        ZIP_NAME=SNA_$VERSION-$COMMIT_NUM-$COMMIT_HASH
+        ZIP_NAME=SAN_$VERSION-$COMMIT_NUM-$COMMIT_HASH
 
         echo "ZIP_NAME=$ZIP_NAME" >> $GITHUB_ENV
 
