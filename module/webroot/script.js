@@ -62,8 +62,6 @@ function importModalMenu() {
     setTimeout(() => {
         importModalMenu.style.opacity = 1;
     }, 10);
-    packageListInput.focus();
-    importModalMenuContent.style.transform = 'translateY(-10vh)';
 
     function closeImportModal() {
         document.body.classList.remove('no-scroll');
@@ -81,6 +79,7 @@ function importModalMenu() {
     packageListInput.addEventListener('blur', () => {
         importModalMenuContent.style.transform = 'translateY(0)';
     });
+    packageListInput.focus();
 
     // Close import modal when clicking outside
     importModalMenu.addEventListener('click', (event) => {
