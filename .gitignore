@@ -1,2 +1,4 @@
-webroot/assets/app_list.json
+app_list.json
+nuke_list.json
+module/webroot/icons
 *.bak
