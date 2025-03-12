@@ -24,9 +24,17 @@ product
 system_ext
 vendor"
 
+# args handling
+[ "$1" = "update" ] && update=true || update=false
+[ "$1" = "skip_symlink" ] || [ "$update" = "true" ] && skip_symlink=true || skip_symlink=false
+
+# handle symlink and hierarchy
 handle_symlink() {
+    # exit early in update and skip symlink
+    $skip_symlink && return 0
+
+    # handle magic mount
     if [ "$MAGIC_MOUNT" = true ]; then
-        # handle magic mount
         if [ -d /$1 ] && [ ! -L /$1 ] && [ -d "$MODULES_UPDATE_DIR/system/$1" ]; then
             if [ -L "$MODULES_UPDATE_DIR/$1" ]; then
                 # Check if the symlink points to the correct location
@@ -42,8 +50,8 @@ handle_symlink() {
                 ln -sf ./system/$1 $MODULES_UPDATE_DIR/$1
             fi
         fi
+    # handle overlayfs
     else
-        # handle overlayfs
         if [ ! -d "$MODULES_UPDATE_DIR/system/$1" ]; then
             # No partition found in the module update directory
             return
@@ -82,50 +90,45 @@ nuke_system_apps() {
     done
 }
 
-# skip symlink on installation
-[ "$1" = "skip_symlink" ] && skip_symlink=true || skip_symlink=false
-
 # revamped routine
 # here we copy over all the module files to modules_update folder.
 # this is better than deleting system over and over
 # also this way manager handles the update.
 # this can avoid persistence issues too
 
-# flag module for update
-# check if module already flagged for update
-if [ ! -f "$MODDIR/update" ]; then
-    echo "[+] Flagging module for update..."
-    if [ "$MAGIC_MOUNT" = true ]; then
-        touch "$MODDIR/update"
-    elif [ -n $KSU ]; then
-        ksud module install "$MODDIR/dummy.zip"
-    elif [ -n "$APATCH" ]; then
-        apd module install "$MODDIR/dummy.zip"
-    fi
-else
-    echo "[-] Module already flagged for update, skipping..."
-fi
+# create folder if it doesnt exist and copy selinux context
+[ ! -d "$MODULES_UPDATE_DIR" ] && mkdir -p "$MODULES_UPDATE_DIR"
+busybox chcon --reference="/system" "$MODULES_UPDATE_DIR"
 
-# handle symlink and hierarchy
-if [ "$skip_symlink" = true ]; then
-    nuke_system_apps
-else
-    # create folder if it doesnt exist
-    [ ! -d "$MODULES_UPDATE_DIR" ] && mkdir -p "$MODULES_UPDATE_DIR"
-    busybox chcon --reference="/system" "$MODULES_UPDATE_DIR"
+# if not update
+if [ "$update" != true ]; then
+    # flag module for update
+    # check if module already flagged for update
+    if [ ! -f "$MODDIR/update" ]; then
+        if [ "$MAGIC_MOUNT" = true ]; then
+            touch "$MODDIR/update"
+        elif [ -n $KSU ]; then
+            ksud module install "$MODDIR/dummy.zip"
+        elif [ -n "$APATCH" ]; then
+            apd module install "$MODDIR/dummy.zip"
+        fi
+    fi
+
+    # copy module content
     cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
 
     # cleanup all old setup
     for dir in system system_ext vendor product; do
         rm -rf "$MODULES_UPDATE_DIR/$dir"
     done
-
-    nuke_system_apps
-
-    for dir in $targets; do
-        handle_symlink "$dir"
-    done
 fi
+
+
+nuke_system_apps
+
+for dir in $targets; do
+    handle_symlink "$dir"
+done
 
 rm "$MODULES_UPDATE_DIR/update"
 

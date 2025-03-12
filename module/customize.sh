@@ -28,6 +28,7 @@ if [ "$MMRL" = "true" ] || { [ "$KSU" = "true" ] && [ "$KSU_VER_CODE" -ge 11998 
         done
 else
     # sleep a bit to make it look like something is happening!!
+    echo "[-] Checking mounting system..."
     sleep 2
 fi
 # check for mounting system
@@ -50,7 +51,7 @@ set_perm $MODPATH/nuke.sh 0 2000 0755
 rm -rf "$MODPATH/bin"
 
 # Migrate old config
-[ -f "$PERSIST_DIR/nuke_list.json" ] && sh "$MODPATH/nuke.sh" skip_symlink
+[ -f "$PERSIST_DIR/nuke_list.json" ] && sh "$MODPATH/nuke.sh" update
 
 # removes action.sh on non-magisk env
 if [ -n "$KSU" ] || [ -n "$APATCH" ]; then
