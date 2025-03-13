@@ -78,7 +78,7 @@ async function displayAppList(data) {
     appListDiv.innerHTML = "";
 
     const htmlContent = data.map((pkg) => `
-        <div class="app ripple-element" data-package-name="${pkg.package_name}" data-app-path="${pkg.app_path}">
+        <div class="app ripple-element" data-package-name="${pkg.package_name}" data-app-path="${pkg.app_path}" data-app-name="${pkg.app_name}">
             <div class="app-info">
                 <div class="app-icon-container">
                     <div class="icon-loading">Loading...</div>
@@ -103,6 +103,7 @@ async function displayAppList(data) {
 
     // Add click handlers to all app divs
     document.querySelectorAll('.app').forEach(appDiv => {
+        // Check checkbox on whole app card
         appDiv.addEventListener('click', function(e) {
             if (e.target.type !== 'checkbox') {
                 const checkbox = this.querySelector('input[type="checkbox"]');
@@ -110,6 +111,7 @@ async function displayAppList(data) {
             }
         });
 
+        // Overflow scroll
         appDiv.querySelectorAll(".app-name span, .app-package span, .app-path span").forEach(el => {
             const parent = el.parentElement;
             const scrollAmount = el.scrollWidth - parent.clientWidth;
@@ -126,6 +128,25 @@ async function displayAppList(data) {
                 el.style.setProperty('--scroll-distance', `-${adjustedScroll}px`);
                 el.style.setProperty('--scroll-time', `${scrollTime}s`);
             }
+        });
+
+        // Long press to show app info modal
+        appDiv.addEventListener('pointerdown', () => {
+            let holdTimeout;
+            holdTimeout = setTimeout(() => {
+                const appData = {
+                    app_name: appDiv.dataset.appName,
+                    package_name: appDiv.dataset.packageName,
+                    app_path: appDiv.dataset.appPath
+                };
+                showAppInfoModal(appData);
+            }, 500);
+            appDiv.addEventListener('pointerup', () => {
+                clearTimeout(holdTimeout);
+            });
+            appDiv.addEventListener('pointercancel', () => {
+                clearTimeout(holdTimeout);
+            });
         });
     });
 }
@@ -153,7 +174,7 @@ export async function updateAppList(isNuke = false) {
             return {
                 package_name: appDiv.dataset.packageName,
                 app_path: appDiv.dataset.appPath,
-                app_name: appDiv.querySelector('.app-name').textContent
+                app_name: appDiv.dataset.appName
             };
         });
 
@@ -376,236 +397,55 @@ export function setupScrollEvent() {
     });
 }
 
-/**
- * Gets detailed information about a specific app
- * @param {string} packageName - The package name of the app
- * @returns {Promise<object>} - App information
- */
-async function getAppInfo(packageName) {
-    try {
-        // Execute command to get app info
-        const result = await ksuExec(`
-            # Get basic app info
-            VERSION=$(dumpsys package ${packageName} | grep versionName | head -1 | cut -d= -f2)
-            IS_SYSTEM=$(dumpsys package ${packageName} | grep -q "system app" && echo "true" || echo "false")
-            
-            # Format output for parsing
-            echo "VERSION:$VERSION"
-            echo "IS_SYSTEM:$IS_SYSTEM"
-        `);
-        
-        if (result.errno !== 0) {
-            throw new Error(`Command failed with error: ${result.stderr}`);
-        }
-        
-        // Parse the output into an object
-        const lines = result.stdout.split('\n');
-        const info = {};
-        
-        lines.forEach(line => {
-            const [key, value] = line.split(':', 2);
-            if (key && value) {
-                info[key.trim()] = value.trim();
-            }
-        });
-        
-        return info;
-    } catch (error) {
-        console.error("Error getting app info:", error);
-        return { error: error.message };
-    }
-}
+// App info modal
+async function showAppInfoModal(app) {
+    const appInfoModal = document.getElementById('app-info-modal');
+    const appInfoModalContent = document.getElementById('app-info-modal-content');
 
-/**
- * Shows app info modal with details
- * @param {string} packageName - The package name of the app
- */
-function showAppInfoModal(packageName) {
-    // First try to find the app in our list
-    const app = appList.find(a => a.package_name === packageName);
-    if (!app) {
-        toast("App not found");
-        return;
-    }
-    
-    // Create the modal first with loading state
-    const infoModal = document.createElement('div');
-    infoModal.className = 'modal';
-    infoModal.id = 'app-info-modal';
-    
-    infoModal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>${app.app_name}</h2>
-                <span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="app-info-container">
-                    <div class="app-icon-container" style="width: 64px; height: 64px; margin-bottom: 16px;">
-                        <img src="icons/${app.package_name}.png" 
-                            onerror="this.src='default.png'" 
-                            alt="${app.app_name} icon"
-                            style="width: 100%; height: 100%; border-radius: 12px;">
-                    </div>
-                    
-                    <p><strong>Package Name:</strong> ${app.package_name}</p>
-                    <p><strong>Path:</strong> ${app.app_path}</p>
-                    <p id="app-version"><strong>Version:</strong> <span>Loading...</span></p>
-                    <p id="app-system"><strong>System App:</strong> <span>Loading...</span></p>
-                </div>
-                
-                <div class="modal-actions">
-                    <button id="close-info" class="modal-btn ripple-element">Close</button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Add modal to document
-    document.body.appendChild(infoModal);
-    
+    if (!appInfoModal) return;
+
+    // Update modal content using the app object
+    appInfoModal.querySelector('#app-name').textContent = app.app_name;
+    appInfoModal.querySelector('#app-icon').src = `icons/${app.package_name}.png`;
+    appInfoModal.querySelector('#app-package').textContent = app.package_name;
+    appInfoModal.querySelector('#app-path').textContent = app.app_path;
+
     // Show the modal
-    infoModal.style.display = 'flex';
+    appInfoModal.style.display = 'flex';
     document.body.classList.add('no-scroll');
     setTimeout(() => {
-        infoModal.style.opacity = 1;
+        appInfoModal.style.opacity = 1;
+        appInfoModalContent.style.transform = 'scale(1)';
     }, 10);
     
     // Add close functionality
     const closeModal = () => {
         document.body.classList.remove('no-scroll');
-        infoModal.style.opacity = 0;
+        appInfoModal.style.opacity = 0;
+        appInfoModalContent.style.transform = 'scale(0.8)';
         setTimeout(() => {
-            infoModal.remove();
+            appInfoModal.style.display = 'none';
         }, 300);
     };
-    
-    infoModal.querySelector('.close-modal').addEventListener('click', closeModal);
-    infoModal.querySelector('#close-info').addEventListener('click', closeModal);
-    infoModal.addEventListener('click', (event) => {
-        if (event.target === infoModal) {
-            closeModal();
-        }
+
+    // Close modal
+    appInfoModal.querySelector('.close-modal').addEventListener('click', closeModal);
+    appInfoModal.querySelector('#close-info').addEventListener('click', closeModal);
+    appInfoModal.addEventListener('click', (event) => {
+        if (event.target === appInfoModal) closeModal();
     });
-    
-    // Fetch detailed app info
-    getAppInfo(packageName).then(info => {
-        // Format the size in a human-readable format
-        const formatSize = (sizeInKb) => {
-            if (!sizeInKb) return 'Unknown';
-            const kb = parseInt(sizeInKb);
-            if (isNaN(kb)) return 'Unknown';
-            
-            if (kb < 1024) return `${kb} KB`;
-            const mb = kb / 1024;
-            if (mb < 1024) return `${mb.toFixed(2)} MB`;
-            const gb = mb / 1024;
-            return `${gb.toFixed(2)} GB`;
-        };
-        
-        // Format date string
-        const formatDate = (dateStr) => {
-            if (!dateStr) return 'Unknown';
-            try {
-                const date = new Date(dateStr);
-                return date.toLocaleString();
-            } catch (e) {
-                return dateStr;
-            }
-        };
+
+    try {
+        const versionResult = await ksuExec(`dumpsys package ${app.package_name} | grep versionName | head -1 | cut -d= -f2`);
+        const isSystemResult = await ksuExec(`dumpsys package ${app.package_name} | grep -q "system app" || echo "false"`);
         
         // Update the elements with actual data
-        document.getElementById('app-version').querySelector('span').textContent = 
-            info.VERSION || 'Not available';
-            
-        document.getElementById('app-system').querySelector('span').textContent = 
-            info.IS_SYSTEM === 'true' ? 'Yes' : 'No';
-    }).catch(error => {
+        document.getElementById('app-version').textContent = versionResult.stdout.trim() || 'Not available';
+        document.getElementById('app-system').textContent = isSystemResult.stdout.trim() === 'false' ? 'No' : 'Yes';
+    } catch (error) {
         console.error("Failed to get app info:", error);
-        // Update UI to show error
-        document.querySelectorAll('#app-info-modal .modal-body p span').forEach(span => {
-            span.textContent = 'Unable to fetch';
+        document.querySelectorAll('#app-version, #app-system').forEach(el => {
+            el.textContent = 'Unable to fetch';
         });
-    });
-}
-
-export function setupLongPressForAppInfo() {
-    const appList = document.getElementById('app-list');
-    
-    // Using a MutationObserver to handle dynamically added apps
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.type === 'childList') {
-                mutation.addedNodes.forEach(node => {
-                    if (node.classList && node.classList.contains('app')) {
-                        setupLongPressForAppItem(node);
-                    }
-                });
-            }
-        });
-    });
-    
-    // Start observing the app list for changes
-    observer.observe(appList, { childList: true });
-    
-    // Setup for existing apps
-    document.querySelectorAll('.app').forEach(app => {
-        setupLongPressForAppItem(app);
-    });
-}
-
-/**
- * Set up long press detection for a single app item
- * @param {HTMLElement} appElement - The app element to set up
- */
-function setupLongPressForAppItem(appElement) {
-    let longPressTimer;
-    let isLongPress = false;
-    const longPressDuration = 500; // milliseconds for long press
-    
-    appElement.addEventListener('pointerdown', (e) => {
-        isLongPress = false;
-        
-        // Don't trigger if we're clicking on the checkbox
-        if (e.target.type === 'checkbox') return;
-        
-        longPressTimer = setTimeout(() => {
-            isLongPress = true;
-            // Visual feedback
-            appElement.style.backgroundColor = 'rgba(0, 123, 255, 0.1)';
-            
-            // Get package name and show info
-            const packageName = appElement.dataset.packageName;
-            if (packageName) {
-                showAppInfoModal(packageName);
-            }
-            
-            // Reset visual feedback after a short delay
-            setTimeout(() => {
-                appElement.style.backgroundColor = '';
-            }, 300);
-        }, longPressDuration);
-    });
-    
-    // Clear timer if pointer is moved significantly
-    appElement.addEventListener('pointermove', (e) => {
-        if (Math.abs(e.movementX) > 5 || Math.abs(e.movementY) > 5) {
-            clearTimeout(longPressTimer);
-        }
-    });
-    
-    // Clear timer on pointer up
-    appElement.addEventListener('pointerup', (e) => {
-        clearTimeout(longPressTimer);
-        
-        // If this was a long press, prevent the normal click action
-        if (isLongPress) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    });
-    
-    // Also clear on pointer cancel/leave
-    appElement.addEventListener('pointercancel', () => clearTimeout(longPressTimer));
-    appElement.addEventListener('pointerleave', () => clearTimeout(longPressTimer));
+    }
 }

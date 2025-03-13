@@ -37,7 +37,7 @@
 
         <!-- App List -->
         <div id="app-list">
-        <!-- System apps will be listed here -->
+            <!-- System apps will be listed here -->
         </div>
 
         <!-- Floating Button -->
@@ -98,6 +98,45 @@
                     <div class="modal-actions">
                         <button id="cancel-action" class="modal-btn ripple-element">Cancel</button>
                         <button id="confirm-action" class="modal-btn confirm-btn ripple-element">Remove Apps</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- App Info Modal -->
+        <div id="app-info-modal" class="modal">
+            <div id="app-info-modal-content" class="modal-content">
+                <div class="modal-header">
+                    <h2 id="app-name"></h2>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="app-info-container">
+                        <div class="app-icon-container" style="width: 64px; height: 64px; margin-bottom: 16px;">
+                            <img id="app-icon" src="" 
+                                onerror="this.src='default.png'" 
+                                alt="error icon"
+                                style="width: 100%; height: 100%; border-radius: 12px;">
+                        </div>
+                        <div class="app-info-detail">
+                            <strong>Package Name</strong>
+                            <p id="app-package">Loading...</p>
+                        </div>
+                        <div class="app-info-detail">
+                            <strong>Path</strong>
+                            <p id="app-path">Loading...</p>
+                        </div>
+                        <div class="app-info-detail">
+                            <strong>Version</strong>
+                            <p id="app-version">Loading...</p>
+                        </div>
+                        <div class="app-info-detail">
+                            <strong>System App</strong>
+                            <p id="app-system">Loading...</p>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button id="close-info" class="modal-btn ripple-element">Close</button>
                     </div>
                 </div>
             </div>

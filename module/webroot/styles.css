@@ -180,6 +180,7 @@ body {
     position: relative;
     z-index: 2;
     transition: opacity 0.2s ease;
+    user-select: none;
 }
 
 .icon-loading {
@@ -246,6 +247,7 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+    user-select: none;
 }
 
 .app-package {
@@ -255,6 +257,7 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+    user-select: none;
 }
 
 .app-path {
@@ -263,6 +266,7 @@ body {
     word-break: break-word;
     overflow-wrap: break-word;
     max-width: 100%;
+    user-select: none;
 }
 
 /* App info modal specific styles */
@@ -270,20 +274,28 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    text-align: center;
     padding: 10px 0;
 }
 
-.app-info-container p {
-    width: 100%;
-    margin: 5px 0;
-    text-align: left;
-    word-break: break-word;
+.app-icon-container {
+    user-select: none;
 }
 
-/* Long press visual feedback */
-.app.long-press-active {
-    background-color: rgba(0, 123, 255, 0.1) !important;
+.app-info-detail {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.app-info-detail strong {
+    user-select: none;
+}
+
+.app-info-detail p {
+    width: 100%;
+    margin: 0;
+    text-align: left;
+    word-break: break-word;
+    word-break: break-all;
 }
 
 .warning-text {
@@ -360,6 +372,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 10px 20px;
+    gap: 10px;
     border-bottom: 1px solid #e0e0e0;
 }
 
@@ -406,6 +419,7 @@ body {
     font-weight: bold;
     border: none;
     background-color: #f0f0f0;
+    user-select: none;
 }
 
 .confirm-btn {
@@ -452,7 +466,7 @@ body {
     text-align: center;
     align-items: center;
     text-decoration: none;
-    cursor: none;
+    cursor: default;
     user-select: none;
 }
 
@@ -592,9 +606,5 @@ body {
     
     .warning-text {
         color: #ff6b6b; /* More visible red for dark mode */
-    }
-
-    .app.long-press-active {
-        background-color: rgba(0, 123, 255, 0.2) !important;
     }
 }
