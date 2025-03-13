@@ -116,20 +116,17 @@ if [ "$update" != true ]; then
 
     # copy module content
     cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
-
-    # cleanup all old setup
-    for dir in system system_ext vendor product; do
-        rm -rf "$MODULES_UPDATE_DIR/$dir"
-    done
 fi
 
+# cleanup all old setup
+for item in system system_ext vendor product update; do
+    rm -rf "$MODULES_UPDATE_DIRECTORY/$item"
+done
 
 nuke_system_apps
 
 for dir in $targets; do
     handle_symlink "$dir"
 done
-
-rm "$MODULES_UPDATE_DIR/update"
 
 # EOF
