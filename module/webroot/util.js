@@ -448,4 +448,15 @@ async function showAppInfoModal(app) {
             el.textContent = 'Unable to fetch';
         });
     }
+
+    // Allow tap to copy
+    document.querySelectorAll('.app-info-detail-text').forEach(el => {
+        el.addEventListener('click', () => {
+            navigator.clipboard.writeText(el.innerText).then(() => {
+                toast("Text copied to clipboard: " + el.innerText);
+            }).catch(err => {
+                console.error("Failed to copy text: ", err);
+            });
+        });
+    });
 }
