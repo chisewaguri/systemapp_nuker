@@ -10,14 +10,9 @@ function setupDropdownMenu() {
     // Open menu or close if already open
     menuButton.addEventListener('click', () => {
         if (menuDropdown.style.display === 'flex') {
-            menuDropdown.style.opacity = 0;
-            menuDropdown.style.transform = 'scale(0)';
-            setTimeout(() => {
-                menuDropdown.style.display = 'none';
-            }, 300);
+            closeDropdownMenu();
         } else {
             menuDropdown.style.display = 'flex';
-            menuDropdown.style.transform = 'scale(0)';
             setTimeout(() => {
                 menuDropdown.style.opacity = 1;
                 menuDropdown.style.transform = 'scale(1)';
@@ -25,24 +20,24 @@ function setupDropdownMenu() {
         }
     });
 
-    // Close menu when clicking outside
-    document.addEventListener('click', (event) => {
-        if (!menuButton.contains(event.target)) {
-            menuDropdown.style.opacity = 0;
-            menuDropdown.style.transform = 'scale(0)';
-            setTimeout(() => {
-                menuDropdown.style.display = 'none';
-            }, 300);
-        }
-    });
-
-    // Close menu when scrolling
-    window.addEventListener('scroll', () => {
+    function closeDropdownMenu() {
         menuDropdown.style.opacity = 0;
         menuDropdown.style.transform = 'scale(0)';
         setTimeout(() => {
             menuDropdown.style.display = 'none';
         }, 300);
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (event) => {
+        if (!menuButton.contains(event.target)) {
+            closeDropdownMenu();
+        }
+    });
+
+    // Close menu when scrolling
+    window.addEventListener('scroll', () => {
+        closeDropdownMenu();
     });
 
     document.getElementById('import-option').addEventListener('click', () => {

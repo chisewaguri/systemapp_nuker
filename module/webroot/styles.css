@@ -68,6 +68,7 @@ body {
     overflow: hidden;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    transform: scale(0);
     transition: opacity 0.3s ease, transform 0.3s ease;
     transform-origin: top right;
 }
@@ -350,7 +351,8 @@ body {
     max-width: 500px;
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    transition: transform 0.3s ease-in-out;
+    transform: scale(0.8);
+    transition: transform 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
 .modal-header {
