@@ -264,6 +264,27 @@ body {
     max-width: 100%;
 }
 
+/* App info modal specific styles */
+.app-info-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 10px 0;
+}
+
+.app-info-container p {
+    width: 100%;
+    margin: 5px 0;
+    text-align: left;
+    word-break: break-word;
+}
+
+/* Long press visual feedback */
+.app.long-press-active {
+    background-color: rgba(0, 123, 255, 0.1) !important;
+}
+
 .warning-text {
     color: #f44336;
     font-weight: bold;
@@ -569,5 +590,9 @@ body {
     
     .warning-text {
         color: #ff6b6b; /* More visible red for dark mode */
+    }
+
+    .app.long-press-active {
+        background-color: rgba(0, 123, 255, 0.2) !important;
     }
 }
