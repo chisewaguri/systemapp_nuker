@@ -140,7 +140,7 @@ async function displayAppList(data) {
                     app_path: appDiv.dataset.appPath
                 };
                 showAppInfoModal(appData);
-            }, 500);
+            }, 300);
             appDiv.addEventListener('pointerup', () => {
                 clearTimeout(holdTimeout);
             });
@@ -451,12 +451,15 @@ async function showAppInfoModal(app) {
 
     // Allow tap to copy
     document.querySelectorAll('.app-info-detail-text').forEach(el => {
-        el.addEventListener('click', () => {
-            navigator.clipboard.writeText(el.innerText).then(() => {
-                toast("Text copied to clipboard: " + el.innerText);
-            }).catch(err => {
-                console.error("Failed to copy text: ", err);
+        if (!el.dataset.listenerAdded) {
+            el.addEventListener('click', () => {
+                navigator.clipboard.writeText(el.innerText).then(() => {
+                    toast("Text copied to clipboard: " + el.innerText);
+                }).catch(err => {
+                    console.error("Failed to copy text: ", err);
+                });
             });
-        });
+            el.dataset.listenerAdded = true;
+        }
     });
 }
