@@ -290,12 +290,15 @@ body {
     user-select: none;
 }
 
-.app-info-detail p {
-    width: 100%;
+.app-info-detail-text {
+    width: fit-content;
+    border-radius: 5px;
     margin: 0;
     text-align: left;
     word-break: break-word;
     word-break: break-all;
+    background-color: #ffffff;
+    user-select: none;
 }
 
 .warning-text {
@@ -606,5 +609,9 @@ body {
     
     .warning-text {
         color: #ff6b6b; /* More visible red for dark mode */
+    }
+
+    .app-info-detail-text {
+        background-color: #212121;
     }
 }
