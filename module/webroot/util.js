@@ -180,11 +180,13 @@ export async function updateAppList(isNuke = false) {
             document.body.classList.add("no-scroll");
             setTimeout(() => {
                 confirmationModal.style.opacity = "1";
+                modalContent.style.transform = "scale(1)";
             }, 10);
 
             function closeModal(confirmed = false) {
                 document.body.classList.remove("no-scroll");
                 confirmationModal.style.opacity = "0";
+                modalContent.style.transform = "scale(0.8)";
                 setTimeout(() => {
                     confirmationModal.style.display = "none";
                     resolve(confirmed); // Resolve the promise with user's choice
