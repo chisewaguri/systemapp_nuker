@@ -48,7 +48,7 @@ handle_symlink() {
                 # Check if the symlink points to the correct location
                 if [ $(readlink -f $MODULES_UPDATE_DIR/$1) != $(realpath $MODULES_UPDATE_DIR/system/$1) ]; then
                     echo "[!] Incorrect symlink for /$1, fixing..."
-                    rm -f $MODULES_UPDATE_DIR/$1
+                    rm -f "$MODULES_UPDATE_DIR/$1"
                     ln -sf ./system/$1 $MODULES_UPDATE_DIR/$1
                 else
                     echo "[+] Symlink for /$1 is correct, skipping..."
@@ -119,7 +119,7 @@ fi
 
 # cleanup all old setup
 for item in system system_ext vendor product update; do
-    rm -rf "$MODULES_UPDATE_DIRECTORY/$item"
+    rm -rf "$MODULES_UPDATE_DIR/$item"
 done
 
 nuke_system_apps
