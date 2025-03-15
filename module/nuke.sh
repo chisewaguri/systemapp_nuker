@@ -28,7 +28,7 @@ vendor"
 [ "$1" = "update" ] && update=true || update=false
 
 # lets have customize.sh of dummy.zip call us.
-if [ ! "$MAGIC_MOUNT" = true ] && [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
+if [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
     if command -v apd; then
         apd module install "$MODDIR/dummy.zip"
     elif command -v ksud; then
