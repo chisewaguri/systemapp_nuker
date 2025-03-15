@@ -41,11 +41,18 @@ if (restoreButton) {
     });
 
     document.addEventListener('DOMContentLoaded', () => {
-        fetchAppList("nuke_list.json", true);
-        fetchAppList("app_list.json");
+        setTimeout(() => {
+            const restoreButton = document.querySelector('.focus-btn');
+            restoreButton.style.paddingLeft = "25px";
+            restoreButton.style.paddingRight = "25px";
+        }, 10);
+        setTimeout(() => {
+            fetchAppList("nuke_list.json", true);
+            fetchAppList("app_list.json");
+            checkMMRL();
+        }, 150);
         setupSearch();
         setupScrollEvent();
-        checkMMRL();
         setupDropdownMenu();
         applyRippleEffect();
     });

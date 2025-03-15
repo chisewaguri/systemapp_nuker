@@ -252,7 +252,7 @@ body {
 
 .app-package {
     font-size: 13px;
-    color: #aaaaaa;
+    color: #666;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -261,7 +261,7 @@ body {
 }
 
 .app-path {
-    color: #777777;
+    color: #777;
     font-size: 12px;
     word-break: break-word;
     overflow-wrap: break-word;
@@ -455,6 +455,7 @@ body {
     justify-content: center;
     border-top-left-radius: 15px;
     border-top-right-radius: 15px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
     overflow: hidden;
     z-index: 4;
 }
@@ -464,7 +465,7 @@ body {
     flex-direction: column;
     padding: 15px;
     padding-top: 10px;
-    background-color: #E4E4E4;
+    background-color: #FFFFFF;
     width: 50%;
     text-align: center;
     align-items: center;
@@ -491,7 +492,10 @@ body {
 }
 
 .focus-btn {
-    background-color: #BEBEBE;
+    background-color: #E4E4E4;
+    padding: 3px 10px;
+    padding-bottom: 1px;
+    transition: padding 0.15s ease;
 }
 
 .ripple-element {
@@ -562,6 +566,10 @@ body {
         background-color: #4D4D4D;
     }
 
+    .app-package {
+        color: #aaa;
+    }
+
     .footer-btn {
         background-color: #4c4c4c;
     }
@@ -620,15 +628,15 @@ body {
     }
     
     .confirm-btn {
-        background-color: #0066cc; /* Darker blue for dark mode */
+        background-color: #007bff;
     }
-    
+
     .selected-apps-list {
         background-color: rgba(255, 255, 255, 0.05);
     }
     
     .warning-text {
-        color: #ff6b6b; /* More visible red for dark mode */
+        color: #ff6b6b;
     }
 
     .app-info-detail-text {

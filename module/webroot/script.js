@@ -122,9 +122,16 @@ if (nukeButton) {
     });
 
     document.addEventListener("DOMContentLoaded", () => {
-        fetchAppList("app_list.json", true);
-        fetchAppList("nuke_list.json");
-        checkMMRL();
+        setTimeout(() => {
+            const focusButton = document.querySelector(".focus-btn");
+            focusButton.style.paddingLeft = "25px";
+            focusButton.style.paddingRight = "25px";
+        }, 10);
+        setTimeout(() => {
+            fetchAppList("app_list.json", true);
+            fetchAppList("nuke_list.json");
+            checkMMRL();
+        }, 150);
         setupSearch();
         setupScrollEvent();
         setupDropdownMenu();
