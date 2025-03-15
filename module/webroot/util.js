@@ -1,4 +1,7 @@
-export let appList = [], nukeList = [], isShellRunning = false;
+import { importModalMenu } from "./script.js";
+import { exportPackageList } from "./restore.js";
+
+export let appList = [], nukeList = [], isShellRunning = false, initialized = false;
 
 export  async function ksuExec(command) {
     return new Promise((resolve) => {
@@ -273,6 +276,59 @@ export async function updateAppList(isNuke = false) {
     } catch (error) {
         toast("Error updating removed apps list");
         console.error("Error:", error);
+    }
+}
+
+// Function to setup dropdown menu
+export function setupDropdownMenu() {
+    const menuButton = document.getElementById('menu-button');
+    const menuDropdown = document.getElementById('menu-dropdown');
+
+    // Open menu or close if already open
+    menuButton.addEventListener('click', () => {
+        if (menuDropdown.style.display === 'flex') {
+            closeDropdownMenu();
+        } else {
+            menuDropdown.style.display = 'flex';
+            setTimeout(() => {
+                menuDropdown.style.opacity = 1;
+                menuDropdown.style.transform = 'scale(1)';
+            }, 10);
+        }
+    });
+
+    function closeDropdownMenu() {
+        menuDropdown.style.opacity = 0;
+        menuDropdown.style.transform = 'scale(0)';
+        setTimeout(() => {
+            menuDropdown.style.display = 'none';
+        }, 300);
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (event) => {
+        if (!menuButton.contains(event.target)) {
+            closeDropdownMenu();
+        }
+    });
+
+    // Close menu when scrolling
+    window.addEventListener('scroll', () => {
+        closeDropdownMenu();
+    });
+
+    const importOption = document.getElementById('import-option');
+    if (importOption) {
+        importOption.addEventListener('click', () => {
+            importModalMenu();
+        });
+    }
+
+    const exportOption = document.getElementById('export-option');
+    if (exportOption) {
+        exportOption.addEventListener('click', () => {
+            exportPackageList();
+        });
     }
 }
 

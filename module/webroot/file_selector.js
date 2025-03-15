@@ -3,7 +3,6 @@ import { ksuExec, toast, applyRippleEffect } from "./util.js";
 // File selector state
 let fileSelector;
 let currentPath = '/storage/emulated/0/Download';
-let isShellRunning = false;
 
 // Function to update path display
 function updateCurrentPath() {
