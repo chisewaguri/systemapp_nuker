@@ -1,7 +1,7 @@
-import { ksuExec, setupSearch, setupScrollEvent, checkMMRL, fetchAppList, updateAppList, nukeList, toast, applyRippleEffect } from "./util.js";
+import { ksuExec, setupSearch, setupScrollEvent, setupDropdownMenu, checkMMRL, fetchAppList, updateAppList, nukeList, toast, applyRippleEffect } from "./util.js";
 
 // Function to handle the export of package list
-async function exportPackageList() {
+export async function exportPackageList() {
     try {
         // First check if there are any packages to export
         if (nukeList.length === 0) {
@@ -23,73 +23,30 @@ async function exportPackageList() {
             return;
         }
         
-        toast(`Package list exported to Downloads/${filename}`);
+        toast(`Package list exported to ${filePath}`);
     } catch (error) {
         console.error("Export error:", error);
         toast("Error exporting package list");
     }
 }
 
-// Function to set up the dropdown menu
-function setupDropdownMenu() {
-    const menuButton = document.getElementById('menu-button');
-    const menuDropdown = document.getElementById('menu-dropdown');
-    
-    if (!menuButton || !menuDropdown) return;
-
-    // Open menu or close if already open
-    menuButton.addEventListener('click', () => {
-        if (menuDropdown.style.display === 'flex') {
-            closeDropdownMenu();
-        } else {
-            menuDropdown.style.display = 'flex';
-            setTimeout(() => {
-                menuDropdown.style.opacity = 1;
-                menuDropdown.style.transform = 'scale(1)';
-            }, 10);
-        }
+/**
+ * Restore button
+ * Use availability of restore button to check if we need to initialize
+ */
+const restoreButton = document.getElementById('restore-button');
+if (restoreButton) {
+    restoreButton.addEventListener('click', async () => {
+        await updateAppList(true);
     });
 
-    function closeDropdownMenu() {
-        menuDropdown.style.opacity = 0;
-        menuDropdown.style.transform = 'scale(0)';
-        setTimeout(() => {
-            menuDropdown.style.display = 'none';
-        }, 300);
-    }
-
-    // Close menu when clicking outside
-    document.addEventListener('click', (event) => {
-        if (!menuButton.contains(event.target)) {
-            closeDropdownMenu();
-        }
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchAppList("nuke_list.json", true);
+        fetchAppList("app_list.json");
+        setupSearch();
+        setupScrollEvent();
+        checkMMRL();
+        setupDropdownMenu();
+        applyRippleEffect();
     });
-
-    // Close menu when scrolling
-    window.addEventListener('scroll', () => {
-        closeDropdownMenu();
-    });
-
-    // Set up export option
-    const exportOption = document.getElementById('export-option');
-    if (exportOption) {
-        exportOption.addEventListener('click', () => {
-            exportPackageList();
-            closeDropdownMenu();
-        });
-    }
 }
-
-document.getElementById('restore-button').addEventListener('click', async () => {
-    await updateAppList(true);
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    fetchAppList("nuke_list.json", true);
-    fetchAppList("app_list.json");
-    setupSearch();
-    setupScrollEvent();
-    checkMMRL();
-    setupDropdownMenu();
-    applyRippleEffect();
-});

@@ -1,57 +1,15 @@
 // This is part of system app nuker
 // Inspired by j-hc's zygisk detach that's licensed under Apache 2.0 and backslashxx's mountify.
 
-import { toast, setupSearch, setupScrollEvent, checkMMRL, fetchAppList, updateAppList, appList, applyRippleEffect } from "./util.js";
+import { toast, setupSearch, setupScrollEvent, setupDropdownMenu, checkMMRL, fetchAppList, updateAppList, appList, applyRippleEffect, initialized } from "./util.js";
 import { initFileSelector, openFileSelector } from "./file_selector.js";
 
-function setupDropdownMenu() {
-    const menuButton = document.getElementById('menu-button');
-    const menuDropdown = document.getElementById('menu-dropdown');
-
-    // Open menu or close if already open
-    menuButton.addEventListener('click', () => {
-        if (menuDropdown.style.display === 'flex') {
-            closeDropdownMenu();
-        } else {
-            menuDropdown.style.display = 'flex';
-            setTimeout(() => {
-                menuDropdown.style.opacity = 1;
-                menuDropdown.style.transform = 'scale(1)';
-            }, 10);
-        }
-    });
-
-    function closeDropdownMenu() {
-        menuDropdown.style.opacity = 0;
-        menuDropdown.style.transform = 'scale(0)';
-        setTimeout(() => {
-            menuDropdown.style.display = 'none';
-        }, 300);
-    }
-
-    // Close menu when clicking outside
-    document.addEventListener('click', (event) => {
-        if (!menuButton.contains(event.target)) {
-            closeDropdownMenu();
-        }
-    });
-
-    // Close menu when scrolling
-    window.addEventListener('scroll', () => {
-        closeDropdownMenu();
-    });
-
-    document.getElementById('import-option').addEventListener('click', () => {
-        importModalMenu();
-    });
-}
-
 // Import modal menu
-function importModalMenu() {
+export function importModalMenu() {
     const importModalMenu = document.getElementById('import-modal');
     const importModalMenuContent = document.querySelector('.modal-content');
     const packageListInput = document.getElementById('package-list-input');
-    const fileImportBtn = document.getElementById('file-import-btn'); // Add this line
+    const fileImportBtn = document.getElementById('file-import-btn');
 
     // Open import modal
     importModalMenu.style.display = 'flex';
@@ -153,18 +111,24 @@ function importModalMenu() {
     });
 }
 
-// Nuke button
-document.getElementById("nuke-button").addEventListener("click", async () => {
-    await updateAppList();
-});
+/**
+ * Nuke button
+ * Use availability of nuke button to check if we need to initialize
+ */
+const nukeButton = document.getElementById("nuke-button");
+if (nukeButton) {
+    nukeButton.addEventListener("click", async () => {
+        await updateAppList();
+    });
 
-document.addEventListener("DOMContentLoaded", () => {
-    fetchAppList("app_list.json", true);
-    fetchAppList("nuke_list.json");
-    checkMMRL();
-    setupSearch();
-    setupScrollEvent();
-    setupDropdownMenu();
-    applyRippleEffect();
-    initFileSelector();
-});
+    document.addEventListener("DOMContentLoaded", () => {
+        fetchAppList("app_list.json", true);
+        fetchAppList("nuke_list.json");
+        checkMMRL();
+        setupSearch();
+        setupScrollEvent();
+        setupDropdownMenu();
+        applyRippleEffect();
+        initFileSelector();
+    });
+}
