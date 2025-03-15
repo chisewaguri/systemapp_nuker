@@ -4,3 +4,4 @@ version=v1.0-rc2
 versionCode=102
 author=ChiseWaguri
 description=Simple system app debloater
+updateJson=https://raw.githubusercontent.com/ChiseWaguri/systemapp_nuker/master/update.json
