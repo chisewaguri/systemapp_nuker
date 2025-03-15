@@ -1,6 +1,6 @@
 export let appList = [], nukeList = [], isShellRunning = false;
 
-async function ksuExec(command) {
+export  async function ksuExec(command) {
     return new Promise((resolve) => {
         let callbackName = `exec_callback_${Date.now()}`;
         window[callbackName] = (errno, stdout, stderr) => {
