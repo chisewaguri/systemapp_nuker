@@ -22,7 +22,7 @@ if [ "$MMRL" = "true" ] || { [ "$KSU" = "true" ] && [ "$KSU_VER_CODE" -ge 11998 
         clear
         echo "[*] Initializing System App Nuker..."
         
-        for _ in $(seq 1 5); do
+        for _ in $(seq 1 3); do
             for symbol in '-' '\' '|' '/'; do
                 echo "[$symbol] Initializing System App Nuker..."
                 sleep 0.1
@@ -31,10 +31,8 @@ if [ "$MMRL" = "true" ] || { [ "$KSU" = "true" ] && [ "$KSU_VER_CODE" -ge 11998 
         done
 else
     echo "[*] Initializing System App Nuker..."
-    sleep 2 # sleep a bit to make it look like something is happening!!
+    sleep 1 # sleep a bit to make it look like something is happening!!
 fi
-clear
-echo "[+] System App Nuker ready!"
 
 # set proper permissions
 set_perm "$PERSIST_DIR/module_system.sh" 0 2000 0755
