@@ -23,7 +23,7 @@ export async function exportPackageList() {
             return;
         }
         
-        toast(`Package list exported to ${filePath}`);
+        toast(`Package list exported to Download/${filename}`);
     } catch (error) {
         console.error("Export error:", error);
         toast("Error exporting package list");
