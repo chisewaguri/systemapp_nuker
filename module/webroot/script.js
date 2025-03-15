@@ -2,6 +2,7 @@
 // Inspired by j-hc's zygisk detach that's licensed under Apache 2.0 and backslashxx's mountify.
 
 import { toast, setupSearch, setupScrollEvent, checkMMRL, fetchAppList, updateAppList, appList, applyRippleEffect } from "./util.js";
+import { initFileSelector, openFileSelector } from "./file_selector.js";
 
 function setupDropdownMenu() {
     const menuButton = document.getElementById('menu-button');
@@ -50,6 +51,7 @@ function importModalMenu() {
     const importModalMenu = document.getElementById('import-modal');
     const importModalMenuContent = document.querySelector('.modal-content');
     const packageListInput = document.getElementById('package-list-input');
+    const fileImportBtn = document.getElementById('file-import-btn'); // Add this line
 
     // Open import modal
     importModalMenu.style.display = 'flex';
@@ -75,6 +77,13 @@ function importModalMenu() {
         importModalMenuContent.style.transform = 'translateY(0)';
     });
     packageListInput.focus();
+
+    fileImportBtn.addEventListener('click', () => {
+        closeImportModal();
+        setTimeout(() => {
+            openFileSelector();
+        }, 300);
+    });
 
     // Close import modal when clicking outside
     importModalMenu.addEventListener('click', (event) => {
@@ -157,4 +166,5 @@ document.addEventListener("DOMContentLoaded", () => {
     setupScrollEvent();
     setupDropdownMenu();
     applyRippleEffect();
+    initFileSelector();
 });

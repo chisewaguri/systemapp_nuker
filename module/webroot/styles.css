@@ -509,6 +509,26 @@ body {
     background: rgba(0, 0, 0, 0.2);
 }
 
+.file-import-option {
+    margin: 10px 0;
+    display: flex;
+}
+
+#file-import-btn {
+    background-color: #f0f0f0;
+    color: inherit;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+#file-import-btn svg {
+    height: 20px;
+    width: 20px;
+}
+
 .ripple.end {
     opacity: 0;
 }
@@ -613,5 +633,9 @@ body {
 
     .app-info-detail-text {
         background-color: #212121;
+    }
+
+    #file-import-btn {
+        background-color: #444;
     }
 }

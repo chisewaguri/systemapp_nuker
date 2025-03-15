@@ -7,6 +7,7 @@
     <script type="module" src="script.js" defer></script>
     <link rel="stylesheet" type="text/css" href="/mmrl/insets.css" />
     <link rel="stylesheet" type="text/css" href="styles.css">
+    <link rel="stylesheet" type="text/css" href="file_selector.css">
 </head>
 <body>
     <div class="content">
@@ -73,6 +74,9 @@
                 <div class="modal-body">
                     <p>Paste a list of package names (one per line):</p>
                     <textarea id="package-list-input" placeholder="com.example.app1&#10;com.example.app2&#10;com.example.app3"></textarea>
+                    <div class="file-import-option">
+                        <button id="file-import-btn" class="modal-btn ripple-element">Import From File</button>
+                    </div>
                     <div class="modal-actions">
                         <button id="cancel-import" class="modal-btn ripple-element">Cancel</button>
                         <button id="confirm-import" class="modal-btn confirm-btn ripple-element">Import</button>
@@ -140,6 +144,20 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- File Selector Modal -->
+    <div class="file-selector-modal">
+        <div class="file-selector">
+            <div class="file-selector-header">
+                <button class="back-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="40 -1050 900 960" width="22px"><path d="M400-93.85 13.85-480 400-866.15l56.77 56.77L127.38-480l329.39 329.38L400-93.85Z"/></svg>
+                </button>
+                <div class="current-path">/storage/emulated/0/Download</div>
+                <button class="close-selector">&#x2715;</button>
+            </div>
+            <div class="file-list"></div>
         </div>
     </div>
 </body>
