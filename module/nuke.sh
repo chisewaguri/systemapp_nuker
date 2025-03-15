@@ -26,7 +26,6 @@ vendor"
 
 # args handling
 [ "$1" = "update" ] && update=true || update=false
-[ "$1" = "skip_symlink" ] || [ "$update" = "true" ] && skip_symlink=true || skip_symlink=false
 
 # lets have customize.sh of dummy.zip call us.
 if [ ! "$MAGIC_MOUNT" = true ] && [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
@@ -41,34 +40,6 @@ if [ ! "$MAGIC_MOUNT" = true ] && [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = 
         exit 1
     fi
 fi
-
-# handle symlink and hierarchy
-handle_symlink() {
-    # exit early in update and skip symlink
-    $skip_symlink && return 0
-
-    # handle magic mount
-    if [ "$MAGIC_MOUNT" = true ]; then
-        if [ -d /$1 ] && [ ! -L /$1 ] && [ -d "$MODULES_UPDATE_DIR/system/$1" ]; then
-            if [ -L "$MODULES_UPDATE_DIR/$1" ]; then
-                # Check if the symlink points to the correct location
-                if [ $(readlink -f $MODULES_UPDATE_DIR/$1) != $(realpath $MODULES_UPDATE_DIR/system/$1) ]; then
-                    echo "[!] Incorrect symlink for /$1, fixing..."
-                    rm -f "$MODULES_UPDATE_DIR/$1"
-                    ln -sf ./system/$1 $MODULES_UPDATE_DIR/$1
-                else
-                    echo "[+] Symlink for /$1 is correct, skipping..."
-                fi
-            else
-                echo "[+] Creating symlink for /$1"
-                ln -sf ./system/$1 $MODULES_UPDATE_DIR/$1
-            fi
-        fi
-    # handle overlayfs
-    else
-       true
-    fi
-}
 
 whiteout_create_systemapp() {
     path="$1"
@@ -115,9 +86,5 @@ for item in system system_ext vendor product update; do
 done
 
 nuke_system_apps
-
-for dir in $targets; do
-    handle_symlink "$dir"
-done
 
 # EOF
