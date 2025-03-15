@@ -50,6 +50,13 @@ whiteout_create_systemapp() {
 }
 
 nuke_system_apps() {
+    # first, remove any updates for the apps being nuked
+    for package_name in $(grep -E '"package_name":' "$REMOVE_LIST" | sed 's/.*"package_name": "\(.*\)",/\1/'); do
+        if pm list packages | grep -qx "package:$package_name"; then
+            pm uninstall-system-updates "$package_name" >/dev/null 2>&1 || true
+        fi
+    done
+
     for apk_path in $(grep -E '"app_path":' "$REMOVE_LIST" | sed 's/.*"app_path": "\(.*\)",/\1/'); do
         # Create whiteout for apk_path
         whiteout_create_systemapp "$(dirname $apk_path)" > /dev/null 2>&1

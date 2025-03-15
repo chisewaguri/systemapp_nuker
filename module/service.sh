@@ -4,6 +4,9 @@ APP_LIST="$PERSIST_DIR/app_list.json"
 REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
 ICON_DIR="$PERSIST_DIR/icons"
 
+# uninstall fallback for apps thats still installed after nuking
+uninstall=false
+
 aapt() { "$MODDIR/common/aapt" "$@"; }
 
 
@@ -74,7 +77,6 @@ create_applist() {
 [ ! -L "$MODDIR/webroot/app_list.json" ] && ln -sf "$APP_LIST" $MODDIR/webroot/app_list.json
 [ ! -L "$MODDIR/webroot/nuke_list.json" ] && ln -sf "$REMOVE_LIST" $MODDIR/webroot/nuke_list.json
 
-# install app that was uninstalled with pm uninstall -k --user 0
 # this make sure that restored app is back
 for pkg in $(grep -o "\"package_name\":.*" "$APP_LIST" | awk -F"\"" '{print $4}'); do
     if ! pm path "$pkg" >/dev/null 2>&1; then
@@ -82,9 +84,11 @@ for pkg in $(grep -o "\"package_name\":.*" "$APP_LIST" | awk -F"\"" '{print $4}'
     fi
 done
 
-# remove system apps if they still exist
-for package_name in $(grep -o "\"package_name\":.*" "$REMOVE_LIST" | awk -F"\"" '{print $4}'); do
-    if pm list packages | grep -qx "package:$package_name"; then
-        pm uninstall -k --user 0 "$package_name" 2>/dev/null
-    fi
-done
+$uninstall && {
+    # remove system apps if they still exist
+    for package_name in $(grep -o "\"package_name\":.*" "$REMOVE_LIST" | awk -F"\"" '{print $4}'); do
+        if pm list packages | grep -qx "package:$package_name"; then
+            pm uninstall -k --user 0 "$package_name" 2>/dev/null
+        fi
+    done
+}
