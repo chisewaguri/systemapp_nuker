@@ -20,27 +20,21 @@ if [ "$MMRL" = "true" ] || { [ "$KSU" = "true" ] && [ "$KSU_VER_CODE" -ge 11998 
     { [ "$KSU_NEXT" = "true" ] && [ "$KSU_VER_CODE" -ge 12144 ]; } ||
     { [ "$APATCH" = "true" ] && [ "$APATCH_VER_CODE" -ge 11022 ]; }; then
         clear
+        echo "[*] Initializing System App Nuker..."
+        
         for _ in $(seq 1 5); do
             for symbol in '-' '\' '|' '/'; do
-                echo "[$symbol] Checking mounting system..."
+                echo "[$symbol] Initializing System App Nuker..."
                 sleep 0.1
                 clear
             done
         done
-        echo "[-] Checking mounting system..."
 else
-    echo "[-] Checking mounting system..."
+    echo "[*] Initializing System App Nuker..."
     sleep 2 # sleep a bit to make it look like something is happening!!
 fi
-
-# check and configure mount system
-if { [ "$KSU" = true ] && [ ! "$KSU_MAGIC_MOUNT" = true ]; } || { [ "$APATCH" = true ] && [ ! "$APATCH_BIND_MOUNT" = true ]; }; then
-    echo "MAGIC_MOUNT=false" > "$PERSIST_DIR/module_system.sh"
-    echo "[+] No magic mount detected, using overlayfs configuration"
-else
-    echo "MAGIC_MOUNT=true" > "$PERSIST_DIR/module_system.sh"
-    echo "[+] Magic mount detected, using magic mount configuration"
-fi
+clear
+echo "[+] System App Nuker ready!"
 
 # set proper permissions
 set_perm "$PERSIST_DIR/module_system.sh" 0 2000 0755

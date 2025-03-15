@@ -10,10 +10,6 @@ MODULES_UPDATE_DIR="/data/adb/modules_update/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
 REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
 
-# import mounting system config
-MAGIC_MOUNT=true
-[ -f "$PERSIST_DIR/module_system.sh" ] && . "$PERSIST_DIR/module_system.sh"
-
 # special dirs
 # handle this properly so this script can be used standalone
 # so yeah, symlinks.
