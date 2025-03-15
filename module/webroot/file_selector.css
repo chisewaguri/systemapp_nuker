@@ -70,7 +70,7 @@
 .file-item svg {
     flex-shrink: 0;
     margin-right: 10px;
-    fill: #ccc;
+    fill: #6E6E6E;
 }
 
 .file-item span {
@@ -98,6 +98,7 @@
         color: #C2C2C2;
     }
 
+    .file-item svg,
     .back-button {
         fill: #C2C2C2;
     }
