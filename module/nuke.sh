@@ -30,10 +30,16 @@ vendor"
 
 # lets have customize.sh of dummy.zip call us.
 if [ ! "$MAGIC_MOUNT" = true ] && [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
-	# we need to check files instead since its the webui calling these, we cant rely on env vars.
-	[ -f "/data/adb/ksu/bin/ksud" ] && ksud module install "$MODDIR/dummy.zip"
-	[ -f "/data/adb/ap/bin/apd" ] && apd module install "$MODDIR/dummy.zip"
-	exit 0
+    if command -v apd; then
+        apd module install "$MODDIR/dummy.zip"
+    elif command -v ksud; then
+        ksud module install "$MODDIR/dummy.zip"
+    elif command -v magisk; then
+        magisk --install-module "$MODDIR/dummy.zip"
+    else
+        echo "am I trippin or you are using some unknown root manager?"
+        exit 1
+    fi
 fi
 
 # handle symlink and hierarchy
