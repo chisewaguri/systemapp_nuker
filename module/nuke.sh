@@ -60,21 +60,7 @@ handle_symlink() {
         fi
     # handle overlayfs
     else
-        if [ ! -d "$MODULES_UPDATE_DIR/system/$1" ]; then
-            # No partition found in the module update directory
-            return
-        fi
-
-        if [ -L "/system/$1" ] && [ "$(readlink -f /system/$1)" = "/$1" ]; then
-            echo "[*] Handling partition /$1"
-
-            # Move out of system/ to avoid being overlaid
-            [ -e "$MODULES_UPDATE_DIR/$1" ] && rm -rf "$MODULES_UPDATE_DIR/$1"
-            mv -f "$MODULES_UPDATE_DIR/system/$1" "$MODULES_UPDATE_DIR/$1"
-
-            # Create a relative symlink
-            ln -sf ../$1 "$MODULES_UPDATE_DIR/system/$1"
-        fi
+       true
     fi
 }
 
