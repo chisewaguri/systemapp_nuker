@@ -36,10 +36,9 @@ jobs:
 
     - name: Create dummy zip
       run: |
-        cp module/module.prop module/dummy_zip/
         cd module/dummy_zip
-        zip -r dummy.zip module.prop META-INF
-        cp dummy.zip ../
+        zip -r dummy.zip *
+        mv dummy.zip ../
       
     - name: Upload artifact
       uses: actions/upload-artifact@v4
