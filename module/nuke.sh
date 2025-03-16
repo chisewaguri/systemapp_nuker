@@ -33,8 +33,8 @@ if [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
         magisk --install-module "$MODDIR/dummy.zip"
     else
         echo "am I trippin or you are using some unknown root manager?"
-        exit 1
     fi
+    exit 0
 fi
 
 whiteout_create_systemapp() {
