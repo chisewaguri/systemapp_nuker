@@ -37,9 +37,9 @@ if [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
     exit 0
 fi
 
-whiteout_create_systemapp() {
+whiteout_create() {
     path="$1"
-    echo "$path" | grep -q "/system/" || path="/system$1"
+    echo "$path" | grep -q "^/system/" || path="/system$1"
     mkdir -p "$MODULES_UPDATE_DIR${path%/*}"
     chmod 755 "$MODULES_UPDATE_DIR${path%/*}"
     busybox mknod "$MODULES_UPDATE_DIR$path" c 0 0
@@ -59,7 +59,7 @@ nuke_system_apps() {
 
     for apk_path in $(grep -E '"app_path":' "$REMOVE_LIST" | sed 's/.*"app_path": "\(.*\)",/\1/'); do
         # Create whiteout for apk_path
-        whiteout_create_systemapp "$(dirname $apk_path)" > /dev/null 2>&1
+        whiteout_create "$(dirname $apk_path)" > /dev/null 2>&1
         ls "$MODULES_UPDATE_DIR$apk_path" 2>/dev/null
     done
 }
@@ -89,5 +89,10 @@ for item in system system_ext vendor product update; do
 done
 
 nuke_system_apps
+
+for line in $( sed '/#/d' "$PERSIST_DIR/raw_whiteouts.txt" ); do
+	whiteout_create "$line" > /dev/null 2>&1 
+	ls "$MODULE_UPDATES_DIR$line" 2>/dev/null
+done
 
 # EOF
