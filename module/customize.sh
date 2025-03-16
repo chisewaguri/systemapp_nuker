@@ -34,9 +34,6 @@ else
     sleep 1 # sleep a bit to make it look like something is happening!!
 fi
 
-# set proper permissions
-set_perm "$PERSIST_DIR/module_system.sh" 0 2000 0755
-
 # set up aapt binary
 mkdir -p "$MODPATH/common"
 CPU_ABI=$(getprop ro.product.cpu.abi)
