@@ -53,6 +53,13 @@ get_webui() {
     am start -n "io.github.a13e300.ksuwebui/.WebUIActivity" -e id "system_app_nuker"
 }
 
+# 50% chance to open rickroll on April 1st
+[ "$(date +"%d%m")" = "0104" ] && (
+    sleep 5
+    [ $((RANDOM % 2)) -eq 0 ] && \
+    am start -a android.intent.action.VIEW -d "https://youtu.be/dQw4w9WgXcQ" &>/dev/null
+) &
+
 # Launch KSUWebUI standalone or MMRL, install KSUWebUI standalone if both are not installed
 if pm path io.github.a13e300.ksuwebui >/dev/null 2>&1; then
     echo "- Launching WebUI in KSUWebUIStandalone..."
