@@ -1,0 +1,220 @@
+.dev-badge {
+    background-color: #ff5722;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    margin-right: 15px;
+    position: absolute;
+    right: 0;
+}
+
+#path-list {
+    margin-top: 130px;
+    margin-bottom: 100px;
+    display: flex;
+    padding: 0 10px;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.empty-list-message {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+    width: 100%;
+    max-width: 900px;
+    color: #888;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.path-item {
+    padding: 12px;
+    display: flex;
+    width: 100%;
+    max-width: 900px;
+    background-color: #fff;
+    justify-content: space-between;
+    align-items: center;
+    border: 2px solid #fff;
+    border-radius: 10px;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, background-color 0.2s ease-in-out;
+}
+
+.path-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.path-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.path-icon svg {
+    width: 28px;
+    height: 28px;
+    fill: #007bff;
+}
+
+.path-text {
+    font-family: monospace;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+}
+
+.path-actions {
+    display: flex;
+    align-items: center;
+}
+
+.delete-path-btn {
+    background: none;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+}
+
+.delete-path-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.delete-path-btn svg {
+    fill: #ff5252;
+    width: 24px;
+    height: 24px;
+}
+
+.path-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    outline-color: #3a75ff;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.path-warning {
+    display: flex;
+    align-items: flex-start;
+    background-color: rgba(255, 152, 0, 0.1);
+    border-left: 4px solid #ff9800;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+.warning-icon {
+    margin-right: 12px;
+    font-size: 18px;
+}
+
+.warning-text {
+    font-size: 14px;
+    color: #d84315;
+}
+
+.path-to-remove {
+    background-color: #f5f5f5;
+    padding: 12px;
+    border-radius: 8px;
+    font-family: monospace;
+    margin: 16px 0;
+    word-break: break-all;
+}
+
+.floating-button-container {
+    position: fixed;
+    bottom: 95px;
+    display: flex;
+    width: 100%;
+    justify-content: flex-end;
+    z-index: 5;
+    transition: transform 0.3s ease-in-out;
+    pointer-events: auto;
+}
+
+#add-path-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    bottom: 0;
+    margin-right: 15px;
+    padding: 15px;
+    color: #fff;
+    background-color: #007bff;
+    box-shadow: 0 4px 8px #0003;
+    border-radius: 15px;
+    user-select: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    .path-item {
+        background-color: #343434;
+        border-color: #343434;
+    }
+    
+    .path-icon svg {
+        fill: #2196f3;
+    }
+    
+    .delete-path-btn:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .path-input {
+        background-color: #212121;
+        color: #fff;
+        border-color: #555;
+    }
+    
+    .path-warning {
+        background-color: rgba(255, 152, 0, 0.05);
+    }
+    
+    .warning-text {
+        color: #ffab91;
+    }
+    
+    .path-to-remove {
+        background-color: #212121;
+        color: #ccc;
+    }
+    
+    .empty-list-message {
+        color: #aaa;
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+}

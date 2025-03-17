@@ -4,6 +4,10 @@
 import { toast, setupSearch, setupScrollEvent, setupDropdownMenu, checkMMRL, fetchAppList, updateAppList, appList, applyRippleEffect, initialized } from "./util.js";
 import { initFileSelector, openFileSelector } from "./file_selector.js";
 
+// Triple click handler for developer mode
+let headerClickCount = 0;
+let headerClickTimer;
+
 // Import modal menu
 export function importModalMenu() {
     const importModalMenu = document.getElementById('import-modal');
@@ -111,6 +115,28 @@ export function importModalMenu() {
     });
 }
 
+// Initialize dev mode triple-click handler
+function initDevModeHandler() {
+    const header = document.querySelector('.header h1');
+    if (header) {
+        header.addEventListener('click', () => {
+            headerClickCount++;
+            
+            // Reset counter after 1 second
+            clearTimeout(headerClickTimer);
+            headerClickTimer = setTimeout(() => {
+                headerClickCount = 0;
+            }, 1000);
+            
+            // If triple clicked, navigate to raw whiteout page
+            if (headerClickCount === 3) {
+                headerClickCount = 0;
+                window.location.href = 'raw_whiteout.html';
+            }
+        });
+    }
+}
+
 /**
  * Nuke button
  * Use availability of nuke button to check if we need to initialize
@@ -137,5 +163,6 @@ if (nukeButton) {
         setupDropdownMenu();
         applyRippleEffect();
         initFileSelector();
+        initDevModeHandler();
     });
 }
