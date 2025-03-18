@@ -1,6 +1,6 @@
 id=system_app_nuker
-name=Dummy - I'll Be Gone Soon!
+name="Dummy - I'll Be Gone Soon!"
 version=v0.0
 versionCode=0
 author=The Ghost of Zips Past
-description=I'm just a file that will be replaced. If you're reading this, something went hilariously wrong. Please open an issue on GitHub and tell us that our dummy wasn't so smart after all.
+description="I'm just a file that will be replaced. If you're reading this, something went hilariously wrong. Please open an issue on GitHub and tell us that our dummy wasn't so smart after all."
