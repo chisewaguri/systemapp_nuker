@@ -1,0 +1,40 @@
+/* ====== TEXT SCROLL ANIMATION ====== */
+@media (min-width: 0) { 
+    .app-name span.scroll,
+    .app-package span.scroll,
+    .app-path span.scroll {
+        animation: textScroll var(--scroll-time) linear infinite alternate;
+    }
+}
+
+/* scrolling keyframe (uses --scroll-distance) */
+@keyframes textScroll {
+    0% { transform: translateX(0); } 
+    100% { transform: translateX(var(--scroll-distance)); }
+}
+
+/* ====== RIPPLE EFFECT ====== */
+.ripple-element {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    transform: scale(0);
+    opacity: 1;
+    animation: ripple-animation ease-out forwards;
+    pointer-events: none;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.ripple.end {
+    opacity: 0;
+}
+
+@keyframes ripple-animation {
+    to {
+        transform: scale(3);
+    }
+}

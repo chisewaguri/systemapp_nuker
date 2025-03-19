@@ -1,0 +1,25 @@
+body {
+    background-color: #F5F5F5;
+    padding-top: var(--window-inset-top);
+    padding-bottom: var(--window-inset-bottom);
+    margin: 0;
+}
+
+.no-scroll {
+    overflow: hidden;
+}
+
+.content {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #121212;
+        color: #FFFFFF;
+    }
+}

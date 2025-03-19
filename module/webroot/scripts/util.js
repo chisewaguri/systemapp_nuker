@@ -1,4 +1,4 @@
-import { importModalMenu } from "./script.js";
+import { importModalMenu } from "./index.js";
 import { exportPackageList } from "./restore.js";
 
 export let appList = [], nukeList = [], isShellRunning = false, initialized = false, categoriesData = null;;
@@ -88,6 +88,15 @@ async function displayAppList(data) {
     const htmlContent = data.map((pkg) => {
         const category = getCategoryInfo(pkg.package_name);
         
+        // Different approach for category display:
+        // 1. For known categories: show a small colored dot with the category name
+        // 2. For unknown category: show nothing
+        const categoryBadgeHtml = category.id !== "unknown" ? 
+            `<div class="app-category-container">
+                <span class="category-dot" style="background-color: ${category.color}"></span>
+                <span class="app-category">${category.name}</span>
+             </div>` : '';
+        
         return `
         <div class="app ripple-element" 
              data-package-name="${pkg.package_name}" 
@@ -108,9 +117,7 @@ async function displayAppList(data) {
                     <span class="app-name"><span>${pkg.app_name}</span></span>
                     <span class="app-package"><span>${pkg.package_name}</span></span>
                     <span class="app-path"><span>${pkg.app_path}</span></span>
-                    <span class="app-category" style="background-color: ${category.color}">
-                        ${category.name}
-                    </span>
+                    ${categoryBadgeHtml}
                 </div>
             </div>
             <input class="app-selector" type="checkbox">
@@ -119,6 +126,7 @@ async function displayAppList(data) {
 
     appListDiv.innerHTML = htmlContent;
 
+    // Rest of the function remains the same...
     // Add click handlers to all app divs
     document.querySelectorAll('.app').forEach(appDiv => {
         // Check checkbox on whole app card
@@ -540,6 +548,7 @@ async function showAppInfoModal(app) {
 
     // Add or update category info
     let categoryEl = appInfoModal.querySelector('#app-category-container');
+    
     if (!categoryEl) {
         categoryEl = document.createElement('div');
         categoryEl.id = 'app-category-container';
@@ -556,12 +565,20 @@ async function showAppInfoModal(app) {
     
     // Set category display
     const categoryDisplay = appInfoModal.querySelector('#app-category');
-    categoryDisplay.innerHTML = `
-        <span class="app-category-badge" style="background-color: ${category.color}">
-            ${category.name}
-        </span>
-        <span class="app-category-description">${category.description}</span>
-    `;
+    
+    if (category.id === "unknown") {
+        // For unknown category, only show the description without the badge
+        categoryDisplay.innerHTML = `
+            <span class="app-category-description">${category.description}</span>
+        `;
+    } else {
+        // For known categories, show a colored dot with the category name and description
+        categoryDisplay.innerHTML = `
+            <span class="app-category-badge" style="background-color: ${category.color}"></span>
+            <span class="app-category-name">${category.name}:</span>
+            <span class="app-category-description">${category.description}</span>
+        `;
+    }
 
     // Show the modal
     appInfoModal.style.display = 'flex';

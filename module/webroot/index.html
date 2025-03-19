@@ -4,10 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System App Nuker</title>
-    <script type="module" src="script.js"></script>
+    <script type="module" src="scripts/index.js"></script>
     <link rel="stylesheet" type="text/css" href="/mmrl/insets.css" />
-    <link rel="stylesheet" type="text/css" href="styles.css">
-    <link rel="stylesheet" type="text/css" href="file_selector.css">
+    <link rel="stylesheet" type="text/css" href="styles/base.css">
+    <link rel="stylesheet" type="text/css" href="styles/layout.css">
+    <link rel="stylesheet" type="text/css" href="styles/components.css">
+    <link rel="stylesheet" type="text/css" href="styles/modals.css">
+    <link rel="stylesheet" type="text/css" href="styles/animations.css">
+    <link rel="stylesheet" type="text/css" href="styles/file_selector.css">
 </head>
 <body>
     <div class="content">
@@ -152,13 +156,13 @@
 
     <!-- File Selector Modal -->
     <div class="file-selector-modal modal">
-        <div class="file-selector">
+        <div class="file-selector ">
             <div class="file-selector-header">
-                <button class="back-button">
+                <button class="back-button ripple-element">
                     <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="40 -1050 900 960" width="22px"><path d="M400-93.85 13.85-480 400-866.15l56.77 56.77L127.38-480l329.39 329.38L400-93.85Z"/></svg>
                 </button>
                 <div class="current-path">/storage/emulated/0/Download</div>
-                <button class="close-selector">&#x2715;</button>
+                <button class="close-selector ripple-element">&#x2715;</button>
             </div>
             <div class="file-list"></div>
         </div>
