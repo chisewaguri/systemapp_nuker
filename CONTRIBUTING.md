@@ -6,8 +6,8 @@ The categorization system in System App Nuker helps users make better decisions 
 
 ### How to Contribute App Categories
 
-1. Fork the repository
-2. Edit `webroot/categories.json`
+1. Fork this repository
+2. Edit `module/webroot/categories.json`
 3. Add your app entries to the "apps" section with the appropriate category ID:
 
 "com.example.app": "safe",
@@ -21,7 +21,6 @@ The categorization system in System App Nuker helps users make better decisions 
 - **caution**: Use with caution
 - **safe**: Safe to remove
 - **google**: Google apps and services
-- **unknown**: Uncategorized apps
 
 ## Contributing Code
 
