@@ -50,6 +50,8 @@ whiteout_create() {
 }
 
 nuke_system_apps() {
+    total=$(grep -c '"package_name":' "$REMOVE_LIST")
+
     # first, remove any updates for the apps being nuked
     for package_name in $(grep -E '"package_name":' "$REMOVE_LIST" | sed 's/.*"package_name": "\(.*\)",/\1/'); do
         if pm list packages | grep -qx "package:$package_name"; then
@@ -62,6 +64,8 @@ nuke_system_apps() {
         whiteout_create "$(dirname $apk_path)" > /dev/null 2>&1
         ls "$MODULES_UPDATE_DIR$apk_path" 2>/dev/null
     done
+
+    echo "[-] Nuking complete: $total apps processed"
 }
 
 # revamped routine
