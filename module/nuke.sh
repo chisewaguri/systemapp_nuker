@@ -76,7 +76,7 @@ busybox chcon --reference="/system" "$MODULES_UPDATE_DIR"
 
 # if not update
 if [ "$update" != true ]; then
-    # copy module content
+    # copy module content, this also copy all scripts and module.prop
     cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
     # flag module for update
     # check if module already flagged for update
@@ -88,7 +88,10 @@ for item in system system_ext vendor product update; do
     rm -rf "$MODULES_UPDATE_DIR/$item"
 done
 
-nuke_system_apps
+# skip app whiteout creation when remove list is empty
+if grep -q '"package_name":' "$REMOVE_LIST"; then
+    nuke_system_apps
+fi
 
 for line in $( sed '/#/d' "$PERSIST_DIR/raw_whiteouts.txt" ); do
 	whiteout_create "$line" > /dev/null 2>&1 
