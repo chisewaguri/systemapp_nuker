@@ -1,7 +1,7 @@
 import { importModalMenu } from "./script.js";
 import { exportPackageList } from "./restore.js";
 
-export let appList = [], nukeList = [], isShellRunning = false, initialized = false;
+export let appList = [], nukeList = [], isShellRunning = false, initialized = false, categoriesData = null;;
 
 export  async function ksuExec(command) {
     return new Promise((resolve) => {
@@ -77,11 +77,23 @@ export async function fetchAppList(file, display = false) {
 
 // Display app list
 async function displayAppList(data) {
+    // Load categories if not already loaded
+    if (!categoriesData) {
+        await loadCategories();
+    }
+    
     const appListDiv = document.getElementById("app-list");
     appListDiv.innerHTML = "";
 
-    const htmlContent = data.map((pkg) => `
-        <div class="app ripple-element" data-package-name="${pkg.package_name}" data-app-path="${pkg.app_path}" data-app-name="${pkg.app_name}">
+    const htmlContent = data.map((pkg) => {
+        const category = getCategoryInfo(pkg.package_name);
+        
+        return `
+        <div class="app ripple-element" 
+             data-package-name="${pkg.package_name}" 
+             data-app-path="${pkg.app_path}" 
+             data-app-name="${pkg.app_name}"
+             data-category="${category.id}">
             <div class="app-info">
                 <div class="app-icon-container">
                     <div class="icon-loading">Loading...</div>
@@ -93,15 +105,18 @@ async function displayAppList(data) {
                         alt="Icon">
                 </div>
                 <div class="app-details">
-                    <span class="app-name"><span>${pkg.app_name}</span></span>  
-                    <span class="app-package"><span>${pkg.package_name}</span></span>  
-                    <span class="app-path"><span>${pkg.app_path}</span></span>  
+                    <span class="app-name"><span>${pkg.app_name}</span></span>
+                    <span class="app-package"><span>${pkg.package_name}</span></span>
+                    <span class="app-path"><span>${pkg.app_path}</span></span>
+                    <span class="app-category" style="background-color: ${category.color}">
+                        ${category.name}
+                    </span>
                 </div>
             </div>
             <input class="app-selector" type="checkbox">
         </div>
-    `).join("");
-        
+    `}).join("");
+
     appListDiv.innerHTML = htmlContent;
 
     // Add click handlers to all app divs
@@ -140,7 +155,8 @@ async function displayAppList(data) {
                 const appData = {
                     app_name: appDiv.dataset.appName,
                     package_name: appDiv.dataset.packageName,
-                    app_path: appDiv.dataset.appPath
+                    app_path: appDiv.dataset.appPath,
+                    category: appDiv.dataset.category
                 };
                 showAppInfoModal(appData);
             }, 300);
@@ -152,6 +168,11 @@ async function displayAppList(data) {
             });
         });
     });
+    
+    // Create category filters
+    createCategoryFilters();
+    
+    applyRippleEffect();
 }
 
 // Funtion to update app list
@@ -195,10 +216,36 @@ export async function updateAppList(isNuke = false) {
             const confirmationModal = document.getElementById("confirmation-modal");
             const modalContent = confirmationModal.querySelector(".modal-content");
             const selectedAppsList = document.getElementById("selected-apps-confirm");
-            selectedAppsList.innerHTML = selectedPackages.map(app => 
-                `<li><strong>${app.app_name}</strong> <small>(${app.package_name})</small></li>`
-            ).join("");
-        
+            
+            // Check for critical apps
+            const criticalApps = selectedPackages.filter(app => {
+                const category = getCategoryInfo(app.package_name);
+                return category.id === 'essential' || category.id === 'caution';
+            });
+            
+            // Update warning text based on critical apps
+            const warningText = document.querySelector(".warning-text");
+            if (criticalApps.length > 0) {
+                warningText.innerHTML = `
+                    <strong>WARNING:</strong> You are about to remove ${criticalApps.length} critical system 
+                    app(s) that may affect device functionality or cause stability issues!
+                `;
+                warningText.style.color = "#ff0000";
+            } else {
+                warningText.innerHTML = "This action may affect device functionality.";
+                warningText.style.color = "#f44336";
+            }
+            
+            // Update list with category indicators
+            selectedAppsList.innerHTML = selectedPackages.map(app => {
+                const category = getCategoryInfo(app.package_name);
+                return `<li>
+                    <strong>${app.app_name}</strong> 
+                    <small>(${app.package_name})</small>
+                    <span class="app-category-badge" style="background-color: ${category.color}">${category.name}</span>
+                </li>`;
+            }).join("");
+            
             // Show the confirmation dialog
             confirmationModal.style.display = "flex";
             document.body.classList.add("no-scroll");
@@ -206,7 +253,7 @@ export async function updateAppList(isNuke = false) {
                 confirmationModal.style.opacity = "1";
                 modalContent.style.transform = "scale(1)";
             }, 10);
-
+    
             function closeModal(confirmed = false) {
                 document.body.classList.remove("no-scroll");
                 confirmationModal.style.opacity = "0";
@@ -430,9 +477,11 @@ export function setupScrollEvent() {
     let lastScrollY = window.scrollY;
     let scrollTimeout;
     const scrollThreshold = 40;
+    
     window.addEventListener('scroll', () => {
         isScrolling = true;
         clearTimeout(scrollTimeout);
+        
         if (window.scrollY > lastScrollY && window.scrollY > scrollThreshold) {
             hideFloatingButton(true);
         } else if (window.scrollY < lastScrollY) {
@@ -445,11 +494,31 @@ export function setupScrollEvent() {
         const opacity = 1 - (scrollPosition / scrollRange);
         const scale = 0.5 + (opacity * 0.5);
         const translateY = scrollPosition / 2;
+        
+        // Apply to header
         document.querySelector('.header').style.opacity = opacity.toString();
         document.querySelector('.header').style.transform = `scale(${scale}) translateY(-${translateY}px)`;
-        document.querySelector('.search-container').style.transform = `translateY(-${scrollPosition}px)`;
+        
+        // IMPORTANT: Apply EXACT same transform to both elements
+        // Using a variable to ensure they're exactly the same
+        const offset = scrollPosition;
+        const transform = `translateY(-${offset}px)`;
+        
+        const searchContainer = document.querySelector('.search-container');
+        if (searchContainer) {
+            searchContainer.style.transform = transform;
+        }
+        
+        const categoryFilters = document.querySelector('.category-filters');
+        if (categoryFilters) {
+            categoryFilters.style.transform = transform;
+        }
+        
         lastScrollY = window.scrollY;
-        isScrolling = false;
+        
+        scrollTimeout = setTimeout(() => {
+            isScrolling = false;
+        }, 100);
     });
 }
 
@@ -460,11 +529,39 @@ async function showAppInfoModal(app) {
 
     if (!appInfoModal) return;
 
+    // Get category info
+    const category = getCategoryInfo(app.package_name);
+
     // Update modal content using the app object
     appInfoModal.querySelector('#app-name').textContent = app.app_name;
     appInfoModal.querySelector('#app-icon').src = `icons/${app.package_name}.png`;
     appInfoModal.querySelector('#app-package').textContent = app.package_name;
     appInfoModal.querySelector('#app-path').textContent = app.app_path;
+
+    // Add or update category info
+    let categoryEl = appInfoModal.querySelector('#app-category-container');
+    if (!categoryEl) {
+        categoryEl = document.createElement('div');
+        categoryEl.id = 'app-category-container';
+        categoryEl.className = 'app-info-detail';
+        categoryEl.innerHTML = `
+            <strong>Category</strong>
+            <div class="app-info-detail-text" id="app-category"></div>
+        `;
+        
+        // Find where to insert it (after app-system)
+        const systemEl = appInfoModal.querySelector('#app-system').parentNode;
+        systemEl.parentNode.insertBefore(categoryEl, systemEl.nextSibling);
+    }
+    
+    // Set category display
+    const categoryDisplay = appInfoModal.querySelector('#app-category');
+    categoryDisplay.innerHTML = `
+        <span class="app-category-badge" style="background-color: ${category.color}">
+            ${category.name}
+        </span>
+        <span class="app-category-description">${category.description}</span>
+    `;
 
     // Show the modal
     appInfoModal.style.display = 'flex';
@@ -518,4 +615,96 @@ async function showAppInfoModal(app) {
             el.dataset.listenerAdded = true;
         }
     });
+}
+
+async function loadCategories() {
+    if (categoriesData) return categoriesData;
+    
+    try {
+        const response = await fetch('categories.json');
+        categoriesData = await response.json();
+        return categoriesData;
+    } catch (error) {
+        console.error("Failed to load categories:", error);
+        // Fallback to basic categories
+        return {
+            categories: [
+                { id: "unknown", name: "Unknown", color: "#9e9e9e", icon: "help", description: "Uncategorized app" }
+            ],
+            apps: {}
+        };
+    }
+}
+
+// Function to get category info for a package
+function getCategoryInfo(packageName) {
+    if (!categoriesData) return { id: "unknown", name: "Unknown", color: "#9e9e9e", icon: "help", description: "Uncategorized app" };
+    
+    const categoryId = categoriesData.apps[packageName] || "unknown";
+    const category = categoriesData.categories.find(c => c.id === categoryId) || 
+                    { id: "unknown", name: "Unknown", color: "#9e9e9e", icon: "help", description: "Uncategorized app" };
+    
+    return category;
+}
+
+// Create category filters
+function createCategoryFilters() {
+    if (!categoriesData) return;
+    
+    const filterContainer = document.querySelector('.category-filters') || document.createElement('div');
+    
+    if (!document.querySelector('.category-filters')) {
+        filterContainer.className = 'category-filters';
+        const searchContainer = document.querySelector('.search-container');
+        searchContainer.parentNode.insertBefore(filterContainer, searchContainer.nextSibling);
+    }
+    
+    // Clear existing filters
+    filterContainer.innerHTML = '';
+    
+    // Add "All" filter
+    const allBtn = document.createElement('button');
+    allBtn.className = 'filter-btn filter-all active ripple-element';
+    allBtn.dataset.category = 'all';
+    allBtn.textContent = 'All';
+    filterContainer.appendChild(allBtn);
+    
+    // Add filters for each category that has apps
+    const usedCategories = new Set(Object.values(categoriesData.apps));
+    
+    categoriesData.categories.forEach(category => {
+        // Skip the "unknown" category
+        if (category.id === 'unknown') return;
+        
+        // Only add categories that are actually used by apps
+        if (usedCategories.has(category.id)) {
+            const btn = document.createElement('button');
+            btn.className = `filter-btn filter-${category.id} ripple-element`;
+            btn.dataset.category = category.id;
+            btn.style.backgroundColor = category.color;
+            btn.style.color = 'white';
+            btn.textContent = category.name;
+            filterContainer.appendChild(btn);
+        }
+    });
+    
+    // Add filter functionality
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            const selectedCategory = this.dataset.category;
+            
+            document.querySelectorAll('.app').forEach(app => {
+                if (selectedCategory === 'all') {
+                    app.style.display = 'flex';
+                } else {
+                    app.style.display = (app.dataset.category === selectedCategory) ? 'flex' : 'none';
+                }
+            });
+        });
+    });
+    
+    applyRippleEffect();
 }

@@ -94,6 +94,7 @@ body {
     top: 80px;
     height: 40px;
     z-index: 3;
+    transition: transform 0.3s ease;
 }
 
 .search-container input {
@@ -106,6 +107,78 @@ body {
     border-radius: 10px;
     background-color: #fff;
     box-shadow: 0 4px 8px #0003;
+}
+
+/* Category filters */
+.category-filters {
+    position: fixed;
+    top: 130px;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+    justify-content: center;
+    background-color: rgba(245, 245, 245, 0.9);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    transition: transform 0.3s ease;
+}
+
+.filter-btn {
+    border: none;
+    padding: 5px 10px;
+    border-radius: 15px;
+    background-color: #f0f0f0;
+    font-size: 12px;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.filter-btn.active {
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    opacity: 1;
+}
+
+.filter-btn:not(.active) {
+    opacity: 0.7;
+}
+
+.app-category {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+    color: white;
+    font-weight: bold;
+}
+
+#app-category-container {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+#app-category .app-category-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.app-category-description {
+    display: inline-block;
+    font-size: 13px;
+    color: #666;
+    vertical-align: middle;
+    margin-top: 6px;
 }
 
 .clear-btn {
@@ -122,7 +195,7 @@ body {
 
 #removed-list,
 #app-list {
-    margin-top: 130px;
+    margin-top: 180px;
     margin-bottom: 100px;
     display: flex;
     padding: 0 10px;
@@ -645,5 +718,18 @@ body {
 
     #file-import-btn {
         background-color: #444;
+    }
+
+    .category-filters {
+        background-color: rgba(18, 18, 18, 0.9);
+    }
+    
+    .filter-btn {
+        background-color: #333;
+        color: #fff;
+    }
+    
+    .app-category-description {
+        color: #aaa;
     }
 }

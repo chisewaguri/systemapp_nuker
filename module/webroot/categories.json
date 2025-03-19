@@ -1,0 +1,48 @@
+{
+    "categories": [
+      {
+        "id": "essential",
+        "name": "Essential",
+        "description": "Critical system components. Removing these may break core functionality.",
+        "color": "#ff6b6b"
+      },
+      {
+        "id": "caution",
+        "name": "Caution",
+        "description": "This that might be used by other system components.",
+        "color": "#ff5722"
+      },
+      {
+        "id": "safe",
+        "name": "Safe",
+        "description": "Non-essential apps that can be removed without affecting system stability.",
+        "color": "#4caf50"
+      },
+      {
+        "id": "google",
+        "name": "Google",
+        "description": "Google apps and services that may be required for the Play Store ecosystem.",
+        "color": "#4285f4"
+      },
+      {
+        "id": "unknown",
+        "name": "Unknown",
+        "description": "Apps with unknown classification.",
+        "color": "#9e9e9e",
+        "icon": "help"
+      }
+    ],
+    "apps": {
+      "com.android.systemui": "essential",
+      "com.android.settings": "essential",
+      "com.google.android.gms": "google",
+      "com.google.android.gsf": "google",
+      "com.verizon.loginengine": "safe",
+      "com.att.android.attsmartwifi": "safe",
+      "com.samsung.android.bixby.agent": "safe",
+      "com.miui.weather2": "safe",
+      "com.facebook.system": "safe",
+      "com.android.chrome": "safe",
+      "com.android.bluetooth": "caution"
+    }
+  }
