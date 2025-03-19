@@ -15,14 +15,11 @@ REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
 # so yeah, symlinks.
 IFS="
 "
-targets="odm
-product
-system_ext
-vendor"
 
 # args handling
 [ "$1" = "update" ] && update=true || update=false
 
+# ----- flag module for update  -----
 # lets have customize.sh of dummy.zip call us.
 if [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
     if command -v apd; then
@@ -37,6 +34,7 @@ if [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
     exit 0
 fi
 
+# ----- functions -----
 whiteout_create() {
     path="$1"
     echo "$path" | grep -q "^/system/" || path="/system$1"
@@ -68,6 +66,7 @@ nuke_system_apps() {
     echo "[-] Nuking complete: $total apps processed"
 }
 
+# ----- main script -----
 # revamped routine
 # here we copy over all the module files to modules_update folder.
 # this is better than deleting system over and over
