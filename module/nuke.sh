@@ -95,7 +95,7 @@ fi
 
 for line in $( sed '/#/d' "$PERSIST_DIR/raw_whiteouts.txt" ); do
 	whiteout_create "$line" > /dev/null 2>&1 
-	ls "$MODULE_UPDATES_DIR$line" 2>/dev/null
+	ls "$MODULES_UPDATE_DIR$line" 2>/dev/null
 done
 
 # EOF
