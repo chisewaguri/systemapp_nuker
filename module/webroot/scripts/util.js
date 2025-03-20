@@ -510,16 +510,21 @@ export function setupScrollEvent() {
         // IMPORTANT: Apply EXACT same transform to both elements
         // Using a variable to ensure they're exactly the same
         const offset = scrollPosition;
-        const transform = `translateY(-${offset}px)`;
         
         const searchContainer = document.querySelector('.search-container');
         if (searchContainer) {
-            searchContainer.style.transform = transform;
+            if (!searchContainer.style.transition) {
+                searchContainer.style.transition = 'transform 0.15s ease-out';
+            }
+            searchContainer.style.transform = `translateY(-${offset}px)`;
         }
         
         const categoryFilters = document.querySelector('.category-filters');
         if (categoryFilters) {
             // We need to keep the horizontal centering while applying vertical transform
+            if (!categoryFilters.style.transition) {
+                categoryFilters.style.transition = 'transform 0.15s ease-out';
+            }
             categoryFilters.style.transform = `translateX(-50%) translateY(-${offset}px)`;
         }
         

@@ -10,6 +10,7 @@
     box-sizing: border-box;
     justify-content: space-between;
     align-items: center;
+    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
 }
 
 .header h1 {
@@ -30,6 +31,7 @@
     top: 80px;
     height: 40px;
     z-index: 3;
+    transition: transform 0.15s ease-out;
 }
 
 .search-container input {
@@ -74,6 +76,7 @@
     box-sizing: border-box;
     left: 50%;
     transform: translateX(-50%);
+    transition: transform 0.15s ease-out;
 }
 
 /* ====== APP LISTS ====== */
@@ -98,7 +101,7 @@
     width: 100%;
     justify-content: flex-end;
     z-index: 3;
-    transition: transform 0.3s ease-in-out;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
 }
 
