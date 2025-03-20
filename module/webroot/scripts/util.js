@@ -519,7 +519,8 @@ export function setupScrollEvent() {
         
         const categoryFilters = document.querySelector('.category-filters');
         if (categoryFilters) {
-            categoryFilters.style.transform = transform;
+            // We need to keep the horizontal centering while applying vertical transform
+            categoryFilters.style.transform = `translateX(-50%) translateY(-${offset}px)`;
         }
         
         lastScrollY = window.scrollY;

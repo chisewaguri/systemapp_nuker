@@ -30,7 +30,6 @@
     top: 80px;
     height: 40px;
     z-index: 3;
-    transition: transform 0.3s ease;
 }
 
 .search-container input {
@@ -61,19 +60,20 @@
 .category-filters {
     position: fixed;
     top: 130px;
-    left: 0;
-    right: 0;
     z-index: 3;
-    width: 100%;
+    width: calc(100% - 20px);
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
     padding: 8px 10px;
     justify-content: center;
-    background-color: rgba(245, 245, 245, 0.9);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     box-sizing: border-box;
-    transition: transform 0.3s ease;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 /* ====== APP LISTS ====== */
@@ -180,7 +180,8 @@
     }
     
     .category-filters {
-        background-color: rgba(18, 18, 18, 0.9);
+        background-color: #212121;
+        border-color: #6E6E6E;
     }
     
     .footer-btn {
