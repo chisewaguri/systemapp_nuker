@@ -4,24 +4,25 @@
 A simple yet powerful module that lets you reclaim control over your device by disabling pre-installed system apps. Because stock firmware thinks it knows best—and we respectfully disagree.  
 
 ## 🧩 Features  
-- **Web-Based Interface** – Manage app removal through a user-friendly WebUI.  
-- **Compatibility** – Works seamlessly with Magisk, KernelSU, and Apatch.  
-- **Bootloop Recovery** – If something breaks, the module auto-disables itself so you (hopefully) get another chance.  
-- **Package List Management** – Import/export package lists for easy backups and sharing.  
-- **Developer Mode** – Manually create whiteouts for advanced customization.  
+- **Web-Based Interface** – Manage app removal through a user-friendly WebUI
+- **App Categorization System** – Helps users distinguish between safe and critical apps 
+- **Compatibility** – Works seamlessly with Magisk, KernelSU, and Apatch
+- **Bootloop Recovery** – If something breaks, the module auto-disables itself so you (hopefully) get another chance
+- **Package List Management** – Import/export package lists for easy backups and sharing
+- **Developer Mode** – Manually create whiteouts for advanced customization
 
 ---
 
 ## 🌐 WebUI Usage  
 ### KernelSU & Apatch  
-- KSU WebUI – A dedicated interface for managing system app removal.  
+- KSU WebUI – A dedicated interface for managing system app removal
 
 ### Magisk  
-- Action Button – Launch WebUI directly from the Magisk app.  
+- Action Button – Launch WebUI directly from the Magisk app
 - Third-Party Support:  
   - [KSUWebUIStandalone](https://github.com/5ec1cff/KsuWebUIStandalone)  
   - [MMRL](https://github.com/MMRLApp/MMRL)  
-- Automatic Installation – If no WebUI is found, KSUWebUIStandalone will be installed automatically.  
+- Automatic Installation – If no WebUI is found, KSUWebUIStandalone will be installed automatically
 
 ---
 
@@ -30,14 +31,14 @@ A simple yet powerful module that lets you reclaim control over your device by d
 - **Import Packages** – Load a list of package names from:  
   - Manual text input (copy/paste)  
   - Text files stored on your device  
-- **Export Packages** – Save your nuked app list as a text file for backup or sharing.  
+- **Export Packages** – Save your nuked app list as a text file for backup or sharing
 
 ### Restore Functionality  
-- Easily re-enable previously nuked system apps via the Restore page.  
+- Easily re-enable previously nuked system apps via the Restore page 
 
 ### Developer Mode  
 For advanced users who want complete control, Developer Mode allows manual whiteout creation:  
-- Access it with tapping the "System App Nuker" title three times.
+- Access it with tapping the "System App Nuker" title three times
 
 ---
 

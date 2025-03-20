@@ -1,19 +1,14 @@
-# App Nuker
-Simple debloater with WebUI support.
+## App Nuker
+Simple debloater and whiteout maker with WebUI support.
 
-## Changelog
+### Changelog
 
-# v1.0-release
-## Initial Release
-- Web-based interface for managing system app removal
-- Support for Magisk, KernelSU, and Apatch
-- Non-destructive removal using whiteout mechanism
-- Bootloop protection and failsafe mechanisms
-- App icon extraction for easier identification
-- Search functionality for finding specific apps
+### v1.1-release
+- Add support for raw whiteouts (@backslashxx)
+- Add developer mode for raw whiteouts, open it by tapping the header three times
+- Add app categorization system
 
-## Package Management Features
-- Import package lists via text input
-- Import package lists from text files
-- Export nuked app list to text file
-- Easy restore functionality for disabled apps
+### v1.0-release
+- Initial Release
+----
+Full changelog: [GitHub Commits](https://github.com/ChiseWaguri/systemapp_nuker/commits/master/)
