@@ -244,6 +244,41 @@
     margin-right: 4px;
 }
 
+/* Category styling in app info modal */
+/* Category styling in app info modal */
+.category-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .category-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  
+  .category-indicator-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  
+  .category-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    vertical-align: middle;
+  }
+  
+  .category-description {
+    font-size: 13px;
+    color: #666;
+  }
+
 /* Dark mode styles */
 @media (prefers-color-scheme: dark) {
     .menu-btn {
@@ -288,6 +323,14 @@
     }
     
     .app-category-description {
+        color: #aaa;
+    }
+
+    .category-name {
+        color: #bbb;
+      }
+      
+    .category-description {
         color: #aaa;
     }
 }

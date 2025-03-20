@@ -546,44 +546,31 @@ async function showAppInfoModal(app) {
     appInfoModal.querySelector('#app-package').textContent = app.package_name;
     appInfoModal.querySelector('#app-path').textContent = app.app_path;
 
-    // Add or update category info
-    let categoryEl = appInfoModal.querySelector('#app-category-container');
-    
-    if (!categoryEl) {
-        categoryEl = document.createElement('div');
-        categoryEl.id = 'app-category-container';
-        categoryEl.className = 'app-info-detail';
-        categoryEl.innerHTML = `
-            <strong>Category</strong>
-            <div class="app-info-detail-text" id="app-category"></div>
-        `;
-        
-        // Find where to insert it (after app-system)
-        const systemEl = appInfoModal.querySelector('#app-system').parentNode;
-        systemEl.parentNode.insertBefore(categoryEl, systemEl.nextSibling);
-    }
-    
     // Set category display
     const categoryDisplay = appInfoModal.querySelector('#app-category');
-    
+
     if (category.id === "unknown") {
         // For unknown category, only show the description without the badge
         categoryDisplay.innerHTML = `
-            <span class="app-category-description">${category.description}</span>
+            <span class="category-description">${category.description}</span>
         `;
     } else {
-        // For known categories, show a colored dot with the category name and description
+        // Stacked layout with description below the badge and name
         categoryDisplay.innerHTML = `
-            <span class="app-category-badge" style="background-color: ${category.color}"></span>
-            <span class="app-category-name">${category.name}:</span>
-            <span class="app-category-description">${category.description}</span>
+            <div class="category-container">
+                <div class="category-header">
+                    <span class="category-indicator-dot" style="background-color: ${category.color};"></span>
+                    <span class="category-name">${category.name}</span>
+                </div>
+                <span class="category-description">${category.description}</span>
+            </div>
         `;
     }
 
     // Show the modal
     appInfoModal.style.display = 'flex';
     document.body.classList.add('no-scroll');
-    setTimeout(() => {
+     setTimeout(() => {
         appInfoModal.style.opacity = 1;
         appInfoModalContent.style.transform = 'scale(1)';
     }, 10);
@@ -607,16 +594,12 @@ async function showAppInfoModal(app) {
 
     try {
         const versionResult = await ksuExec(`dumpsys package ${app.package_name} | grep versionName | head -1 | cut -d= -f2`);
-        const isSystemResult = await ksuExec(`dumpsys package ${app.package_name} | grep -q "system app" || echo "false"`);
         
-        // Update the elements with actual data
+        // Update the version with actual data
         document.getElementById('app-version').textContent = versionResult.stdout.trim() || 'Not available';
-        document.getElementById('app-system').textContent = isSystemResult.stdout.trim() === 'false' ? 'No' : 'Yes';
     } catch (error) {
         console.error("Failed to get app info:", error);
-        document.querySelectorAll('#app-version, #app-system').forEach(el => {
-            el.textContent = 'Unable to fetch';
-        });
+        document.getElementById('app-version').textContent = 'Unable to fetch';
     }
 
     // Allow tap to copy

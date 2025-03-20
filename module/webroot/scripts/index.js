@@ -1,7 +1,7 @@
 // This is part of system app nuker
 // Inspired by j-hc's zygisk detach that's licensed under Apache 2.0 and backslashxx's mountify.
 
-import { toast, setupSearch, setupScrollEvent, setupDropdownMenu, checkMMRL, fetchAppList, updateAppList, appList, applyRippleEffect, initialized } from "./util.js";
+import { toast, setupSearch, setupScrollEvent, setupDropdownMenu, checkMMRL, fetchAppList, updateAppList, appList, applyRippleEffect } from "./util.js";
 import { initFileSelector, openFileSelector } from "./file_selector.js";
 
 // Triple click handler for developer mode
