@@ -1,6 +1,6 @@
 id=system_app_nuker
-name="Dummy - I'll Be Gone Soon!"
+name="System App Nuker Dummy"
 version=v0.0
 versionCode=0
-author=The Ghost of Zips Past
+author=SAN
 description="I'm just a file that will be replaced. If you're reading this, something went hilariously wrong. Please open an issue on GitHub and tell us that our dummy wasn't so smart after all."
