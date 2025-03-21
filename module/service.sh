@@ -120,10 +120,9 @@ scan_system_apks() {
         extract_icon "$APK_PATH" "$PACKAGE_NAME" &
         
         # limit concurrent icon extractions
-        RUNNING_JOBS=$(jobs -p | wc -l)
-        if [ $RUNNING_JOBS -ge 4 ]; then
-            wait -n
-        fi
+        while [ "$(jobs | wc -l)" -ge 4 ]; do
+            sleep 0.5
+        done
     done
     
     # wait for all icon extractions to finish
@@ -150,10 +149,9 @@ scan_remaining_system_packages() {
         extract_icon "$APK_PATH" "$package_name" &
         
         # Limit concurrent icon extractions
-        RUNNING_JOBS=$(jobs -p | wc -l)
-        if [ $RUNNING_JOBS -ge 4 ]; then
-            wait -n
-        fi
+        while [ "$(jobs | wc -l)" -ge 4 ]; do
+            sleep 0.5
+        done
     done
     
     # Wait for all icon extractions to finish
