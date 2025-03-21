@@ -19,22 +19,9 @@ IFS="
 # args handling
 [ "$1" = "update" ] && update=true || update=false
 
-# ----- flag module for update  -----
-# lets have customize.sh of dummy.zip call us.
-if [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
-    if command -v apd; then
-        apd module install "$MODDIR/dummy.zip"
-    elif command -v ksud; then
-        ksud module install "$MODDIR/dummy.zip"
-    elif command -v magisk; then
-        magisk --install-module "$MODDIR/dummy.zip"
-    else
-        echo "am I trippin or you are using some unknown root manager?"
-    fi
-    exit 0
-fi
-
 # ----- functions -----
+
+# whiteout creator
 whiteout_create() {
     path="$1"
     echo "$path" | grep -q "^/system/" || path="/system$1"
@@ -47,6 +34,7 @@ whiteout_create() {
     chmod 644 "$MODULES_UPDATE_DIR$path"
 }
 
+# nuke app from REMOVE_LIST
 nuke_system_apps() {
     total=$(grep -c '"package_name":' "$REMOVE_LIST")
 
@@ -66,6 +54,38 @@ nuke_system_apps() {
     echo "[-] Nuking complete: $total apps processed"
 }
 
+# this function install dummy.zip
+# dummy.zip would call this script again
+install_dummy() {
+    if command -v apd >/dev/null 2>&1; then
+        apd module install "$MODDIR/dummy.zip" && installed=true
+    elif command -v ksud >/dev/null 2>&1; then
+        ksud module install "$MODDIR/dummy.zip" && installed=true
+    elif command -v magisk >/dev/null 2>&1; then
+        magisk --install-module "$MODDIR/dummy.zip" && installed=true
+    else
+        echo "am I trippin or you are using some unknown root manager?"
+        return 1
+    fi
+
+    # verify installation
+    if [ "$installed" = true ]; then
+        return 0
+    else
+        echo "dummy installation failed" >&2
+        return 1
+    fi
+}
+
+# ----- if called from webui -----
+
+# lets have customize.sh of dummy.zip call us.
+if [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
+    # install dummy.zip
+    install_dummy
+    exit $?
+fi
+
 # ----- main script -----
 # revamped routine
 # here we copy over all the module files to modules_update folder.
@@ -80,7 +100,11 @@ busybox chcon --reference="/system" "$MODULES_UPDATE_DIR"
 # if not update
 if [ "$update" != true ]; then
     # copy module content, this also copy all scripts and module.prop
-    cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
+    # only copy if module files is not copied, this ensure updated files are not overwritten by nuking process
+    if [ ! -f "$MODULES_UPDATE_DIR/module.prop" ]; then
+        cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
+    fi
+
     # flag module for update
     # check if module already flagged for update
     [ ! -f "$MODDIR/update" ] && touch "$MODDIR/update"
@@ -96,6 +120,7 @@ if grep -q '"package_name":' "$REMOVE_LIST"; then
     nuke_system_apps
 fi
 
+# handle raw whiteout
 for line in $( sed '/#/d' "$PERSIST_DIR/raw_whiteouts.txt" ); do
 	whiteout_create "$line" > /dev/null 2>&1 
 	ls "$MODULES_UPDATE_DIR$line" 2>/dev/null
