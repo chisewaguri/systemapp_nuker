@@ -68,7 +68,11 @@ get_webui() {
 [ "$(date +"%d%m")" = "0104" ] && (
     sleep 5
     [ $((RANDOM % 2)) -eq 0 ] && \
-    am start -a android.intent.action.VIEW -d "https://youtu.be/dQw4w9WgXcQ" &>/dev/null
+        if pm path tv.danmaku.bili > /dev/null 2>&1; then
+ 			am start -a android.intent.action.VIEW -d "https://b23.tv/Qhk2xvo"
+        else
+ 	        am start -a android.intent.action.VIEW -d "https://youtu.be/dQw4w9WgXcQ"
+        fi
 ) &
 
 # ===== Main Script =====

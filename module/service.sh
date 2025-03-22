@@ -229,7 +229,7 @@ reinstall_apps
 $uninstall && uninstall_apps
 
 # remove tmp dir
-rm -rf $TEMP_DIR
+rm -rf "$TEMP_DIR"
 
 # exit successfully
 exit 0
