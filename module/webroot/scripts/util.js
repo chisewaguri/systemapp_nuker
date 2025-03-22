@@ -30,8 +30,30 @@ export function setupSearch() {
         apps.forEach(app => {
             const appName = app.querySelector('span.app-name').textContent.toLowerCase();
             const appPackage = app.querySelector('span.app-package').textContent.toLowerCase();
-            if (appName.includes(searchValue) || appPackage.includes(searchValue)) {
+            const appNameEl = app.querySelector('span.app-name span');
+            const appPackageEl = app.querySelector('span.app-package span');
+            
+            // Clear previous highlighting
+            if (appNameEl && appNameEl.innerHTML.includes('<mark>')) {
+                appNameEl.innerHTML = appNameEl.textContent;
+            }
+            if (appPackageEl && appPackageEl.innerHTML.includes('<mark>')) {
+                appPackageEl.innerHTML = appPackageEl.textContent;
+            }
+            
+            // Check if app matches search (with fuzzy search)
+            if (fuzzyMatch(appName, searchValue) || fuzzyMatch(appPackage, searchValue)) {
                 app.style.display = 'flex';
+                
+                // Highlight matching text
+                if (searchValue) {
+                    if (appNameEl) {
+                        appNameEl.innerHTML = highlightText(appNameEl.textContent, searchValue);
+                    }
+                    if (appPackageEl) {
+                        appPackageEl.innerHTML = highlightText(appPackageEl.textContent, searchValue);
+                    }
+                }
             } else {
                 app.style.display = 'none';
             }
@@ -49,9 +71,71 @@ export function setupSearch() {
         const apps = document.querySelectorAll('.app, .removed-app');
         apps.forEach(app => {
             app.style.display = 'flex';
+            
+            // Clear highlighting
+            const appNameEl = app.querySelector('span.app-name span');
+            const appPackageEl = app.querySelector('span.app-package span');
+            
+            if (appNameEl && appNameEl.innerHTML.includes('<mark>')) {
+                appNameEl.innerHTML = appNameEl.textContent;
+            }
+            if (appPackageEl && appPackageEl.innerHTML.includes('<mark>')) {
+                appPackageEl.innerHTML = appPackageEl.textContent;
+            }
         });
         document.getElementById('clear-btn').style.display = 'none';
     });
+    
+    // Fuzzy search function
+    function fuzzyMatch(text, search) {
+        // If no search term, everything matches
+        if (!search) return true;
+        
+        search = search.toLowerCase();
+        text = text.toLowerCase();
+        
+        // Exact substring match
+        if (text.includes(search)) {
+            return true;
+        }
+        
+        // Simple fuzzy logic - all search characters must be in order
+        let textIndex = 0;
+        for (let i = 0; i < search.length; i++) {
+            const searchChar = search[i];
+            
+            // Skip spaces in search term
+            if (searchChar === ' ') continue;
+            
+            let found = false;
+            while (textIndex < text.length) {
+                if (text[textIndex] === searchChar) {
+                    found = true;
+                    textIndex++;
+                    break;
+                }
+                textIndex++;
+            }
+            
+            if (!found) return false;
+        }
+        
+        return true;
+    }
+    
+    // Highlight matching text
+    function highlightText(text, query) {
+        if (!query) return text;
+        
+        // For direct matches
+        if (text.toLowerCase().includes(query.toLowerCase())) {
+            const regex = new RegExp(`(${query})`, 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        }
+        
+        // No highlighting for fuzzy matches that aren't direct substring matches
+        return text;
+    }
 }
 
 // Fetch system apps
