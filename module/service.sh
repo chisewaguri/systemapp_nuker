@@ -36,7 +36,21 @@ extract_icon() {
         return
     fi
     
-    ICON_PATH=$(grep "application:" "$TEMP_DIR/dump_$PACKAGE_NAME" 2>/dev/null | awk -F "icon=" '{print $2}' | sed "s/'//g")
+    # try to find the best icon by density
+    local ICON_PATH=""
+    for RES in xxxhdpi xxhdpi xhdpi hdpi mdpi; do
+        ICON_PATH=$(grep "application-icon-$RES:" "$TEMP_DIR/dump_$PACKAGE_NAME" 2>/dev/null | sed "s/application-icon-$RES://g; s/'//g" | head -1)
+        if [ -n "$ICON_PATH" ]; then
+            break
+        fi
+    done
+    
+    # if no density-specific icons found
+    if [ -z "$ICON_PATH" ]; then
+        ICON_PATH=$(grep "application:" "$TEMP_DIR/dump_$PACKAGE_NAME" 2>/dev/null | awk -F "icon=" '{print $2}' | sed "s/'//g")
+    fi
+    
+    # extract icon if path was found
     if [ -n "$ICON_PATH" ]; then
         unzip -p "$APK_PATH" "$ICON_PATH" > "$ICON_DIR/$PACKAGE_NAME.png" 2>/dev/null
     fi
@@ -85,6 +99,9 @@ create_applist() {
 
 # scan APK files found in system directories
 scan_system_apks() {
+    local BATCH_COUNT=0
+    local MAX_CONCURRENT=10
+    
     find /system/app /system/priv-app /vendor/app /product/app /product/priv-app /system_ext/app /system_ext/priv-app \
         -maxdepth 2 -type f -name "*.apk" | sort | while read APK_PATH; do
         
@@ -119,42 +136,57 @@ scan_system_apks() {
         # extract icon in background
         extract_icon "$APK_PATH" "$PACKAGE_NAME" &
         
-        # limit concurrent icon extractions
-        while [ "$(jobs | wc -l)" -ge 4 ]; do
-            sleep 0.5
-        done
+        # increment batch counter
+        BATCH_COUNT=$((BATCH_COUNT + 1))
+        
+        # wait for completion if batch limit reached
+        if [ $BATCH_COUNT -ge $MAX_CONCURRENT ]; then
+            wait
+            BATCH_COUNT=0
+        fi
     done
     
-    # wait for all icon extractions to finish
+    # wait for any remaining background processes
     wait
 }
 
 # scan system packages not found by path scan
 scan_remaining_system_packages() {
+    local BATCH_COUNT=0
+    local MAX_CONCURRENT=10
+    
     pm list packages -s | sed 's/package://g' | while read package_name; do
         if grep -q "\"$package_name\"" "$APP_LIST" 2>/dev/null; then
             continue
         fi
         
-        APK_PATH=$(pm path $package_name | grep -m 1 "^package:" | sed 's/package://g')
+        local APK_PATH=$(pm path $package_name | grep -m 1 "^package:" | sed 's/package://g')
         echo "$APK_PATH" | grep -qE "/system/|/vendor/|/product/|/system_ext/" || continue
         
-        aapt dump badging "$APK_PATH" > "$TEMP_DIR/dump_$package_name" 2>/dev/null
-        APP_NAME=$(grep "application-label:" "$TEMP_DIR/dump_$package_name" 2>/dev/null | sed "s/application-label://g; s/'//g")
+        # Only dump the app info if we haven't already
+        if [ ! -f "$TEMP_DIR/dump_$package_name" ]; then
+            aapt dump badging "$APK_PATH" > "$TEMP_DIR/dump_$package_name" 2>/dev/null
+        fi
+        
+        local APP_NAME=$(grep "application-label:" "$TEMP_DIR/dump_$package_name" 2>/dev/null | sed "s/application-label://g; s/'//g")
         [ -z "$APP_NAME" ] && APP_NAME="$package_name"
         
         echo "  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$package_name\", \"app_path\": \"$APK_PATH\"}, " >> "$APP_LIST"
         
-        # Extract icon in background
+        # extract icon in background
         extract_icon "$APK_PATH" "$package_name" &
         
-        # Limit concurrent icon extractions
-        while [ "$(jobs | wc -l)" -ge 4 ]; do
-            sleep 0.5
-        done
+        # increment batch counter
+        BATCH_COUNT=$((BATCH_COUNT + 1))
+        
+        # wait for completion if batch limit reached
+        if [ $BATCH_COUNT -ge $MAX_CONCURRENT ]; then
+            wait
+            BATCH_COUNT=0
+        fi
     done
     
-    # Wait for all icon extractions to finish
+    # wait for any remaining processes
     wait
 }
 
