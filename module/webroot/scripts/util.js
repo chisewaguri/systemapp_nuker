@@ -535,6 +535,7 @@ export async function checkMMRL() {
         // Adjust elements position for MMRL
         document.querySelector('.header').style.top = 'var(--window-inset-top)';
         document.querySelector('.search-container').style.top = 'calc(var(--window-inset-top) + 80px)';
+        document.querySelector('.category-filters').style.top = 'calc(var(--window-inset-top) + 130px)';
         document.querySelector('.floating-button-container').style.bottom = 'calc(var(--window-inset-bottom) + 95px)';
         document.querySelector('.footer-btn').style.paddingBottom = 'calc(var(--window-inset-bottom) + 15px)';
 
