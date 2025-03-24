@@ -100,8 +100,9 @@ busybox chcon --reference="/system" "$MODULES_UPDATE_DIR"
 # if not update
 if [ "$update" != true ]; then
     # copy module content, this also copy all scripts and module.prop
-    # only copy if module files is not copied, this ensure updated files are not overwritten by nuking process
-    if [ ! -f "$MODULES_UPDATE_DIR/module.prop" ]; then
+    # only copy content if module files was not copied yet
+    # this ensure updated files are not overwritten
+    if [ ! -f "$MODULES_UPDATE_DIR/nuke.sh" ]; then
         cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
     fi
 
