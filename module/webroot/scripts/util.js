@@ -129,7 +129,11 @@ async function displayAppList(data) {
         appDiv.addEventListener('click', function(e) {
             if (e.target.type !== 'checkbox') {
                 const checkbox = this.querySelector('input[type="checkbox"]');
-                checkbox.checked = !checkbox.checked;
+                const wasChecked = checkbox.checked;
+                checkbox.checked = !wasChecked;
+                
+                // Call the function to move checked apps to top
+                setTimeout(moveCheckedAppsToTop, 100);
             }
         });
 
@@ -770,6 +774,9 @@ function applyFilters() {
             app.style.display = 'none';
         }
     });
+
+    // Move checked apps to top
+    moveCheckedAppsToTop();
 }
 
 // Fuzzy search function
@@ -821,4 +828,27 @@ function highlightText(text, query) {
     
     // No highlighting for fuzzy matches that aren't direct substring matches
     return text;
+}
+
+function moveCheckedAppsToTop() {
+    const appListContainer = document.getElementById('app-list');
+    const apps = Array.from(appListContainer.querySelectorAll('.app'));
+    
+    // Sort the apps based on checkbox state
+    apps.sort((a, b) => {
+        const aChecked = a.querySelector('.app-selector').checked;
+        const bChecked = b.querySelector('.app-selector').checked;
+        
+        if (aChecked && !bChecked) return -1;
+        if (!aChecked && bChecked) return 1;
+        return 0;
+    });
+    
+    // Remove all apps from the container
+    apps.forEach(app => app.remove());
+    
+    // Add them back in the new order
+    apps.forEach(app => {
+        appListContainer.appendChild(app);
+    });
 }
