@@ -1,6 +1,6 @@
 {
-    "version": "v1.1-release",
-    "versionCode": 110,
-    "zipUrl": "https://github.com/ChiseWaguri/systemapp_nuker/releases/download/v1.1-release/SAN_v1.1-release.zip",
+    "version": "v1.1.1",
+    "versionCode": 111,
+    "zipUrl": "https://github.com/ChiseWaguri/systemapp_nuker/releases/download/v1.1.1/SAN_v1.1.1.zip",
     "changelog": "https://raw.githubusercontent.com/ChiseWaguri/systemapp_nuker/refs/heads/master/CHANGELOG.md"
   }
