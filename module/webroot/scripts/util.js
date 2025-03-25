@@ -250,7 +250,10 @@ export async function updateAppList(isNuke = false) {
                 return `<li>
                     <strong>${app.app_name}</strong> 
                     <small>(${app.package_name})</small>
-                    <span class="app-category-badge" style="background-color: ${category.color}">${category.name}</span>
+                    <span class="filter-btn" style="background-color: ${category.color}; color: white; 
+                           padding: 2px 6px; font-size: 10px; border-radius: 4px; margin-left: 5px;">
+                        ${category.name}
+                    </span>
                 </li>`;
             }).join("");
             
