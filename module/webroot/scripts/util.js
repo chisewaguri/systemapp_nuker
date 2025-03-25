@@ -834,21 +834,22 @@ function moveCheckedAppsToTop() {
     const appListContainer = document.getElementById('app-list');
     const apps = Array.from(appListContainer.querySelectorAll('.app'));
     
-    // Sort the apps based on checkbox state
+    // Sort the apps: checked ones at top, then alphabetical for unchecked
     apps.sort((a, b) => {
-        const aChecked = a.querySelector('.app-selector').checked;
-        const bChecked = b.querySelector('.app-selector').checked;
-        
-        if (aChecked && !bChecked) return -1;
-        if (!aChecked && bChecked) return 1;
-        return 0;
+      const aChecked = a.querySelector('.app-selector').checked;
+      const bChecked = b.querySelector('.app-selector').checked;
+      
+      // If checked status is different, put checked ones first
+      if (aChecked && !bChecked) return -1;
+      if (!aChecked && bChecked) return 1;
+      
+      // If both are checked or both are unchecked, sort alphabetically by app name
+      const aName = a.querySelector('.app-name').textContent.toLowerCase();
+      const bName = b.querySelector('.app-name').textContent.toLowerCase();
+      return aName.localeCompare(bName);
     });
     
-    // Remove all apps from the container
+    // Remove and re-add all apps in the new order
     apps.forEach(app => app.remove());
-    
-    // Add them back in the new order
-    apps.forEach(app => {
-        appListContainer.appendChild(app);
-    });
-}
+    apps.forEach(app => appListContainer.appendChild(app));
+  }
