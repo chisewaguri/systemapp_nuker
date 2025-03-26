@@ -179,8 +179,12 @@
 }
 
 .focus-btn {
-    background-color: var(--border-color);
+    background-color: var(--filledTonalButtonContainerColor, var(--border-color));
     padding: 3px 10px;
     padding-bottom: 1px;
     transition: padding 0.15s ease;
+}
+
+#whiteout-btn {
+    display: none;
 }
