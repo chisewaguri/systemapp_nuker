@@ -1,39 +1,40 @@
 @import url('https://mui.kernelsu.org/mmrl/insets.css');
+@import url('https://mui.kernelsu.org/mmrl/colors.css');
 
 :root {
     --top-inset: var(--window-inset-top, 0px);
     --bottom-inset: var(--window-inset-bottom, 0px);
 
     /* Background colors */
-    --bg-primary: #F5F5F5;
-    --bg-secondary: #fff;
-    --bg-input: #F5F5F5;
+    --bg-primary: var(--background, #F5F5F5);
+    --bg-secondary: var(--tonalSurface, #fff);
+    --bg-input: var(--surfaceBright, #F5F5F5);
 
     /* Text colors */
-    --text-primary: #000;
-    --text-secondary: #757575;
+    --text-primary: var(--onSurface, #000);
+    --text-secondary: var(--onSurfaceVariant, #757575);
 
     /* Button colors */
-    --btn-primary: #007bff;
-    --btn-primary-text:#fff;
+    --btn-primary: var(--primary, #007bff);
+    --btn-primary-text: var(--onPrimary, #fff);
 
     /* Border colors */
-    --border-color: #ccc;
+    --border-color: var(--outlineVariant, #ccc);
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
         /* Background colors */
-        --bg-primary: #151515;
-        --bg-secondary: #292929;
-        --bg-input: #1b1b1b;
+        --bg-primary: var(--background, #151515);
+        --bg-secondary: var(--tonalSurface, #292929);
+        --bg-input: var(--surfaceBright, #1b1b1b);
 
         /* Text colors */
-        --text-primary: #fff;
-        --text-secondary: #C2C2C2;
+        --text-primary: var(--onSurface, #fff);
+        --text-secondary: var(--onSurfaceVariant, #C2C2C2);
 
         /* Border colors */
-        --border-color: #636363;
+        --border-color: var(--outlineVariant, #636363);
     }
 }
 

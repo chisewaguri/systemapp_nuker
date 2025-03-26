@@ -126,6 +126,10 @@
     border-radius: 15px;
     user-select: none;
     pointer-events: auto;
+
+    svg {
+        fill: var(--btn-primary-text)
+    }
 }
 
 /* ====== FOOTER ====== */
