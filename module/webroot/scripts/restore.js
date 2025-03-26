@@ -47,8 +47,8 @@ if (restoreButton) {
             restoreButton.style.paddingRight = "25px";
         }, 10);
         setTimeout(() => {
-            fetchAppList("nuke_list.json", true);
-            fetchAppList("app_list.json");
+            fetchAppList("link/nuke_list.json", true);
+            fetchAppList("link/app_list.json");
             checkMMRL();
         }, 150);
         setupSearch();

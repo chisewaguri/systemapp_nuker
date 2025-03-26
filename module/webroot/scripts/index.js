@@ -154,8 +154,8 @@ if (nukeButton) {
             focusButton.style.paddingRight = "25px";
         }, 10);
         setTimeout(() => {
-            fetchAppList("app_list.json", true);
-            fetchAppList("nuke_list.json");
+            fetchAppList("link/app_list.json", true);
+            fetchAppList("link/nuke_list.json");
             checkMMRL();
         }, 150);
         setupSearch();

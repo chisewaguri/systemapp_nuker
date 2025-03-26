@@ -6,21 +6,22 @@ let isShellRunning = false;
 let pathToRemove = null;
 
 // Fetch raw whiteout paths from the file
-async function fetchWhiteoutPaths() {
-    try {
-        const result = await ksuExec('cat /data/adb/system_app_nuker/raw_whiteouts.txt 2>/dev/null || echo ""');
-        // Filter out comments and empty lines
-        const paths = result.stdout.split('\n')
-            .filter(path => path.trim() && !path.trim().startsWith('#'));
-        
-        whiteoutPaths = paths;
-        displayWhiteoutPaths(paths);
-        return paths;
-    } catch (error) {
-        console.error("Failed to fetch whiteout paths:", error);
-        toast("Failed to load whiteout paths");
-        return [];
-    }
+function fetchWhiteoutPaths() {
+    fetch('link/raw_whiteouts.txt')
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to fetch whiteout paths');
+            return response.text();
+        })
+        .then(text => {
+            whiteoutPaths = text
+                .split('\n')
+                .filter(path => path.trim() && !path.trim().startsWith('#'))
+                .map(path => path.trim());
+            displayWhiteoutPaths(whiteoutPaths);
+        })
+        .catch(error => {
+            console.error('Error fetching whiteout paths:', error);
+        });
 }
 
 // Display the whiteout paths in the UI
@@ -371,8 +372,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setupScrollEvent();
     applyRippleEffect();
     checkMMRL();
+    fetchWhiteoutPaths();
     initEventListeners();
-    setTimeout(() => {
-        fetchWhiteoutPaths();
-    }, 150);
 });

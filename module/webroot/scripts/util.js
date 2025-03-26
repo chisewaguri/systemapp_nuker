@@ -50,25 +50,38 @@ export function setupSearch() {
     });
 }
 
+// Handle link within webui
+async function linkFile() {
+    try {
+        await ksuExec(`ln -s /data/adb/system_app_nuker /data/adb/modules/system_app_nuker/webroot/link`);
+    } catch (error) {
+        console.error("Failed to link file:", error);
+    }
+}
+
 // Fetch system apps
 export async function fetchAppList(file, display = false) {
-    fetch(file)
-        .then(response => response.json())
-        .then(data => {
-            data.sort((a, b) => a.app_name.localeCompare(b.app_name));
-            if (file === "app_list.json") {
-                appList = data;
-            } else {
-                nukeList = data;
-            }
-            if (display) {
-                displayAppList(data);
-                applyRippleEffect();
-            }
-        })
-        .catch(error => {
-            console.error("Failed to fetch system apps:", error);
-        });
+    try {
+        const response = await fetch(file);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch ${file}`);
+        }
+        const data = await response.json();
+        data.sort((a, b) => a.app_name.localeCompare(b.app_name));
+        if (file === "app_list.json") {
+            appList = data;
+        } else {
+            nukeList = data;
+        }
+        if (display) {
+            displayAppList(data);
+            applyRippleEffect();
+        }
+    } catch (error) {
+        console.error("Failed to fetch system apps:", error);
+        await linkFile();
+        window.location.reload();
+    }
 }
 
 // Display app list
@@ -103,7 +116,7 @@ async function displayAppList(data) {
                 <div class="app-icon-container">
                     <div class="icon-loading">Loading...</div>
                     <img class="app-icon" 
-                        src="icons/${pkg.package_name}.png" 
+                        src="link/icons/${pkg.package_name}.png" 
                         style="opacity: 0;" 
                         onload="this.style.opacity='1'; this.previousElementSibling.style.display='none';" 
                         onerror="this.src='default.png'; this.style.opacity='1'; this.previousElementSibling.style.display='none';" 
@@ -482,11 +495,11 @@ export function setupScrollEvent() {
     let lastScrollY = window.scrollY;
     let scrollTimeout;
     const scrollThreshold = 40;
-    
+
     window.addEventListener('scroll', () => {
         isScrolling = true;
         clearTimeout(scrollTimeout);
-        
+
         if (window.scrollY > lastScrollY && window.scrollY > scrollThreshold) {
             hideFloatingButton(true);
         } else if (window.scrollY < lastScrollY) {
@@ -499,15 +512,15 @@ export function setupScrollEvent() {
         const opacity = 1 - (scrollPosition / scrollRange);
         const scale = 0.5 + (opacity * 0.5);
         const translateY = scrollPosition / 2;
-        
+
         // Apply to header
         document.querySelector('.header').style.opacity = opacity.toString();
         document.querySelector('.header').style.transform = `scale(${scale}) translateY(-${translateY}px)`;
-        
+
         // IMPORTANT: Apply EXACT same transform to both elements
         // Using a variable to ensure they're exactly the same
         const offset = scrollPosition;
-        
+
         const searchContainer = document.querySelector('.search-container');
         if (searchContainer) {
             searchContainer.style.transform = `translateY(-${offset}px)`;
@@ -520,9 +533,8 @@ export function setupScrollEvent() {
             const translateYPosition = progress * (categoryFiltersHeight + offset + 10);
             categoryFilters.style.transform = `translateY(-${translateYPosition}px)`;
         }
-        
+
         lastScrollY = window.scrollY;
-        
         scrollTimeout = setTimeout(() => {
             isScrolling = false;
         }, 100);
@@ -541,7 +553,7 @@ async function showAppInfoModal(app) {
 
     // Update modal content using the app object
     appInfoModal.querySelector('#app-name').textContent = app.app_name;
-    appInfoModal.querySelector('#app-icon').src = `icons/${app.package_name}.png`;
+    appInfoModal.querySelector('#app-icon').src = `link/icons/${app.package_name}.png`;
     appInfoModal.querySelector('#app-package').textContent = app.package_name;
     appInfoModal.querySelector('#app-path').textContent = app.app_path;
 
@@ -573,7 +585,7 @@ async function showAppInfoModal(app) {
         appInfoModal.style.opacity = 1;
         appInfoModalContent.style.transform = 'scale(1)';
     }, 10);
-    
+
     // Add close functionality
     const closeModal = () => {
         document.body.classList.remove('no-scroll');
@@ -593,7 +605,7 @@ async function showAppInfoModal(app) {
 
     try {
         const versionResult = await ksuExec(`dumpsys package ${app.package_name} | grep versionName | head -1 | cut -d= -f2`);
-        
+
         // Update the version with actual data
         document.getElementById('app-version').textContent = versionResult.stdout.trim() || 'Not available';
     } catch (error) {
@@ -618,7 +630,7 @@ async function showAppInfoModal(app) {
 
 async function loadCategories() {
     if (categoriesData) return categoriesData;
-    
+
     try {
         const response = await fetch('categories.json');
         categoriesData = await response.json();
@@ -638,43 +650,43 @@ async function loadCategories() {
 // Function to get category info for a package
 function getCategoryInfo(packageName) {
     if (!categoriesData) return { id: "unknown", name: "Unknown", color: "#9e9e9e", icon: "help", description: "Uncategorized app" };
-    
+
     const categoryId = categoriesData.apps[packageName] || "unknown";
     const category = categoriesData.categories.find(c => c.id === categoryId) || 
                     { id: "unknown", name: "Unknown", color: "#9e9e9e", icon: "help", description: "Uncategorized app" };
-    
+
     return category;
 }
 
 // Create category filters
 function createCategoryFilters() {
     if (!categoriesData) return;
-    
+
     const filterContainer = document.querySelector('.category-filters') || document.createElement('div');
-    
+
     if (!document.querySelector('.category-filters')) {
         filterContainer.className = 'category-filters';
         const searchContainer = document.querySelector('.search-container');
         searchContainer.parentNode.insertBefore(filterContainer, searchContainer.nextSibling);
     }
-    
+
     // Clear existing filters
     filterContainer.innerHTML = '';
-    
+
     // Add "All" filter
     const allBtn = document.createElement('button');
     allBtn.className = 'filter-btn filter-all active ripple-element';
     allBtn.dataset.category = 'all';
     allBtn.textContent = 'All';
     filterContainer.appendChild(allBtn);
-    
+
     // Add filters for each category that has apps
     const usedCategories = new Set(Object.values(categoriesData.apps));
-    
+
     categoriesData.categories.forEach(category => {
         // Skip the "unknown" category
         if (category.id === 'unknown') return;
-        
+
         // Only add categories that are actually used by apps
         if (usedCategories.has(category.id)) {
             const btn = document.createElement('button');
@@ -686,7 +698,7 @@ function createCategoryFilters() {
             filterContainer.appendChild(btn);
         }
     });
-    
+
     // Add filter functionality
     document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -697,20 +709,20 @@ function createCategoryFilters() {
             applyFilters();
         });
     });
-    
+
     applyRippleEffect();
 }
 
 // Function to apply both filters at once
 function applyFilters() {
     const apps = document.querySelectorAll('.app, .removed-app');
-    
+
     apps.forEach(app => {
         // Reset any previous highlighting
         const appNameEl = app.querySelector('span.app-name span');
         const appPackageEl = app.querySelector('span.app-package span');
         const appPathEl = app.querySelector('span.app-path span');
-        
+
         if (appNameEl && appNameEl.innerHTML.includes('<mark>')) {
             appNameEl.innerHTML = appNameEl.textContent;
         }
@@ -720,14 +732,14 @@ function applyFilters() {
         if (appPathEl && appPathEl.innerHTML.includes('<mark>')) {
             appPathEl.innerHTML = appPathEl.textContent;
         }
-        
+
         // Get app data for filtering
         const appName = app.querySelector('span.app-name').textContent.toLowerCase();
         const appPackage = app.querySelector('span.app-package').textContent.toLowerCase();
         const appPath = app.querySelector('span.app-path').textContent;
         const apkFilename = appPath.substring(appPath.lastIndexOf('/') + 1).toLowerCase();
         const appCategory = app.dataset.category;
-        
+
         // Check if app passes both filters
         const matchesSearch = !currentSearchTerm || 
                               fuzzyMatch(appName, currentSearchTerm) || 
@@ -735,7 +747,7 @@ function applyFilters() {
                               fuzzyMatch(apkFilename, currentSearchTerm);
                               
         const matchesCategory = activeCategory === 'all' || appCategory === activeCategory;
-        
+
         // Only show the app if it matches both filters
         if (matchesSearch && matchesCategory) {
             app.style.display = 'flex';
@@ -780,18 +792,16 @@ function fuzzyMatch(text, search) {
     text = text.toLowerCase();
     
     // Exact substring match
-    if (text.includes(search)) {
-        return true;
-    }
+    if (text.includes(search)) return true;
     
     // Simple fuzzy logic - all search characters must be in order
     let textIndex = 0;
     for (let i = 0; i < search.length; i++) {
         const searchChar = search[i];
-        
+
         // Skip spaces in search term
         if (searchChar === ' ') continue;
-        
+
         let found = false;
         while (textIndex < text.length) {
             if (text[textIndex] === searchChar) {
@@ -801,10 +811,10 @@ function fuzzyMatch(text, search) {
             }
             textIndex++;
         }
-        
+
         if (!found) return false;
     }
-    
+
     return true;
 }
 
@@ -825,23 +835,23 @@ function highlightText(text, query) {
 function moveCheckedAppsToTop() {
     const appListContainer = document.getElementById('app-list');
     const apps = Array.from(appListContainer.querySelectorAll('.app'));
-    
+
     // Sort the apps: checked ones at top, then alphabetical for unchecked
     apps.sort((a, b) => {
-      const aChecked = a.querySelector('.app-selector').checked;
-      const bChecked = b.querySelector('.app-selector').checked;
-      
-      // If checked status is different, put checked ones first
-      if (aChecked && !bChecked) return -1;
-      if (!aChecked && bChecked) return 1;
-      
-      // If both are checked or both are unchecked, sort alphabetically by app name
-      const aName = a.querySelector('.app-name').textContent.toLowerCase();
-      const bName = b.querySelector('.app-name').textContent.toLowerCase();
-      return aName.localeCompare(bName);
+        const aChecked = a.querySelector('.app-selector').checked;
+        const bChecked = b.querySelector('.app-selector').checked;
+
+        // If checked status is different, put checked ones first
+        if (aChecked && !bChecked) return -1;
+        if (!aChecked && bChecked) return 1;
+
+        // If both are checked or both are unchecked, sort alphabetically by app name
+        const aName = a.querySelector('.app-name').textContent.toLowerCase();
+        const bName = b.querySelector('.app-name').textContent.toLowerCase();
+        return aName.localeCompare(bName);
     });
-    
+
     // Remove and re-add all apps in the new order
     apps.forEach(app => app.remove());
     apps.forEach(app => appListContainer.appendChild(app));
-  }
+}
