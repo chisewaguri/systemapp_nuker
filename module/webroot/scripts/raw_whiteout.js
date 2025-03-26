@@ -1,4 +1,4 @@
-import { ksuExec, toast, setupSearch, setupScrollEvent, checkMMRL, applyRippleEffect, initialTransition } from "./util.js";
+import { ksuExec, toast, setupScrollEvent, checkMMRL, applyRippleEffect, initialTransition } from "./util.js";
 
 // Global variables
 let whiteoutPaths = [];
@@ -21,6 +21,7 @@ function fetchWhiteoutPaths() {
         })
         .catch(error => {
             console.error('Error fetching whiteout paths:', error);
+            displayWhiteoutPaths();
         });
 }
 
@@ -268,6 +269,53 @@ function closeConfirmationModal(confirmed = false) {
     }, 300);
 }
 
+// Search functionality for raw whiteout paths
+function setupPathSearch() {
+    const searchInput = document.getElementById('search-input');
+    const clearBtn = document.getElementById('clear-btn');
+    
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        filterPaths(searchTerm);
+        
+        // Toggle clear button visibility
+        clearBtn.style.display = searchTerm.length > 0 ? 'block' : 'none';
+    });
+    
+    clearBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        filterPaths('');
+        clearBtn.style.display = 'none';
+    });
+}
+
+// Filter paths based on search term
+function filterPaths(searchTerm) {
+    const pathItems = document.querySelectorAll('.path-item');
+    
+    pathItems.forEach(item => {
+        const pathText = item.querySelector('.path-text').textContent.toLowerCase();
+        
+        if (searchTerm === '' || pathText.includes(searchTerm)) {
+            item.style.display = 'flex';
+            
+            // Highlight matching text if search term exists
+            if (searchTerm !== '') {
+                const pathElement = item.querySelector('.path-text');
+                const text = pathElement.textContent;
+                const regex = new RegExp(`(${searchTerm})`, 'gi');
+                pathElement.innerHTML = text.replace(regex, '<mark>$1</mark>');
+            } else {
+                // Reset highlighting
+                const pathElement = item.querySelector('.path-text');
+                pathElement.innerHTML = pathElement.textContent;
+            }
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
 // Init event listeners
 function initEventListeners() {
     console.log("Initializing event listeners");
@@ -369,7 +417,7 @@ document.addEventListener('DOMContentLoaded', function() {
         whiteoutButton.style.paddingLeft = "20px";
         whiteoutButton.style.paddingRight = "20px";
     }, 200);
-    setupSearch();
+    setupPathSearch();
     setupScrollEvent();
     applyRippleEffect();
     checkMMRL();

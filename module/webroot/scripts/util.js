@@ -56,7 +56,7 @@ export function setupSearch() {
 // Handle link within webui
 async function linkFile() {
     try {
-        await ksuExec(`ln -s /data/adb/system_app_nuker /data/adb/modules/system_app_nuker/webroot/link`);
+        await ksuExec(`[ -L "/data/adb/modules/system_app_nuker/webroot/link" ] || ln -s /data/adb/system_app_nuker /data/adb/modules/system_app_nuker/webroot/link`);
     } catch (error) {
         console.error("Failed to link file:", error);
     }
@@ -71,7 +71,7 @@ export async function fetchAppList(file, display = false) {
         }
         const data = await response.json();
         data.sort((a, b) => a.app_name.localeCompare(b.app_name));
-        if (file === "app_list.json") {
+        if (file === "link/app_list.json") {
             appList = data;
         } else {
             nukeList = data;
@@ -88,16 +88,38 @@ export async function fetchAppList(file, display = false) {
 }
 
 // Display app list
-async function displayAppList(data) {
+let allAppsData = []; // Store all apps data
+let currentlyLoadedApps = 0;
+const APPS_PER_BATCH = 20;
+let isLoadingMoreApps = false;
+
+async function displayAppList(data, reset = true) {
     // Load categories if not already loaded
     if (!categoriesData) {
         await loadCategories();
     }
     
     const appListDiv = document.getElementById("app-list");
+    
+    // Reset or store all apps data
+    if (reset) {
     appListDiv.innerHTML = "";
-
-    const htmlContent = data.map((pkg) => {
+        allAppsData = [...data];
+        currentlyLoadedApps = 0;
+        // Remove scroll event listener if exists
+        window.removeEventListener('scroll', handleLazyLoad);
+        // Add scroll event listener for lazy loading
+        window.addEventListener('scroll', handleLazyLoad);
+    }
+    
+    // Calculate next batch of apps to load
+    const nextBatchEnd = Math.min(currentlyLoadedApps + APPS_PER_BATCH, allAppsData.length);
+    const appsToRender = allAppsData.slice(currentlyLoadedApps, nextBatchEnd);
+    
+    if (appsToRender.length === 0) return; // No more apps to load
+    
+    // Generate HTML for the next batch
+    const htmlContent = appsToRender.map((pkg) => {
         const category = getCategoryInfo(pkg.package_name);
         
         // Different approach for category display:
@@ -136,11 +158,31 @@ async function displayAppList(data) {
         </div>
     `}).join("");
 
-    appListDiv.innerHTML = htmlContent;
+    // Append the new batch to the existing content
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlContent;
+    
+    // Append each child individually
+    while (tempDiv.firstChild) appListDiv.appendChild(tempDiv.firstChild);
 
-    // Rest of the function remains the same...
-    // Add click handlers to all app divs
-    document.querySelectorAll('.app').forEach(appDiv => {
+    // Update the count of loaded apps
+    currentlyLoadedApps = nextBatchEnd;
+
+    // Add event handlers to newly added app divs
+    setupAppDivEventHandlers(appListDiv.querySelectorAll('.app:nth-last-child(-n+' + appsToRender.length + ')'));
+
+    // Create category filters - only on initial load
+    if (reset) createCategoryFilters();
+    applyRippleEffect();
+    
+    // If filter/search is active, apply it to newly loaded content
+    if (currentSearchTerm || activeCategory !== 'all') applyFilters();
+    isLoadingMoreApps = false;
+}
+
+// Set up event handlers for app divs
+function setupAppDivEventHandlers(appDivs) {
+    appDivs.forEach(appDiv => {
         // Check checkbox on whole app card
         appDiv.addEventListener('click', function(e) {
             if (e.target.type !== 'checkbox') {
@@ -196,11 +238,6 @@ async function displayAppList(data) {
             });
         });
     });
-    
-    // Create category filters
-    createCategoryFilters();
-    
-    applyRippleEffect();
 }
 
 // Funtion to update app list
@@ -244,13 +281,13 @@ export async function updateAppList(isNuke = false) {
             const confirmationModal = document.getElementById("confirmation-modal");
             const modalContent = confirmationModal.querySelector(".modal-content");
             const selectedAppsList = document.getElementById("selected-apps-confirm");
-            
+
             // Check for critical apps
             const criticalApps = selectedPackages.filter(app => {
                 const category = getCategoryInfo(app.package_name);
                 return category.id === 'essential' || category.id === 'caution';
             });
-            
+
             // Update warning text based on critical apps
             const warningText = document.querySelector(".warning-text");
             if (criticalApps.length > 0) {
@@ -263,7 +300,7 @@ export async function updateAppList(isNuke = false) {
                 warningText.innerHTML = "This action may affect device functionality.";
                 warningText.style.color = "#f44336";
             }
-            
+
             // Update list with category indicators
             selectedAppsList.innerHTML = selectedPackages.map(app => {
                 const category = getCategoryInfo(app.package_name);
@@ -385,29 +422,17 @@ export function setupDropdownMenu() {
 
     // Close menu when clicking outside
     document.addEventListener('click', (event) => {
-        if (!menuButton.contains(event.target)) {
-            closeDropdownMenu();
-        }
+        if (!menuButton.contains(event.target)) closeDropdownMenu();
     });
 
     // Close menu when scrolling
-    window.addEventListener('scroll', () => {
-        closeDropdownMenu();
-    });
+    window.addEventListener('scroll', () => closeDropdownMenu());
 
     const importOption = document.getElementById('import-option');
-    if (importOption) {
-        importOption.addEventListener('click', () => {
-            importModalMenu();
-        });
-    }
+    if (importOption) importOption.addEventListener('click', () => importModalMenu());
 
     const exportOption = document.getElementById('export-option');
-    if (exportOption) {
-        exportOption.addEventListener('click', () => {
-            exportPackageList();
-        });
-    }
+    if (exportOption) exportOption.addEventListener('click', () => exportPackageList());
 }
 
 // Function to apply ripple effect
@@ -723,6 +748,7 @@ function createCategoryFilters() {
 // Function to apply both filters at once
 function applyFilters() {
     const apps = document.querySelectorAll('.app, .removed-app');
+    let visibleCount = 0;
 
     apps.forEach(app => {
         // Reset any previous highlighting
@@ -758,7 +784,8 @@ function applyFilters() {
         // Only show the app if it matches both filters
         if (matchesSearch && matchesCategory) {
             app.style.display = 'flex';
-            
+            visibleCount++;
+
             // Apply highlighting for search matches
             if (currentSearchTerm) {
                 if (appNameEl) {
@@ -786,6 +813,15 @@ function applyFilters() {
         }
     });
 
+    // If search/filter is active and not many results are visible, load more content
+    if ((currentSearchTerm || activeCategory !== 'all') && 
+        visibleCount < 10 && 
+        currentlyLoadedApps < allAppsData.length) {
+        
+        isLoadingMoreApps = true;
+        setTimeout(() => displayAppList(null, false), 100);
+    }
+
     // Move checked apps to top after a delay if not already scheduled
     if (!moveCheckedAppsTimer) {
         moveCheckedAppsTimer = setTimeout(() => {
@@ -799,18 +835,17 @@ function applyFilters() {
 function fuzzyMatch(text, search) {
     // If no search term, everything matches
     if (!search) return true;
-    
+
     search = search.toLowerCase();
     text = text.toLowerCase();
-    
+
     // Exact substring match
     if (text.includes(search)) return true;
-    
+
     // Simple fuzzy logic - all search characters must be in order
     let textIndex = 0;
     for (let i = 0; i < search.length; i++) {
         const searchChar = search[i];
-
         // Skip spaces in search term
         if (searchChar === ' ') continue;
 
@@ -823,25 +858,37 @@ function fuzzyMatch(text, search) {
             }
             textIndex++;
         }
-
         if (!found) return false;
     }
-
     return true;
 }
 
 // Highlight matching text function
 function highlightText(text, query) {
     if (!query) return text;
-    
+
     // For direct matches
     if (text.toLowerCase().includes(query.toLowerCase())) {
         const regex = new RegExp(`(${query})`, 'gi');
         return text.replace(regex, '<mark>$1</mark>');
     }
-    
+
     // No highlighting for fuzzy matches that aren't direct substring matches
     return text;
+}
+
+// Handle lazy loading on scroll
+function handleLazyLoad() {
+    if (isLoadingMoreApps) return;
+    const appListDiv = document.getElementById("app-list");
+    const contentBottom = appListDiv.getBoundingClientRect().bottom;
+    const screenHeight = window.innerHeight;
+
+    // Load more apps when user scrolls to bottom of list
+    if (contentBottom <= screenHeight + 100 && currentlyLoadedApps < allAppsData.length) {
+        isLoadingMoreApps = true;
+        setTimeout(() => displayAppList(null, false), 100);
+    }
 }
 
 function moveCheckedAppsToTop() {

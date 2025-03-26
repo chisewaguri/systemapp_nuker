@@ -158,7 +158,7 @@ if (nukeButton) {
             fetchAppList("link/app_list.json", true);
             fetchAppList("link/nuke_list.json");
             checkMMRL();
-        }, 300);
+        }, 10);
         setupSearch();
         setupScrollEvent();
         setupDropdownMenu();

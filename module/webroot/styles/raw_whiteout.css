@@ -28,14 +28,12 @@
     height: 100px;
     width: 100%;
     max-width: 900px;
-    color: #888;
+    color: var(--text-secondary);
     font-style: italic;
     text-align: center;
-    padding: 20px;
     box-sizing: border-box;
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: var(--bg-input);
     border-radius: 8px;
-    margin: 20px 0;
 }
 
 .path-item {
@@ -184,10 +182,5 @@
     
     .warning-text {
         color: #ffab91;
-    }
-    
-    .empty-list-message {
-        color: #aaa;
-        background-color: rgba(255, 255, 255, 0.05);
     }
 }
