@@ -1,6 +1,6 @@
 .dev-badge {
     background-color: #ff5722;
-    color: white;
+    color: var(--btn-primary-text);
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 10px;
@@ -44,10 +44,10 @@
     display: flex;
     width: 100%;
     max-width: 900px;
-    background-color: #fff;
+    background-color: var(--bg-secondary);
     justify-content: space-between;
     align-items: center;
-    border: 2px solid #fff;
+    border: 2px solid var(--bg-secondary);
     border-radius: 10px;
     box-sizing: border-box;
     transition: border-color 0.3s ease, background-color 0.2s ease-in-out;
@@ -66,12 +66,12 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-}
 
-.path-icon svg {
-    width: 28px;
-    height: 28px;
-    fill: #007bff;
+    svg {
+        width: 28px;
+        height: 28px;
+        fill: var(--btn-primary);
+    }
 }
 
 .path-text {
@@ -101,10 +101,6 @@
     cursor: pointer;
 }
 
-.delete-path-btn:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-}
-
 .delete-path-btn svg {
     fill: #ff5252;
     width: 24px;
@@ -117,12 +113,13 @@
     padding: 12px;
     font-family: monospace;
     font-size: 14px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     margin-bottom: 16px;
-    outline-color: #3a75ff;
+    color: var(--text-primary);
+    background-color: var(--bg-input);
+    outline-color: var(--btn-primary);
     max-width: 100%;
-    overflow: hidden;
 }
 
 .path-warning {
@@ -146,7 +143,8 @@
 }
 
 .path-to-remove {
-    background-color: #f5f5f5;
+    color: var(--border-color);
+    background-color: var(--bg-primary);
     padding: 12px;
     border-radius: 8px;
     font-family: monospace;
@@ -173,44 +171,20 @@
     bottom: 0;
     margin-right: 15px;
     padding: 15px;
-    color: #fff;
-    background-color: #007bff;
+    color: var(--btn-primary-text);
+    background-color: var(--btn-primary);
     box-shadow: 0 4px 8px #0003;
     border-radius: 15px;
     user-select: none;
 }
 
 @media (prefers-color-scheme: dark) {
-    .path-item {
-        background-color: #343434;
-        border-color: #343434;
-    }
-    
-    .path-icon svg {
-        fill: #2196f3;
-    }
-    
-    .delete-path-btn:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    .path-input {
-        background-color: #212121;
-        color: #fff;
-        border-color: #555;
-    }
-    
     .path-warning {
         background-color: rgba(255, 152, 0, 0.05);
     }
     
     .warning-text {
         color: #ffab91;
-    }
-    
-    .path-to-remove {
-        background-color: #212121;
-        color: #ccc;
     }
     
     .empty-list-message {

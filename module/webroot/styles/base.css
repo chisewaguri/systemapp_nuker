@@ -1,7 +1,47 @@
+@import url('https://mui.kernelsu.org/mmrl/insets.css');
+
+:root {
+    --top-inset: var(--window-inset-top, 0px);
+    --bottom-inset: var(--window-inset-bottom, 0px);
+
+    /* Background colors */
+    --bg-primary: #F5F5F5;
+    --bg-secondary: #fff;
+    --bg-input: #F5F5F5;
+
+    /* Text colors */
+    --text-primary: #000;
+    --text-secondary: #757575;
+
+    /* Button colors */
+    --btn-primary: #007bff;
+    --btn-primary-text:#fff;
+
+    /* Border colors */
+    --border-color: #ccc;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Background colors */
+        --bg-primary: #151515;
+        --bg-secondary: #292929;
+        --bg-input: #1b1b1b;
+
+        /* Text colors */
+        --text-primary: #fff;
+        --text-secondary: #C2C2C2;
+
+        /* Border colors */
+        --border-color: #636363;
+    }
+}
+
 body {
-    background-color: #F5F5F5;
-    padding-top: var(--window-inset-top);
-    padding-bottom: var(--window-inset-bottom);
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    padding-top: var(--top-inset);
+    padding-bottom: var(--bottom-inset);
     margin: 0;
 }
 
@@ -15,11 +55,4 @@ body {
     flex-direction: column;
     justify-content: center;
     gap: 16px;
-}
-
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: #121212;
-        color: #FFFFFF;
-    }
 }

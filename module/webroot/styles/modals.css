@@ -10,13 +10,15 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
     opacity: 0;
     transition: opacity 0.3s ease;
 }
 
 .modal-content {
     position: relative;
-    background-color: #ffffff;
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
     width: 90%;
     max-width: 500px;
     border-radius: 12px;
@@ -31,7 +33,7 @@
     align-items: center;
     padding: 10px 20px;
     gap: 10px;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .modal-header h2 {
@@ -55,11 +57,12 @@
     width: 100%;
     min-height: 150px;
     padding: 12px;
-    background-color: #f3f3f3;
+    color: var(--text-primary);
+    background-color: var(--bg-input);
     border-radius: 8px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     box-sizing: border-box;
-    outline-color: #3a75ff;
+    outline-color: var(--btn-primary);
     font-family: monospace;
     resize: none;
 }
@@ -77,13 +80,14 @@
     font-size: 18px;
     font-weight: bold;
     border: none;
-    background-color: #f0f0f0;
+    background-color: var(--border-color);
+    color: var(--text-primary);
     user-select: none;
 }
 
 .confirm-btn {
-    background-color: #007bff;
-    color: white;
+    background-color: var(--btn-primary);
+    color:var(--btn-primary-text);
 }
 
 /* ====== APP INFO MODAL STYLES ====== */
@@ -110,7 +114,7 @@
     text-align: left;
     word-break: break-word;
     word-break: break-all;
-    background-color: #ffffff;
+    background-color: var(--bg-secondary);
     user-select: none;
     display: flex;
     align-items: flex-start;
@@ -127,10 +131,10 @@
 
 .selected-apps-list {
     max-height: 150px;
-    overflow-y: auto;
+    overflow: auto;
     margin-bottom: 16px;
     padding: 10px;
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: var(--border-color);
     border-radius: 4px;
 }
 
@@ -141,13 +145,13 @@
 
 .selected-apps-list ul {
     margin: 5px 0;
-    padding-left: 20px;
+    padding: 0 20px;
 }
 
 .selected-apps-list li {
     margin-bottom: 4px;
     font-size: 14px;
-    word-break: break-all;
+    white-space: nowrap;
 }
 
 /* ====== IMPORT MODAL STYLES ====== */
@@ -157,8 +161,6 @@
 }
 
 #file-import-btn {
-    background-color: #f0f0f0;
-    color: inherit;
     flex-grow: 1;
     display: flex;
     align-items: center;
@@ -166,50 +168,9 @@
     gap: 10px;
 }
 
-#file-import-btn svg {
-    height: 20px;
-    width: 20px;
-}
-
 /* Dark mode styles */
 @media (prefers-color-scheme: dark) {
-    .modal-content {
-        background-color: #212121;
-        color: #ffffff;
-    }
-    
-    .modal-header {
-        border-bottom: 1px solid #333;
-    }
-    
-    #package-list-input {
-        background-color: #333;
-        color: #fff;
-        border-color: #555;
-    }
-    
-    .modal-btn {
-        background-color: #444;
-        color: #fff;
-    }
-    
-    .confirm-btn {
-        background-color: #007bff;
-    }
-
-    .selected-apps-list {
-        background-color: rgba(255, 255, 255, 0.05);
-    }
-    
     .warning-text {
         color: #ff6b6b;
-    }
-
-    .app-info-detail-text {
-        background-color: #212121;
-    }
-
-    #file-import-btn {
-        background-color: #444;
     }
 }

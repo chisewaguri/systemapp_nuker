@@ -2,7 +2,8 @@
     width: 90%;
     max-width: 600px;
     height: 80vh;
-    background-color: #fff;
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
     border-radius: 15px;
     display: flex;
     flex-direction: column;
@@ -14,18 +15,18 @@
     display: flex;
     align-items: center;
     padding: 10px;
-    border-bottom: 2px solid #ccc;
+    border-bottom: 2px solid var(--border-color);
 }
 
 .current-path .separator {
-    color: #6E6E6E;
+    color: var(--border-color);
     padding: 0 4px;
 }
 
 .back-button {
     background: none;
     border: none;
-    fill: #6E6E6E;
+    fill: var(--border-color);
     user-select: none;
 }
 
@@ -40,7 +41,7 @@
     background: none;
     border: none;
     font-size: 20px;
-    color: #ccc;
+    color: var(--border-color);
     padding: 0 5px;
 }
 
@@ -61,16 +62,16 @@
     align-items: center;
     padding: 10px;
     border-radius: 8px;
-    background-color: #fff;
+    background-color: var(--bg-secondary);
     position: relative;
     overflow: hidden;
     user-select: none;
-}
 
-.file-item svg {
-    flex-shrink: 0;
-    margin-right: 10px;
-    fill: #6E6E6E;
+    svg {
+        flex-shrink: 0;
+        margin-right: 10px;
+        fill: var(--text-secondary);
+    }
 }
 
 .file-item span {
@@ -80,26 +81,3 @@
     white-space: nowrap;
 }
 
-@media (prefers-color-scheme: dark) {
-    .file-selector {
-        background-color: #343434;
-        color: #fff;
-    }
-
-    .file-selector-header {
-        border-bottom: 2px solid #232323;
-    }
-
-    .file-item {
-        background-color: #343434;
-    }
-
-    .current-path .separator {
-        color: #C2C2C2;
-    }
-
-    .file-item svg,
-    .back-button {
-        fill: #C2C2C2;
-    }
-}

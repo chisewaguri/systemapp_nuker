@@ -451,13 +451,6 @@ export function applyRippleEffect() {
 // Function to check if running in MMRL
 export async function checkMMRL() {
     if (typeof ksu !== 'undefined' && ksu.mmrl) {
-        // Adjust elements position for MMRL
-        document.querySelector('.header').style.top = 'var(--window-inset-top)';
-        document.querySelector('.search-container').style.top = 'calc(var(--window-inset-top) + 80px)';
-        document.querySelector('.category-filters').style.top = 'calc(var(--window-inset-top) + 130px)';
-        document.querySelector('.floating-button-container').style.bottom = 'calc(var(--window-inset-bottom) + 95px)';
-        document.querySelector('.footer-btn').style.paddingBottom = 'calc(var(--window-inset-bottom) + 15px)';
-
         // Set status bars theme based on device theme
         try {
             $system_app_nuker.setLightStatusBars(!window.matchMedia('(prefers-color-scheme: dark)').matches)
@@ -517,19 +510,15 @@ export function setupScrollEvent() {
         
         const searchContainer = document.querySelector('.search-container');
         if (searchContainer) {
-            if (!searchContainer.style.transition) {
-                searchContainer.style.transition = 'transform 0.15s ease-out';
-            }
             searchContainer.style.transform = `translateY(-${offset}px)`;
         }
-        
+
         const categoryFilters = document.querySelector('.category-filters');
         if (categoryFilters) {
-            // We need to keep the horizontal centering while applying vertical transform
-            if (!categoryFilters.style.transition) {
-                categoryFilters.style.transition = 'transform 0.15s ease-out';
-            }
-            categoryFilters.style.transform = `translateX(-50%) translateY(-${offset}px)`;
+            const categoryFiltersHeight = categoryFilters.offsetHeight;
+            const progress = Math.min(Math.max(window.scrollY / (categoryFiltersHeight + 10), 0), 1);
+            const translateYPosition = progress * (categoryFiltersHeight + offset + 10);
+            categoryFilters.style.transform = `translateY(-${translateYPosition}px)`;
         }
         
         lastScrollY = window.scrollY;
