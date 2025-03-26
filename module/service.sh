@@ -85,9 +85,7 @@ create_applist() {
 create_applist
 
 # create symlink for app icon
-[ ! -L "$MODDIR/webroot/icons" ] && ln -sf "$ICON_DIR" $MODDIR/webroot/icons
-[ ! -L "$MODDIR/webroot/app_list.json" ] && ln -sf "$APP_LIST" $MODDIR/webroot/app_list.json
-[ ! -L "$MODDIR/webroot/nuke_list.json" ] && ln -sf "$REMOVE_LIST" $MODDIR/webroot/nuke_list.json
+[ ! -L "$MODDIR/webroot/link" ] && ln -s $PERSIST_DIR $MODDIR/webroot/link
 
 # this make sure that restored app is back
 for pkg in $(grep -o "\"package_name\":.*" "$APP_LIST" | awk -F"\"" '{print $4}'); do
