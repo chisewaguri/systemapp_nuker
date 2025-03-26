@@ -1,4 +1,4 @@
-import { ksuExec, setupSearch, setupScrollEvent, setupDropdownMenu, checkMMRL, fetchAppList, updateAppList, nukeList, toast, applyRippleEffect } from "./util.js";
+import { ksuExec, setupSearch, setupScrollEvent, setupDropdownMenu, checkMMRL, fetchAppList, updateAppList, nukeList, toast, applyRippleEffect, initialTransition } from "./util.js";
 
 // Function to handle the export of package list
 export async function exportPackageList() {
@@ -41,11 +41,12 @@ if (restoreButton) {
     });
 
     document.addEventListener('DOMContentLoaded', () => {
+        initialTransition();
         setTimeout(() => {
             const restoreButton = document.querySelector('.focus-btn');
             restoreButton.style.paddingLeft = "20px";
             restoreButton.style.paddingRight = "20px";
-        }, 10);
+        }, 200);
         setTimeout(() => {
             fetchAppList("link/nuke_list.json", true);
             fetchAppList("link/app_list.json");

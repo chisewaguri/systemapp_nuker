@@ -885,3 +885,32 @@ fetch('link/raw_whiteouts.txt')
     .catch(error => {
         console.error('File not found:', error);
     });
+
+// function to setup initial transition
+export function initialTransition() {
+    const content = document.querySelector('.content');
+    const footer = document.querySelector('.footer');
+    const floatingButton = document.querySelector('.floating-button-container');
+    // Add loaded class after a short delay to trigger the animation
+    setTimeout(() => {
+        footer.style.transform = 'translateY(0)';
+        floatingButton.style.transform = 'translateY(0)';
+        content.classList.add('loaded');
+    }, 100);
+
+    // Quit transition on switching page
+    document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', (e) => {
+            if (link.href && link.href.startsWith(window.location.origin)) {
+                e.preventDefault();
+                content.classList.remove('loaded');
+                footer.style.transform = 'translateY(100%)';
+                floatingButton.style.transition = 'all 0.2s ease';
+                floatingButton.style.transform = 'translateY(calc(var(--bottom-inset) + 95px + 100%))';
+                setTimeout(() => {
+                    window.location.href = link.href;
+                }, 200);
+            }
+        });
+    });
+}
