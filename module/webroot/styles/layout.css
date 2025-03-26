@@ -34,9 +34,19 @@
     transition: transform 0.05s linear;
 }
 
+.seach-input-wrapper {
+    width: calc(100vw - 30px);
+    max-width: 900px;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
 .search-container input {
-    width: calc(100% - 60px);
-    padding: 0 10px;
+    width: 100%;
+    padding: 0 15px;
     padding-right: 30px;
     height: 100%;
     outline-color: var(--btn-primary);
@@ -50,7 +60,7 @@
 .clear-btn {
     display: none;
     position: absolute;
-    right: 15px;
+    right: 10px;
     top: 50%;
     color: var(--border-color);
     transform: translateY(-50%);
@@ -77,6 +87,8 @@
 /* ====== APP LISTS ====== */
 #removed-list,
 #app-list {
+    width: calc(100vw - 30px);
+    max-width: 900px;
     margin-top: calc(150px + 1em);
     margin-bottom: 100px;
     display: flex;
