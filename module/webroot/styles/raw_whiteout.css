@@ -18,8 +18,7 @@
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    width: 100%;
-    box-sizing: border-box;
+    width: calc(100% - 30px);
 }
 
 .empty-list-message {
@@ -143,8 +142,8 @@
 }
 
 .path-to-remove {
-    color: var(--border-color);
-    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    background-color: var(--bg-input);
     padding: 12px;
     border-radius: 8px;
     font-family: monospace;

@@ -43,8 +43,8 @@ if (restoreButton) {
     document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             const restoreButton = document.querySelector('.focus-btn');
-            restoreButton.style.paddingLeft = "25px";
-            restoreButton.style.paddingRight = "25px";
+            restoreButton.style.paddingLeft = "20px";
+            restoreButton.style.paddingRight = "20px";
         }, 10);
         setTimeout(() => {
             fetchAppList("link/nuke_list.json", true);

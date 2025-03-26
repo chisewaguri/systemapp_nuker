@@ -150,8 +150,8 @@ if (nukeButton) {
     document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => {
             const focusButton = document.querySelector(".focus-btn");
-            focusButton.style.paddingLeft = "25px";
-            focusButton.style.paddingRight = "25px";
+            focusButton.style.paddingLeft = "20px";
+            focusButton.style.paddingRight = "20px";
         }, 10);
         setTimeout(() => {
             fetchAppList("link/app_list.json", true);

@@ -855,3 +855,21 @@ function moveCheckedAppsToTop() {
     apps.forEach(app => app.remove());
     apps.forEach(app => appListContainer.appendChild(app));
 }
+
+// Show raw whiteout button if found any path from raw_whiteouts.txt
+fetch('link/raw_whiteouts.txt')
+    .then(response => {
+        if (!response.ok) throw new Error('Failed to fetch whiteout paths');
+        return response.text();
+    })
+    .then(text => {
+        const paths = text
+            .split('\n')
+            .filter(path => path.trim() && !path.trim().startsWith('#'));
+        if (paths.length > 0) {
+            document.getElementById('whiteout-btn').style.display = 'flex';
+        }
+    })
+    .catch(error => {
+        console.error('File not found:', error);
+    });

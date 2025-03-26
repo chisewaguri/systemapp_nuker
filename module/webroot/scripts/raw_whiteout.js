@@ -42,7 +42,7 @@ function displayWhiteoutPaths(paths) {
     // Create HTML for each path
     paths.forEach(path => {
         const pathDiv = document.createElement("div");
-        pathDiv.className = "path-item ripple-element";
+        pathDiv.className = "path-item";
         pathDiv.dataset.path = path;
 
         pathDiv.innerHTML = `
@@ -362,11 +362,11 @@ function initEventListeners() {
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
+        const whiteoutButtonContainer = document.getElementById('whiteout-btn');
         const whiteoutButton = document.querySelector('.focus-btn');
-        if (whiteoutButton) {
-            whiteoutButton.style.paddingLeft = "25px";
-            whiteoutButton.style.paddingRight = "25px";
-        }
+        whiteoutButtonContainer.style.display = 'flex';
+        whiteoutButton.style.paddingLeft = "20px";
+        whiteoutButton.style.paddingRight = "20px";
     }, 10);
     setupSearch();
     setupScrollEvent();
