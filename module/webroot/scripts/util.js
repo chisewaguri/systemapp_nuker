@@ -9,6 +9,9 @@ export let appList = [],
            currentSearchTerm = '',
            activeCategory = 'all';
 
+// Timer for delaying moveCheckedAppsToTop
+let moveCheckedAppsTimer = null;
+
 export  async function ksuExec(command) {
     return new Promise((resolve) => {
         let callbackName = `exec_callback_${Date.now()}`;
@@ -144,9 +147,13 @@ async function displayAppList(data) {
                 const checkbox = this.querySelector('input[type="checkbox"]');
                 const wasChecked = checkbox.checked;
                 checkbox.checked = !wasChecked;
-                
-                // Call the function to move checked apps to top
-                setTimeout(moveCheckedAppsToTop, 100);
+                // Clear any existing timer
+                if (moveCheckedAppsTimer) clearTimeout(moveCheckedAppsTimer);
+                // Set a new timer to move checked apps after 1 second
+                moveCheckedAppsTimer = setTimeout(() => {
+                    moveCheckedAppsToTop();
+                    moveCheckedAppsTimer = null;
+                }, 1000);
             }
         });
 
@@ -779,8 +786,13 @@ function applyFilters() {
         }
     });
 
-    // Move checked apps to top
-    moveCheckedAppsToTop();
+    // Move checked apps to top after a delay if not already scheduled
+    if (!moveCheckedAppsTimer) {
+        moveCheckedAppsTimer = setTimeout(() => {
+            moveCheckedAppsToTop();
+            moveCheckedAppsTimer = null;
+        }, 1000);
+    }
 }
 
 // Fuzzy search function
