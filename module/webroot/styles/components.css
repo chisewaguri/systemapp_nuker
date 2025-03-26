@@ -12,7 +12,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #F5F5F5;
+    background-color: var(--bg-primary);
     border-radius: 50%;
     width: 40px;
     height: 40px;
@@ -25,7 +25,7 @@
     white-space: nowrap;
     display: none;
     opacity: 0;
-    background-color: #fff;
+    background-color: var(--bg-secondary);
     overflow: hidden;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
@@ -36,23 +36,24 @@
 
 .menu-item {
     display: flex;
-    background-color: #fff;
+    background-color: var(--bg-secondary);
     align-items: center;
     padding: 12px 16px;
     user-select: none;
-}
 
-.menu-item svg {
-    margin-right: 12px;
+    svg {
+        margin-right: 12px;
+    }
 }
 
 /* ====== FILTER BUTTONS ====== */
 .filter-btn {
+    flex-shrink: 0;
     border: none;
     padding: 5px 10px;
     border-radius: 15px;
-    font-size: 12px;
-    transition: background-color 0.2s;
+    transition: all 0.2s ease;
+    user-select: none;
 }
 
 .filter-btn.active {
@@ -71,13 +72,13 @@
     padding: 8px;
     display: flex;
     width: 100%;
-    background-color: #fff;
+    background-color: var(--bg-secondary);
     align-items: space-between;
-    border: 2px solid #fff;
+    border: 2px solid var(--bg-secondary);
     border-radius: 10px;
     box-sizing: border-box;
     z-index: 2;
-    transition: border-color 0.3s ease, background-color 0.2s ease-in-out;
+    transition: all 0.2s ease-in-out;
 }
 
 .app-selector {
@@ -86,8 +87,8 @@
 
 .removed-app:has(.app-selector:checked),
 .app:has(.app-selector:checked) {
-    background-color: #ccc;
-    border-color: #007bff;
+    background-color: var(--border-color);
+    border-color: var(--btn-primary);
 }
 
 .app-info {
@@ -125,8 +126,8 @@
     align-items: center;
     justify-content: center;
     font-size: 10px;
-    background-color: #e0e0e0;
-    color: #666;
+    background-color: var(--border-color);
+    color: var(--text-secondary);
     border-radius: 10px;
     z-index: 1;
 }
@@ -221,7 +222,7 @@
     display: inline-block;
     padding: 3px 8px;
     border-radius: 4px;
-    color: white;
+    color: var(--bg-secondary);
     font-weight: bold;
     font-size: 12px;
     margin-right: 8px;
@@ -279,6 +280,7 @@
 /* ====== SEARCH HIGHLIGHTING ====== */
 mark {
     background-color: #ffffa0;
+    color: var(--text-primary);
     padding: 0 2px;
     border-radius: 2px;
     font-weight: bold;
@@ -286,29 +288,6 @@ mark {
 
 /* Dark mode styles */
 @media (prefers-color-scheme: dark) {
-    .menu-btn {
-        background-color: #121212;
-    }
-
-    .menu-dropdown {
-        background-color: #333;
-    }
-
-    .menu-item {
-        background-color: #333;
-    }
-
-    .removed-app,
-    .app {
-        background-color: #343434;
-        border-color: #343434;
-    }
-
-    .removed-app:has(.app-selector:checked),
-    .app:has(.app-selector:checked) {
-        background-color: #4D4D4D;
-    }
-
     .app-package {
         color: #aaa;
     }
@@ -336,6 +315,5 @@ mark {
 
     mark {
         background-color: #5a5a00;
-        color: white;
     }
 }
