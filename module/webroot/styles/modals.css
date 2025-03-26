@@ -124,7 +124,7 @@
 
 /* ====== CONFIRMATION MODAL STYLES ====== */
 .warning-text {
-    color: #f44336;
+    color: var(--btn-warning);
     font-weight: bold;
     margin-bottom: 16px;
 }
@@ -166,11 +166,4 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-}
-
-/* Dark mode styles */
-@media (prefers-color-scheme: dark) {
-    .warning-text {
-        color: #ff6b6b;
-    }
 }

@@ -1,5 +1,5 @@
 .dev-badge {
-    background-color: #ff5722;
+    background-color: var(--btn-warning);
     color: var(--btn-primary-text);
     padding: 2px 6px;
     border-radius: 4px;
@@ -98,13 +98,13 @@
     align-items: center;
     justify-content: center;
     transition: background-color 0.2s ease;
-    cursor: pointer;
-}
+    cursor: default;
 
-.delete-path-btn svg {
-    fill: #ff5252;
-    width: 24px;
-    height: 24px;
+    svg {
+        fill: var(--btn-warning);
+        width: 24px;
+        height: 24px;
+    }
 }
 
 .path-input {

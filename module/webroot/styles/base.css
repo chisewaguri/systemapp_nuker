@@ -17,6 +17,7 @@
     /* Button colors */
     --btn-primary: var(--primary, #007bff);
     --btn-primary-text: var(--onPrimary, #fff);
+    --btn-warning: var(--error, #f44336);
 
     /* Border colors */
     --border-color: var(--outlineVariant, #ccc);
@@ -32,6 +33,9 @@
         /* Text colors */
         --text-primary: var(--onSurface, #fff);
         --text-secondary: var(--onSurfaceVariant, #C2C2C2);
+
+        /* Button colors */
+        --btn-warning: var(--error, #ff6b6b);
 
         /* Border colors */
         --border-color: var(--outlineVariant, #636363);
