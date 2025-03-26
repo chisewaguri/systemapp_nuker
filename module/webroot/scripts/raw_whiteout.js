@@ -166,11 +166,6 @@ function showAddPathModal() {
     const modal = document.getElementById('add-path-modal');
     const modalContent = modal.querySelector('.modal-content');
     const pathInput = document.getElementById('path-input');
-    
-    if (!modal) {
-        console.error("Add path modal not found");
-        return;
-    }
 
     // Reset input
     pathInput.value = '';
@@ -179,25 +174,21 @@ function showAddPathModal() {
     document.body.classList.add('no-scroll');
     // Force reflow to ensure transition works
     void modal.offsetWidth;
-    
+
     modal.style.opacity = '1';
     modalContent.style.transform = 'scale(1)';
-    
+
     // Add keyboard-friendly behavior
     pathInput.addEventListener('focus', () => {
         // Move modal up when keyboard appears
         modalContent.style.transform = 'translateY(-20vh)';
     });
-    
+
     pathInput.addEventListener('blur', () => {
         // Reset position when keyboard disappears
         modalContent.style.transform = 'translateY(0)';
     });
-    
-    // Focus input after modal is visible
-    setTimeout(() => {
-        pathInput.focus();
-    }, 300);
+    pathInput.focus();
 }
 
 // Close the add path modal
@@ -205,10 +196,7 @@ function closeAddPathModal() {
     const modal = document.getElementById('add-path-modal');
     const modalContent = modal.querySelector('.modal-content');
     
-    if (!modal) {
-        console.error("Add path modal not found");
-        return;
-    }
+    if (!modal) return;
     
     document.body.classList.remove('no-scroll');
     modal.style.opacity = '0';
@@ -226,12 +214,7 @@ function showRemoveConfirmation(path) {
     const modal = document.getElementById('confirmation-modal');
     const modalContent = modal.querySelector('.modal-content');
     const pathElement = document.getElementById('path-to-remove');
-    
-    if (!modal) {
-        console.error("Confirmation modal not found");
-        return;
-    }
-    
+
     // Set the path text
     pathElement.textContent = path;
     // Show modal with animation
@@ -273,15 +256,15 @@ function closeConfirmationModal(confirmed = false) {
 function setupPathSearch() {
     const searchInput = document.getElementById('search-input');
     const clearBtn = document.getElementById('clear-btn');
-    
+
     searchInput.addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase();
         filterPaths(searchTerm);
-        
+
         // Toggle clear button visibility
         clearBtn.style.display = searchTerm.length > 0 ? 'block' : 'none';
     });
-    
+
     clearBtn.addEventListener('click', () => {
         searchInput.value = '';
         filterPaths('');
@@ -292,13 +275,13 @@ function setupPathSearch() {
 // Filter paths based on search term
 function filterPaths(searchTerm) {
     const pathItems = document.querySelectorAll('.path-item');
-    
+
     pathItems.forEach(item => {
         const pathText = item.querySelector('.path-text').textContent.toLowerCase();
-        
+
         if (searchTerm === '' || pathText.includes(searchTerm)) {
             item.style.display = 'flex';
-            
+
             // Highlight matching text if search term exists
             if (searchTerm !== '') {
                 const pathElement = item.querySelector('.path-text');
@@ -318,81 +301,37 @@ function filterPaths(searchTerm) {
 
 // Init event listeners
 function initEventListeners() {
-    console.log("Initializing event listeners");
-    
-    // Add Path button
     const addButton = document.getElementById('add-path-button');
-    console.log("Add button:", addButton); // Debug logging
-    
-    if (addButton) {
-        // Use both click and touchend for better mobile support
-        addButton.addEventListener('click', function(e) {
-            console.log("Add button clicked");
-            e.preventDefault(); // Prevent default anchor behavior
-            showAddPathModal();
-        });
-        
-        addButton.addEventListener('touchend', function(e) {
-            console.log("Add button touched");
-            e.preventDefault(); // Prevent default anchor behavior
-            showAddPathModal();
-        });
-    } else {
-        console.error("Add button not found in the DOM");
-    }
-    
+    addButton.addEventListener('click', () => showAddPathModal());
+
     // Add Path Modal: Confirm button
     const confirmAddButton = document.getElementById('confirm-add');
-    if (confirmAddButton) {
-        confirmAddButton.addEventListener('click', async function() {
-            const pathInput = document.getElementById('path-input');
-            const success = await addWhiteoutPath(pathInput.value.trim());
-            if (success) {
-                closeAddPathModal();
-            }
-        });
-    }
+    confirmAddButton.addEventListener('click', async function() {
+        const pathInput = document.getElementById('path-input');
+        const success = await addWhiteoutPath(pathInput.value.trim());
+        if (success) closeAddPathModal();
+    });
     
     // Add Path Modal: Cancel button
     const cancelAddButton = document.getElementById('cancel-add');
-    if (cancelAddButton) {
-        cancelAddButton.addEventListener('click', function() {
-            closeAddPathModal();
-        });
-    }
-    
+    cancelAddButton.addEventListener('click', () => closeAddPathModal());
+
     // Add Path Modal: Close button
     const closeAddButton = document.querySelector('#add-path-modal .close-modal');
-    if (closeAddButton) {
-        closeAddButton.addEventListener('click', function() {
-            closeAddPathModal();
-        });
-    }
-    
+    closeAddButton.addEventListener('click', () => closeAddPathModal());
+
     // Confirmation Modal: Confirm button
     const confirmRemoveButton = document.getElementById('confirm-action');
-    if (confirmRemoveButton) {
-        confirmRemoveButton.addEventListener('click', function() {
-            closeConfirmationModal(true);
-        });
-    }
-    
+    confirmRemoveButton.addEventListener('click', () => closeConfirmationModal(true));
+
     // Confirmation Modal: Cancel button
     const cancelRemoveButton = document.getElementById('cancel-action');
-    if (cancelRemoveButton) {
-        cancelRemoveButton.addEventListener('click', function() {
-            closeConfirmationModal(false);
-        });
-    }
-    
+    cancelRemoveButton.addEventListener('click', () => closeConfirmationModal(false));
+
     // Confirmation Modal: Close button
     const closeConfirmButton = document.querySelector('#confirmation-modal .close-modal');
-    if (closeConfirmButton) {
-        closeConfirmButton.addEventListener('click', function() {
-            closeConfirmationModal(false);
-        });
-    }
-    
+    closeConfirmButton.addEventListener('click', () => closeConfirmationModal(false));
+
     // Close modals when clicking outside
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(event) {
