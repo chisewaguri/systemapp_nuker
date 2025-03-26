@@ -60,4 +60,12 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 16px;
+    opacity: 0;
+    padding-top: 20px;
+    transition: all 0.2s ease;
+}
+
+.content.loaded {
+    padding-top: 0;
+    opacity: 1;
 }

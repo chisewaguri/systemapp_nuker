@@ -48,114 +48,85 @@
         <div id="app-list">
             <!-- System apps will be listed here -->
         </div>
+    </div>
 
-        <!-- Floating Button -->
-        <div class="floating-button-container">
-            <div class="ripple-element" id="nuke-button">
-                <svg xmlns="http://www.w3.org/2000/svg" height="28px" viewBox="0 -960 960 960" width="28px" fill="#FFFFFF"><path d="m576-80-56-56 104-104-104-104 56-56 104 104 104-104 56 56-104 104 104 104-56 56-104-104L576-80ZM120-320v-80h280v80H120Zm0-160v-80h440v80H120Zm0-160v-80h440v80H120Z"/></svg>
+    <!-- Import Modal -->
+    <div id="import-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Import Package List</h2>
+                <span class="close-modal">&times;</span>
             </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="footer">
-            <a class="footer-btn" id="home-btn">
-                <div class="footer-btn-icon focus-btn ripple-element">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M160-120v-480l320-240 320 240v480H560v-280H400v280H160Z"/></svg>
+            <div class="modal-body">
+                <p>Paste a list of package names (one per line):</p>
+                <textarea id="package-list-input" placeholder="com.example.app1&#10;com.example.app2&#10;com.example.app3"></textarea>
+                <div class="file-import-option">
+                    <button id="file-import-btn" class="modal-btn ripple-element">Import From File</button>
                 </div>
-                <label>Home</label>
-            </a>
-            <a href="restore.html" class="footer-btn" id="restore-btn">
-                <div class="footer-btn-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M280-720v520-520Zm170 600H280q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v172q-17-5-39.5-8.5T680-560v-160H280v520h132q6 21 16 41.5t22 38.5Zm-90-160h40q0-63 20-103.5l20-40.5v-216h-80v360Zm160-230q17-11 38.5-22t41.5-16v-92h-80v130ZM680-80q-83 0-141.5-58.5T480-280q0-83 58.5-141.5T680-480q83 0 141.5 58.5T880-280q0 83-58.5 141.5T680-80Zm66-106 28-28-74-74v-112h-40v128l86 86Z"/></svg>
-                </div>
-                <label>Restore</label>
-            </a>
-            <a href="raw_whiteout.html" class="footer-btn" id="whiteout-btn">
-                <div class="footer-btn-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="m576-80-56-56 104-104-104-104 56-56 104 104 104-104 56 56-104 104 104 104-56 56-104-104L576-80ZM120-320v-80h280v80H120Zm0-160v-80h440v80H120Zm0-160v-80h440v80H120Z"/></svg>
-                </div>
-                <label>Whiteout</label>
-            </a>
-        </div>
-
-        <!-- Import Modal -->
-        <div id="import-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Import Package List</h2>
-                    <span class="close-modal">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <p>Paste a list of package names (one per line):</p>
-                    <textarea id="package-list-input" placeholder="com.example.app1&#10;com.example.app2&#10;com.example.app3"></textarea>
-                    <div class="file-import-option">
-                        <button id="file-import-btn" class="modal-btn ripple-element">Import From File</button>
-                    </div>
-                    <div class="modal-actions">
-                        <button id="cancel-import" class="modal-btn ripple-element">Cancel</button>
-                        <button id="confirm-import" class="modal-btn confirm-btn ripple-element">Import</button>
-                    </div>
+                <div class="modal-actions">
+                    <button id="cancel-import" class="modal-btn ripple-element">Cancel</button>
+                    <button id="confirm-import" class="modal-btn confirm-btn ripple-element">Import</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Confirmation Modal -->
-        <div id="confirmation-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Confirm Removal</h2>
-                    <span class="close-modal">&times;</span>
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirm Removal</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to nuke the selected app(s)?</p>
+                <p class="warning-text">This action may affect device functionality.</p>
+                <div class="selected-apps-list">
+                    <p>Selected apps:</p>
+                    <ul id="selected-apps-confirm"></ul>
                 </div>
-                <div class="modal-body">
-                    <p>Are you sure you want to nuke the selected app(s)?</p>
-                    <p class="warning-text">This action may affect device functionality.</p>
-                    <div class="selected-apps-list">
-                        <p>Selected apps:</p>
-                        <ul id="selected-apps-confirm"></ul>
-                    </div>
-                    <div class="modal-actions">
-                        <button id="cancel-action" class="modal-btn ripple-element">Cancel</button>
-                        <button id="confirm-action" class="modal-btn confirm-btn ripple-element">Nuke</button>
-                    </div>
+                <div class="modal-actions">
+                    <button id="cancel-action" class="modal-btn ripple-element">Cancel</button>
+                    <button id="confirm-action" class="modal-btn confirm-btn ripple-element">Nuke</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- App Info Modal -->
-        <div id="app-info-modal" class="modal">
-            <div id="app-info-modal-content" class="modal-content">
-                <div class="modal-header">
-                    <h2 id="app-name"></h2>
-                    <span class="close-modal">&times;</span>
+    <!-- App Info Modal -->
+    <div id="app-info-modal" class="modal">
+        <div id="app-info-modal-content" class="modal-content">
+            <div class="modal-header">
+                <h2 id="app-name"></h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="app-info-container">
+                    <div class="app-icon-container" style="width: 64px; height: 64px; margin-bottom: 16px;">
+                        <img id="app-icon" src="" 
+                            onerror="this.src='default.png'" 
+                            alt="error icon"
+                            style="width: 100%; height: 100%; border-radius: 12px;">
+                    </div>
+                    <div class="app-info-detail">
+                        <strong>Package Name</strong>
+                        <p class="app-info-detail-text ripple-element" id="app-package">Loading...</p>
+                    </div>
+                    <div class="app-info-detail">
+                        <strong>Path</strong>
+                        <p class="app-info-detail-text ripple-element" id="app-path">Loading...</p>
+                    </div>
+                    <div class="app-info-detail">
+                        <strong>Version</strong>
+                        <p class="app-info-detail-text ripple-element" id="app-version">Loading...</p>
+                    </div>
+                    <div class="app-info-detail">
+                        <strong>Category</strong>
+                        <p class="app-info-detail-text" id="app-category">
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <div class="app-info-container">
-                        <div class="app-icon-container" style="width: 64px; height: 64px; margin-bottom: 16px;">
-                            <img id="app-icon" src="" 
-                                onerror="this.src='default.png'" 
-                                alt="error icon"
-                                style="width: 100%; height: 100%; border-radius: 12px;">
-                        </div>
-                        <div class="app-info-detail">
-                            <strong>Package Name</strong>
-                            <p class="app-info-detail-text ripple-element" id="app-package">Loading...</p>
-                        </div>
-                        <div class="app-info-detail">
-                            <strong>Path</strong>
-                            <p class="app-info-detail-text ripple-element" id="app-path">Loading...</p>
-                        </div>
-                        <div class="app-info-detail">
-                            <strong>Version</strong>
-                            <p class="app-info-detail-text ripple-element" id="app-version">Loading...</p>
-                        </div>
-                        <div class="app-info-detail">
-                            <strong>Category</strong>
-                            <p class="app-info-detail-text" id="app-category">
-                        </div>
-                    </div>
-                    <div class="modal-actions">
-                        <button id="close-info" class="modal-btn ripple-element">Close</button>
-                    </div>
+                <div class="modal-actions">
+                    <button id="close-info" class="modal-btn ripple-element">Close</button>
                 </div>
             </div>
         </div>
@@ -173,6 +144,35 @@
             </div>
             <div class="file-list"></div>
         </div>
+    </div>
+
+    <!-- Floating Button -->
+    <div class="floating-button-container">
+        <div class="ripple-element" id="nuke-button">
+            <svg xmlns="http://www.w3.org/2000/svg" height="28px" viewBox="0 -960 960 960" width="28px" fill="#FFFFFF"><path d="m576-80-56-56 104-104-104-104 56-56 104 104 104-104 56 56-104 104 104 104-56 56-104-104L576-80ZM120-320v-80h280v80H120Zm0-160v-80h440v80H120Zm0-160v-80h440v80H120Z"/></svg>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <a class="footer-btn" id="home-btn">
+            <div class="footer-btn-icon focus-btn ripple-element">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M160-120v-480l320-240 320 240v480H560v-280H400v280H160Z"/></svg>
+            </div>
+            <label>Home</label>
+        </a>
+        <a href="restore.html" class="footer-btn" id="restore-btn">
+            <div class="footer-btn-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M280-720v520-520Zm170 600H280q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v172q-17-5-39.5-8.5T680-560v-160H280v520h132q6 21 16 41.5t22 38.5Zm-90-160h40q0-63 20-103.5l20-40.5v-216h-80v360Zm160-230q17-11 38.5-22t41.5-16v-92h-80v130ZM680-80q-83 0-141.5-58.5T480-280q0-83 58.5-141.5T680-480q83 0 141.5 58.5T880-280q0 83-58.5 141.5T680-80Zm66-106 28-28-74-74v-112h-40v128l86 86Z"/></svg>
+            </div>
+            <label>Restore</label>
+        </a>
+        <a href="raw_whiteout.html" class="footer-btn" id="whiteout-btn">
+            <div class="footer-btn-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="m576-80-56-56 104-104-104-104 56-56 104 104 104-104 56 56-104 104 104 104-56 56-104-104L576-80ZM120-320v-80h280v80H120Zm0-160v-80h440v80H120Zm0-160v-80h440v80H120Z"/></svg>
+            </div>
+            <label>Whiteout</label>
+        </a>
     </div>
 </body>
 </html>

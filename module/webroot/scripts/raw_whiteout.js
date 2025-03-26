@@ -1,4 +1,4 @@
-import { ksuExec, toast, setupSearch, setupScrollEvent, checkMMRL, applyRippleEffect } from "./util.js";
+import { ksuExec, toast, setupSearch, setupScrollEvent, checkMMRL, applyRippleEffect, initialTransition } from "./util.js";
 
 // Global variables
 let whiteoutPaths = [];
@@ -361,13 +361,14 @@ function initEventListeners() {
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
+    initialTransition();
     setTimeout(() => {
         const whiteoutButtonContainer = document.getElementById('whiteout-btn');
         const whiteoutButton = document.querySelector('.focus-btn');
         whiteoutButtonContainer.style.display = 'flex';
         whiteoutButton.style.paddingLeft = "20px";
         whiteoutButton.style.paddingRight = "20px";
-    }, 10);
+    }, 200);
     setupSearch();
     setupScrollEvent();
     applyRippleEffect();

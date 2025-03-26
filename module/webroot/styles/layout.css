@@ -108,7 +108,8 @@
     width: 100%;
     justify-content: flex-end;
     z-index: 3;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(calc(var(--bottom-inset) + 95px + 100%));
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
 }
 
@@ -145,6 +146,8 @@
     box-shadow: 0 0px 15px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     z-index: 4;
+    transform: translateY(100%);
+    transition: transform 0.2s ease;
 }
 
 .footer-btn {
