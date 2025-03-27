@@ -113,8 +113,7 @@
     pointer-events: none;
 }
 
-#restore-button,
-#nuke-button {
+.floating-button {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -167,7 +166,7 @@
 .footer-btn label {
     text-decoration: none;
     font-size: 12px;
-    color: var(--text-primary);
+    color: var(--filledTonalButtonContentColor, var(--text-primary));
 }
 
 .footer-btn-icon {
@@ -177,7 +176,7 @@
     border-radius: 50px;
 
     svg {
-        fill: var(--text-primary);
+        fill: var(--filledTonalButtonContentColor, var(--text-primary));
     }
 }
 
