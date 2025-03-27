@@ -8,6 +8,7 @@
     margin-right: 15px;
     position: absolute;
     right: 0;
+    user-select: none;
 }
 
 #path-list {
@@ -147,32 +148,6 @@
     font-family: monospace;
     margin: 16px 0;
     word-break: break-all;
-}
-
-.floating-button-container {
-    position: fixed;
-    bottom: 95px;
-    display: flex;
-    width: 100%;
-    justify-content: flex-end;
-    z-index: 4;
-    transition: transform 0.3s ease-in-out;
-    pointer-events: auto;
-}
-
-#add-path-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    bottom: 0;
-    margin-right: 15px;
-    padding: 15px;
-    color: var(--btn-primary-text);
-    background-color: var(--btn-primary);
-    box-shadow: 0 4px 8px #0003;
-    border-radius: 15px;
-    user-select: none;
 }
 
 @media (prefers-color-scheme: dark) {
