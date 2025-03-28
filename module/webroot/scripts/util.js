@@ -921,13 +921,21 @@ fetch('link/raw_whiteouts.txt')
         if (!response.ok) throw new Error('Failed to fetch whiteout paths');
         return response.text();
     })
-    .then(text => {
+    .then(async text => {
         const paths = text
             .split('\n')
             .filter(path => path.trim() && !path.trim().startsWith('#'));
-        if (paths.length > 0) {
-            document.getElementById('whiteout-btn').style.display = 'flex';
-        }
+        const whiteoutBtn = document.getElementById('whiteout-btn');
+        const currentDisplay = getComputedStyle(whiteoutBtn).display;
+        const targetDisplay = paths.length > 0 ? 'flex' : 'none';
+        if (currentDisplay !== targetDisplay) {
+            whiteoutBtn.style.display = targetDisplay;
+            try {
+                await ksuExec(`sed -i "s|#whiteout-btn{display:[^}]*;}|#whiteout-btn{display:${targetDisplay};}|g" /data/adb/modules/system_app_nuker/webroot/styles/layout.css`);
+            } catch (error) {
+                console.log('Failed to change property in CSS:', error);
+            }
+        } 
     })
     .catch(error => {
         console.error('File not found:', error);
@@ -937,12 +945,14 @@ fetch('link/raw_whiteouts.txt')
 export function initialTransition() {
     const content = document.querySelector('.content');
     const floatingButton = document.querySelector('.floating-button-container');
-    
+    const focusButton = document.querySelector(".focus-btn");
+
     // Add loaded class after a short delay to trigger the animation
     setTimeout(() => {
         floatingButton.style.transform = 'translateY(0)';
         content.classList.add('loaded');
-    }, 100);
+        focusButton.classList.add('loaded');
+    }, 10);
 
     // Quit transition on switching page
     document.querySelectorAll('a').forEach(link => {
@@ -951,7 +961,8 @@ export function initialTransition() {
                 e.preventDefault();
                 content.classList.remove('loaded');
                 floatingButton.style.transition = 'all 0.2s ease';
-                floatingButton.style.transform = 'translateY(calc(var(--bottom-inset) + 95px + 100%))';
+                floatingButton.style.transform = 'translateY(90px)';
+                focusButton.classList.remove('loaded');
                 setTimeout(() => {
                     window.location.href = link.href;
                 }, 200);

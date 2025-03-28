@@ -351,11 +351,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initialTransition();
     setTimeout(() => {
         const whiteoutButtonContainer = document.getElementById('whiteout-btn');
-        const whiteoutButton = document.querySelector('.focus-btn');
         whiteoutButtonContainer.style.display = 'flex';
-        whiteoutButton.style.paddingLeft = "20px";
-        whiteoutButton.style.paddingRight = "20px";
-    }, 200);
+    }, 10);
     setupPathSearch();
     setupScrollEvent();
     applyRippleEffect();

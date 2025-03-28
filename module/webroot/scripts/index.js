@@ -150,11 +150,6 @@ if (nukeButton) {
     document.addEventListener("DOMContentLoaded", () => {
         initialTransition();
         setTimeout(() => {
-            const focusButton = document.querySelector(".focus-btn");
-            focusButton.style.paddingLeft = "20px";
-            focusButton.style.paddingRight = "20px";
-        }, 200);
-        setTimeout(() => {
             fetchAppList("link/app_list.json", true);
             fetchAppList("link/nuke_list.json");
             checkMMRL();

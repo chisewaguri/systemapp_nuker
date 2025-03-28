@@ -43,11 +43,6 @@ if (restoreButton) {
     document.addEventListener('DOMContentLoaded', () => {
         initialTransition();
         setTimeout(() => {
-            const restoreButton = document.querySelector('.focus-btn');
-            restoreButton.style.paddingLeft = "20px";
-            restoreButton.style.paddingRight = "20px";
-        }, 200);
-        setTimeout(() => {
             fetchAppList("link/nuke_list.json", true);
             fetchAppList("link/app_list.json");
             checkMMRL();
