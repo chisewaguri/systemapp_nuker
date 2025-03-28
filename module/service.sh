@@ -17,8 +17,8 @@ done
 [ ! -d "$PERSIST_DIR" ] && mkdir -p "$PERSIST_DIR"
 
 # reset bootcount
-echo "BOOTCOUNT=0" > "$MODDIR/count.sh"
-chmod 755 "$MODDIR/count.sh"
+echo "BOOTCOUNT=0" > "$PERSIST_DIR/count.sh"
+chmod 755 "$PERSIST_DIR/count.sh"
 
 # ensure the remove list exists
 [ -s "$REMOVE_LIST" ] || echo "[]" > "$REMOVE_LIST"

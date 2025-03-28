@@ -60,5 +60,6 @@ fi
 
 echo "[+] System App Nuker setup completed successfully"
 echo ""
+echo "- KernelSU modules are not mounted globally. Disable umount by default to prevent interference with this module's functionality."
 
 # EOF
