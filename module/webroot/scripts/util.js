@@ -12,10 +12,13 @@ export let appList = [],
 // Timer for delaying moveCheckedAppsToTop
 let moveCheckedAppsTimer = null;
 
-export  async function ksuExec(command) {
+export async function ksuExec(command) {
     return new Promise((resolve) => {
         let callbackName = `exec_callback_${Date.now()}`;
         window[callbackName] = (errno, stdout, stderr) => {
+            if (errno !== 0) {
+                toast(`Error: ${stderr}`);
+            }
             resolve({ errno, stdout, stderr });
             delete window[callbackName];
         };
