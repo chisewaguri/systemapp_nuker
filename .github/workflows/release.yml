@@ -1,18 +1,11 @@
-name: build
+name: release 
 
 on:
   push:
     branches:
       - master
     paths:
-      - '.github/workflows/build.yml'
-      - 'module/**'
-  pull_request:
-    branches:
-      - master
-    paths:
-      - '.github/workflows/build.yml'
-      - 'module/**'
+      - 'update.json'
   workflow_dispatch:
 
 jobs:
@@ -20,30 +13,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - name: Set variables
+    - name: Get commit message
+      id: commit_msg
+      run: |
+        COMMIT_MSG=$(git log -1 --pretty=%s -- update.json | tr -d '\n')
+        echo "COMMIT_MSG=$COMMIT_MSG" >> $GITHUB_ENV
+
+    - name: Read update.json
       id: setup
       run: |
-        COMMIT_NUM=$(git rev-list --count HEAD)
-        COMMIT_HASH=$(git rev-parse --short HEAD)
-        VERSION=$(grep '^version=' module/module.prop | cut -d '=' -f 2)
-        ZIP_NAME=SAN_$VERSION-$COMMIT_NUM-$COMMIT_HASH
-
+        ZIP_URL=$(jq -r .zipUrl update.json)
+        ZIP_NAME=$(basename "$ZIP_URL")
         echo "ZIP_NAME=$ZIP_NAME" >> $GITHUB_ENV
+        echo "ZIP_URL=$ZIP_URL" >> $GITHUB_ENV
 
     - name: Create dummy zip
       run: |
         cd module/dummy_zip
         zip -r dummy.zip *
         mv dummy.zip ../
-      
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
+
+    - name: Create module zip
+      run: |
+        cd module
+        zip -r "$ZIP_NAME" *
+
+    - name: Create Draft GitHub Release
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       with:
-        name: ${{ env.ZIP_NAME }}
-        path: |
-          module/
-          !module/dummy_zip
+        tag_name: "${{ env.COMMIT_MSG }}"
+        name: "${{ env.COMMIT_MSG }}"
+        body: "See changelog for details."
+        draft: true
+        files: "module/${{ env.ZIP_NAME }}" 
