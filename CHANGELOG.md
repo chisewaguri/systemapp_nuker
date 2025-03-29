@@ -3,18 +3,27 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
-### v1.1.1 
+---
+### v1.1.2  
+
+#### WebUI  
+- Fixed category badge on confirmation modal
+- Always display whiteout in footer after adding a path (**#28**, @KOWX712)  
+- Used `fetch` for file reading and fixed extra `end` statement (**#28**, @KOWX712)  
+- Optimized footer layout (**#31**, @KOWX712)  
+- Enhanced UI interactions: optimized app list, added page switching animation, prevented redundant calls, and improved tablet UI (**#27**, **#28**, **#29**, @KOWX712)  
+- Improved color management (**#27**, @KOWX712)  
+- **MMRL:** Added Monet theme support (**#27**, **#29**, @KOWX712)  
+
+#### Scripts  
+- Optimized bootloop protection
+
+---
+### v1.1.1  
 - **Fixed** category filter positioning on **MMRL**  
 - **Search & category filter now work together** instead of operating independently  
 - **Selected apps now move to the top** for better visibility  
 - **Fixed** issue where module content was not copied during the nuking process  
 
-### v1.1-release
-- Add support for raw whiteouts (@backslashxx)
-- Add developer mode for raw whiteouts, open it by tapping the header three times
-- Add app categorization system
-
-### v1.0-release
-- Initial Release
-----
+---
 Full changelog: [GitHub Commits](https://github.com/ChiseWaguri/systemapp_nuker/commits/master/)
