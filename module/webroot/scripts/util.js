@@ -99,35 +99,34 @@ let currentlyLoadedApps = 0;
 const APPS_PER_BATCH = 20;
 let isLoadingMoreApps = false;
 
-async function displayAppList(data, reset = true) {
+export async function displayAppList(data, reset = true, all = false) {
     // Load categories if not already loaded
-    if (!categoriesData) {
-        await loadCategories();
-    }
-    
+    if (!categoriesData) await loadCategories();
+
     const appListDiv = document.getElementById("app-list");
-    
+
     // Reset or store all apps data
     if (reset) {
-    appListDiv.innerHTML = "";
+        appListDiv.innerHTML = "";
         allAppsData = [...data];
         currentlyLoadedApps = 0;
         // Remove scroll event listener if exists
         window.removeEventListener('scroll', handleLazyLoad);
-        // Add scroll event listener for lazy loading
-        window.addEventListener('scroll', handleLazyLoad);
+        // Add scroll event listener for lazy loading if not displaying all
+        if (!all) window.addEventListener('scroll', handleLazyLoad);
     }
-    
-    // Calculate next batch of apps to load
-    const nextBatchEnd = Math.min(currentlyLoadedApps + APPS_PER_BATCH, allAppsData.length);
+
+    // Calculate batch size and apps to render
+    const batchSize = all ? allAppsData.length : APPS_PER_BATCH;
+    const nextBatchEnd = Math.min(currentlyLoadedApps + batchSize, allAppsData.length);
     const appsToRender = allAppsData.slice(currentlyLoadedApps, nextBatchEnd);
-    
+
     if (appsToRender.length === 0) return; // No more apps to load
-    
+
     // Generate HTML for the next batch
     const htmlContent = appsToRender.map((pkg) => {
         const category = getCategoryInfo(pkg.package_name);
-        
+
         // Different approach for category display:
         // 1. For known categories: show a small colored dot with the category name
         // 2. For unknown category: show nothing
@@ -167,7 +166,7 @@ async function displayAppList(data, reset = true) {
     // Append the new batch to the existing content
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlContent;
-    
+
     // Append each child individually
     while (tempDiv.firstChild) appListDiv.appendChild(tempDiv.firstChild);
 
@@ -180,7 +179,7 @@ async function displayAppList(data, reset = true) {
     // Create category filters - only on initial load
     if (reset) createCategoryFilters();
     applyRippleEffect();
-    
+
     // If filter/search is active, apply it to newly loaded content
     if (currentSearchTerm || activeCategory !== 'all') applyFilters();
     isLoadingMoreApps = false;

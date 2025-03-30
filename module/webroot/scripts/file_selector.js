@@ -114,47 +114,8 @@ async function importPackageList(filePath) {
             return;
         }
 
-        let foundCount = 0, notFoundCount = 0, firstFoundApp = null;
-
-        // Select app if found
-        packages.forEach(packageName => {
-            const appDiv = document.querySelector(`.app[data-package-name="${packageName}"]`);
-            if (appDiv) {
-                const checkbox = appDiv.querySelector('.app-selector');
-                if (checkbox) {
-                    if (checkbox.checked) return;
-                    checkbox.checked = true;
-                    foundCount++;
-                    // Store the first found app div for scrolling
-                    if (!firstFoundApp) firstFoundApp = appDiv;
-                }
-            } else {
-                notFoundCount++;
-            }
-        });
-
-        // Show appropriate toast message
-        if (foundCount === 0) {
-            toast(`None of the ${packages.length} package(s) found in system apps`);
-        } else if (notFoundCount > 0) {
-            toast(`${foundCount} package(s) found, ${notFoundCount} not found`);
-        } else {
-            toast(`${foundCount} package(s) found and selected`);
-        }
-
+        document.getElementById('package-list-input').value = packages.join('\n');
         closeFileSelector();
-
-        // Scroll to first found app with 80px offset
-        if (firstFoundApp) {
-            setTimeout(() => {
-                const rect = firstFoundApp.getBoundingClientRect();
-                const scrollTop = window.scrollY;
-                window.scrollTo({
-                    top: rect.top + scrollTop - 80,
-                    behavior: 'smooth'
-                });
-            }, 300);
-        }
     } catch (error) {
         console.error('Error importing package list:', error);
         toast("Error importing package list");
