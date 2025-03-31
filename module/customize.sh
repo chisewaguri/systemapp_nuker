@@ -59,7 +59,14 @@ if [ -n "$KSU" ] || [ -n "$APATCH" ]; then
 fi
 
 echo "[+] System App Nuker setup completed successfully"
+
+# warn ksu and ap user that module is not globally mounted
+[ -n "$KSU" ] || [ -n "$APATCH" ] && {
+    echo "[!] KernelSU and APatch modules are not mounted globally"
+    echo "[!] Please disable umount by default to prevent interference with this module's functionality"
+}
+
+# give space before post-customize manager thing
 echo ""
-echo "- KernelSU modules are not mounted globally. Disable umount by default to prevent interference with this module's functionality."
 
 # EOF
