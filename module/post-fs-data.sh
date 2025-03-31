@@ -3,6 +3,11 @@ PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
 MODDIR="${0%/*}"
 PERSIST_DIR="/data/adb/system_app_nuker"
 
+# import config
+use_mountify_script=false
+magic_mount=true
+[ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
+
 BOOTCOUNT=0
 [ -f "$PERSIST_DIR/count.sh" ] && . "$PERSIST_DIR/count.sh"
 
@@ -40,6 +45,11 @@ if [ $BOOTCOUNT -gt 1 ]; then # on bootloop (2nd boot)
 else # on normal boot
     echo "BOOTCOUNT=1" > "$PERSIST_DIR/count.sh"
     chmod 755 "$PERSIST_DIR/count.sh"
+fi
+
+# mount
+if [ "$use_mountify_script" = true ] && [ "$magic_mount" = true ]; then
+    . $MODDIR/mountify.sh
 fi
 
 # EOF

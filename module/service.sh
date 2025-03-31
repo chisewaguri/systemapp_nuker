@@ -4,8 +4,9 @@ APP_LIST="$PERSIST_DIR/app_list.json"
 REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
 ICON_DIR="$PERSIST_DIR/icons"
 
-# uninstall fallback for apps thats still installed after nuking
-uninstall=false
+# import config
+uninstall_fallback=false
+[ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
 
 aapt() { "$MODDIR/common/aapt" "$@"; }
 
@@ -94,7 +95,9 @@ for pkg in $(grep -o "\"package_name\":.*" "$APP_LIST" | awk -F"\"" '{print $4}'
     fi
 done
 
-$uninstall && {
+# uninstall fallback if apps aint nuked at late service
+# enable this on config.sh
+$uninstall_fallback && {
     # remove system apps if they still exist
     for package_name in $(grep -o "\"package_name\":.*" "$REMOVE_LIST" | awk -F"\"" '{print $4}'); do
         if pm list packages | grep -qx "package:$package_name"; then
