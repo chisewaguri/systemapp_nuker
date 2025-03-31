@@ -34,6 +34,7 @@ jobs:
     - name: Create dummy zip
       run: |
         cd module/dummy_zip
+        cp -r ../META-INF .
         zip -r dummy.zip *
         mv dummy.zip ../
 
