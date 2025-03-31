@@ -1,7 +1,7 @@
 // This is part of system app nuker
 // Inspired by j-hc's zygisk detach that's licensed under Apache 2.0 and backslashxx's mountify.
 
-import { toast, setupSearch, setupScrollEvent, setupDropdownMenu, checkMMRL, fetchAppList, updateAppList, appList, applyRippleEffect, initialTransition } from "./util.js";
+import { toast, setupSearch, setupScrollEvent, setupDropdownMenu, checkMMRL, fetchAppList, displayAppList, updateAppList, appList, applyRippleEffect, initialTransition } from "./util.js";
 import { initFileSelector, openFileSelector } from "./file_selector.js";
 
 // Triple click handler for developer mode
@@ -40,12 +40,7 @@ export function importModalMenu() {
     });
     packageListInput.focus();
 
-    fileImportBtn.addEventListener('click', () => {
-        closeImportModal();
-        setTimeout(() => {
-            openFileSelector();
-        }, 300);
-    });
+    fileImportBtn.addEventListener('click', () => openFileSelector());
 
     // Close import modal when clicking outside
     importModalMenu.addEventListener('click', (event) => {
@@ -61,7 +56,7 @@ export function importModalMenu() {
         });
     });
 
-    document.getElementById('confirm-import').addEventListener('click', () => {
+    document.getElementById('confirm-import').addEventListener('click', async () => {
         const packages = packageListInput.value.trim().split('\n').map(pkg => pkg.trim());
         if (packages.length === 0) {
             toast("Please enter valid package names");
@@ -69,26 +64,21 @@ export function importModalMenu() {
             return;
         }
 
-        let foundCount = 0, notFoundCount = 0, firstFoundApp = null;
+        // Filter apps from appList that match the package names
+        const filteredApps = appList.filter(app => packages.includes(app.package_name));
+        const foundCount = filteredApps.length;
+        const notFoundCount = packages.length - foundCount;
 
-        // Select app if found
-        packages.forEach(packageName => {
-            if (appList.some(app => app.package_name === packageName)) {
-                const appDiv = document.querySelector(`.app[data-package-name="${packageName}"]`);
-                if (appDiv) {
-                    const checkbox = appDiv.querySelector('.app-selector');
-                    if (checkbox) {
-                        if (checkbox.checked) return;
-                        checkbox.checked = true;
-                        foundCount++;
-                        // Store the first found app div for scrolling
-                        if (!firstFoundApp) firstFoundApp = appDiv;
-                    }
-                }
-            } else {
-                notFoundCount++;
-            }
-        });
+        if (foundCount > 0) {
+            // Display entire appList
+            await displayAppList(appList, undefined, true);
+
+            // Click matching apps to trigger move checked app to top
+            filteredApps.forEach(app => {
+                const appDiv = document.querySelector(`.app[data-package-name="${app.package_name}"]`);
+                if (appDiv) appDiv.click();
+            });
+        }
 
         // Show appropriate toast message
         if (foundCount === 0) {
@@ -100,18 +90,6 @@ export function importModalMenu() {
         }
 
         closeImportModal();
-
-        // Scroll to first found app with 80px offset
-        if (firstFoundApp) {
-            setTimeout(() => {
-                const rect = firstFoundApp.getBoundingClientRect();
-                const scrollTop = window.scrollY;
-                window.scrollTo({
-                    top: rect.top + scrollTop - 80,
-                    behavior: 'smooth'
-                });
-            }, 300);
-        }
     });
 }
 
