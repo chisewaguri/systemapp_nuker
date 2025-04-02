@@ -62,8 +62,8 @@ if [ -n "$KSU" ] || [ -n "$APATCH" ]; then
     rm -f "$MODPATH/action.sh"
 fi
 
-# check for mountify requirements
-# use mountify scripts if possible
+# --- check for mountify requirements ---
+# --- use mountify scripts if possible ---
 
 # check for overlayfs
 if grep -q "overlay" /proc/filesystems > /dev/null 2>&1; then
@@ -97,9 +97,22 @@ else
 fi
 sed -i "s/magic_mount=.*/magic_mount=$magic_mount/" ${PERSISTENT_DIR}/config.sh "$PERSIST_DIR/config.sh"
 
-# if mountify is supported
+# --- if mountify is supported ---
+
+# if overlay and tmpfs xattr
 if [ "$overlay_supported" = true ] && [ "$tmpfs_xattr_supported" = true ]; then
     echo "[+] OverlayFS and TMPFS_XATTR detected. Mountify script will be used for mounting"
+    
+    # skip mount cuz we mount it ourselves
+    touch "$MODPATH/skip_mount"
+    touch "$MODPATH/skip_mountify"
+    use_mountify_script=true
+    sed -i "s/^use_mountify_script=.*/use_mountify_script=true/" ${PERSISTENT_DIR}/config.sh "$PERSIST_DIR/config.sh"
+fi
+
+# if overlayfs manager
+if [ "$magic_mount" = false ]; then
+    echo "[+] Using KernelSU OverlayFS mountify standalone script"
     
     # skip mount cuz we mount it ourselves
     touch "$MODPATH/skip_mount"

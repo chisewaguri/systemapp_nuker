@@ -47,9 +47,16 @@ else # on normal boot
     chmod 755 "$PERSIST_DIR/count.sh"
 fi
 
-# mount
+# --- mountify script ---
+
+# if magic mount manager
 if [ "$use_mountify_script" = true ] && [ "$magic_mount" = true ]; then
     . $MODDIR/mountify.sh
+fi
+
+# if overlayfs manager
+if [ "$use_mountify_script" = true ] && [ "$magic_mount" = false ]; then
+    . $MODDIR/mountify-symlink.sh
 fi
 
 # EOF
