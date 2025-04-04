@@ -6,7 +6,7 @@
 # No warranty.
 PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
 MODDIR="/data/adb/modules/system_app_nuker"
-MODULES_UPDATE_DIR="/data/adb/modules_update/system_app_nuker"
+MODULE_UPDATE_DIR="/data/adb/modules_update/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
 REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
 
@@ -25,13 +25,13 @@ IFS="
 whiteout_create() {
     path="$1"
     echo "$path" | grep -q "^/system/" || path="/system$1"
-    mkdir -p "$MODULES_UPDATE_DIR${path%/*}"
-    chmod 755 "$MODULES_UPDATE_DIR${path%/*}"
-    busybox mknod "$MODULES_UPDATE_DIR$path" c 0 0
-    busybox chcon --reference="/system" "$MODULES_UPDATE_DIR$path"
+    mkdir -p "$MODULE_UPDATE_DIR${path%/*}"
+    chmod 755 "$MODULE_UPDATE_DIR${path%/*}"
+    busybox mknod "$MODULE_UPDATE_DIR$path" c 0 0
+    busybox chcon --reference="/system" "$MODULE_UPDATE_DIR$path"
     # not really required, mountify() does NOT even copy the attribute but ok
-    busybox setfattr -n trusted.overlay.whiteout -v y "$MODULES_UPDATE_DIR$path"
-    chmod 644 "$MODULES_UPDATE_DIR$path"
+    busybox setfattr -n trusted.overlay.whiteout -v y "$MODULE_UPDATE_DIR$path"
+    chmod 644 "$MODULE_UPDATE_DIR$path"
 }
 
 # nuke app from REMOVE_LIST
@@ -48,7 +48,7 @@ nuke_system_apps() {
     for apk_path in $(grep -E '"app_path":' "$REMOVE_LIST" | sed 's/.*"app_path": "\(.*\)",/\1/'); do
         # Create whiteout for apk_path
         whiteout_create "$(dirname $apk_path)" > /dev/null 2>&1
-        ls "$MODULES_UPDATE_DIR$apk_path" 2>/dev/null
+        ls "$MODULE_UPDATE_DIR$apk_path" 2>/dev/null
     done
 
     echo "[-] Nuking complete: $total apps processed"
@@ -94,16 +94,16 @@ fi
 # this can avoid persistence issues too
 
 # create folder if it doesnt exist and copy selinux context
-[ ! -d "$MODULES_UPDATE_DIR" ] && mkdir -p "$MODULES_UPDATE_DIR"
-busybox chcon --reference="/system" "$MODULES_UPDATE_DIR"
+[ ! -d "$MODULE_UPDATE_DIR" ] && mkdir -p "$MODULE_UPDATE_DIR"
+busybox chcon --reference="/system" "$MODULE_UPDATE_DIR"
 
 # if not update
 if [ "$update" != true ]; then
     # copy module content, this also copy all scripts and module.prop
     # only copy content if module files was not copied yet
     # this ensure updated files are not overwritten
-    if [ ! -f "$MODULES_UPDATE_DIR/nuke.sh" ]; then
-        cp -Lrf "$MODDIR"/* "$MODULES_UPDATE_DIR"
+    if [ ! -f "$MODULE_UPDATE_DIR/nuke.sh" ]; then
+        cp -Lrf "$MODDIR"/* "$MODULE_UPDATE_DIR"
     fi
 
     # flag module for update
@@ -113,7 +113,7 @@ fi
 
 # cleanup all old setup
 for item in system system_ext vendor product update; do
-    rm -rf "$MODULES_UPDATE_DIR/$item"
+    rm -rf "$MODULE_UPDATE_DIR/$item"
 done
 
 # skip app whiteout creation when remove list is empty
@@ -124,7 +124,7 @@ fi
 # handle raw whiteout
 for line in $( sed '/#/d' "$PERSIST_DIR/raw_whiteouts.txt" ); do
 	whiteout_create "$line" > /dev/null 2>&1 
-	ls "$MODULES_UPDATE_DIR$line" 2>/dev/null
+	ls "$MODULE_UPDATE_DIR$line" 2>/dev/null
 done
 
 # EOF

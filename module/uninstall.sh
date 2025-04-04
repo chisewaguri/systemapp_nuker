@@ -1,5 +1,5 @@
 #!/bin/sh
-MODULES_UPDATE_DIR="/data/adb/modules_update/system_app_nuker"
+MODULE_UPDATE_DIR="/data/adb/modules_update/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
 APP_LIST="$PERSIST_DIR/app_list.json"
 REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
@@ -12,6 +12,6 @@ for pkg in $(grep -h -o "\"package_name\":.*" "$APP_LIST" "$REMOVE_LIST" | awk -
 done
 
 [ -d "$PERSIST_DIR" ] && rm -rf "$PERSIST_DIR"
-[ -d "$MODULES_UPDATE_DIR" ] && rm -rf "$MODULES_UPDATE_DIR"
+[ -d "$MODULE_UPDATE_DIR" ] && rm -rf "$MODULE_UPDATE_DIR"
 
 # EOF
