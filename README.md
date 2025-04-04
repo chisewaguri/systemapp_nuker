@@ -1,48 +1,58 @@
-# System App Nuker  
-### Take Back Control – Because Your Device Should Work for You, Not the Other Way Around  
+# System App Nuker
+### Take Back Control – Because Your Device Should Work for You, Not the Other Way Around
 
-A simple yet powerful module that lets you reclaim control over your device by disabling pre-installed system apps. Because stock firmware thinks it knows best—and we respectfully disagree.  
-
-## 🧩 Features  
-- **Web-Based Interface** – Manage app removal through a user-friendly WebUI
-- **App Categorization System** – Helps users distinguish between safe and critical apps 
-- **Compatibility** – Works seamlessly with Magisk, KernelSU, and Apatch
-- **Bootloop Recovery** – If something breaks, the module auto-disables itself so you (hopefully) get another chance
-- **Package List Management** – Import/export package lists for easy backups and sharing
-- **Developer Mode** – Manually create whiteouts for advanced customization
+A simple yet powerful module that lets you reclaim control over your device by disabling pre-installed system apps.  
+Because stock firmware thinks it knows best — and we respectfully, *aggressively*, disagree.
 
 ---
 
-## 🌐 WebUI Usage  
-### KernelSU & Apatch  
-- KSU WebUI – A dedicated interface for managing system app removal
-
-### Magisk  
-- Action Button – Launch WebUI directly from the Magisk app
-- Third-Party Support:  
-  - [KSUWebUIStandalone](https://github.com/5ec1cff/KsuWebUIStandalone)  
-  - [MMRL](https://github.com/MMRLApp/MMRL)  
-- Automatic Installation – If no WebUI is found, KSUWebUIStandalone will be installed automatically
+## 🧩 Features
+- **Web-Based Interface** – Manage app nuking through a user-friendly WebUI
+- **App Categorization System** – Know what’s safe, what’s risky, and what might summon a bootloop demon
+- **Compatibility** – Plays nice with **Magisk**, **KernelSU**, and **Apatch**
+- **Bootloop Recovery** – If you break something vital, the module politely disables itself so you (hopefully) live to nuke another day
+- **Package List Management** – Import/export app lists for backups or trading war stories
+- **Developer Mode** – Manually create whiteouts if you're into that kind of power
 
 ---
 
-## ⚙️ Advanced Features  
-### Package List Management  
-- **Import Packages** – Load a list of package names from:  
-  - Manual text input (copy/paste)  
-  - Text files stored on your device  
-- **Export Packages** – Save your nuked app list as a text file for backup or sharing
+## 🌐 WebUI Usage
 
-### Restore Functionality  
-- Easily re-enable previously nuked system apps via the Restore page 
+### On KernelSU & Apatch
+- Both come with a **built-in WebUI** for managing system app removal
+- No setup, no fuss — it's already there, waiting for you to make some chaos
 
-### Developer Mode  
-For advanced users who want complete control, Developer Mode allows manual whiteout creation:  
-- Access it with tapping the "System App Nuker" title three times
+### On Magisk
+- **Action Button** – Launch the WebUI directly from the Magisk app
+- **Third-Party Integrations**:
+  - [KSUWebUIStandalone](https://github.com/5ec1cff/KsuWebUIStandalone)
+  - [MMRL](https://github.com/MMRLApp/MMRL)
+- **Auto Installation** – Don’t have a WebUI? We’ll handle it. KSUWebUIStandalone gets installed automatically
 
 ---
 
-## 💡 Acknowledgements  
+## ⚙️ Advanced Features
+
+### 📦 Package List Management 
+- **Import**
+  - Paste in package names manually
+  - Or load from a text file on your device 
+- **Export**
+  - Save your nuked apps as a list
+  - Share it, back it up, frame it on your wall, your call
+
+### ♻️ Restore Functionality
+- Accidentally killed something important?
+  - Use the **Restore** page to bring it back from the dead
+
+### 🧑‍💻 Developer Mode
+For when you want *total* control:
+- Triple-tap the “System App Nuker” title to unlock Developer Mode
+- Manually create whiteouts and nuke anything in `/system`
+
+---
+
+## 💡 Acknowledgements
 
 This module was built on top of hard work from some very cool people.
 
@@ -68,5 +78,13 @@ Appreciate all of you. You made the thing not suck.
 
 ---
 
-## ⚠️ Disclaimer  
-This module is incredibly powerful! Use it wisely. Disabling critical system apps can break functionality, trigger boot loops, and make you question all your life decisions. Proceed with caution.
+## ⚠️ Disclaimer
+
+Yes, this is powerful. No, it does not come with training wheels.   
+Disabling critical system apps can:
+- Break your phone
+- Trigger boot loops
+- Make you question all your life decisions 
+
+Maybe don’t go nuking half your system unless you’re absolutely sure it won’t end in regret and recovery mode.  
+You’ve been warned.
