@@ -99,22 +99,16 @@ sed -i "s/magic_mount=.*/magic_mount=$magic_mount/" ${PERSISTENT_DIR}/config.sh 
 
 # --- if mountify is supported ---
 
-# if overlay and tmpfs xattr
-if [ "$overlay_supported" = true ] && [ "$tmpfs_xattr_supported" = true ]; then
-    echo "[+] OverlayFS and TMPFS_XATTR detected. Mountify script will be used for mounting"
+if [ "$overlay_supported" = true ] && [ "$tmpfs_xattr_supported" = true ] || [ "$magic_mount" = false ]; then
+    # if (overlayfs and xattr) or manager is overlayfs
+    # display msg in manager
+    if [ "$overlay_supported" = true ] && [ "$tmpfs_xattr_supported" = true ]; then
+        echo "[+] OverlayFS and TMPFS_XATTR detected. Mountify script will be used for mounting"
+    else
+        echo "[+] Using KernelSU OverlayFS mountify standalone script"
+    fi
     
-    # skip mount cuz we mount it ourselves
-    touch "$MODPATH/skip_mount"
-    touch "$MODPATH/skip_mountify"
-    use_mountify_script=true
-    sed -i "s/^use_mountify_script=.*/use_mountify_script=true/" ${PERSISTENT_DIR}/config.sh "$PERSIST_DIR/config.sh"
-fi
-
-# if overlayfs manager
-if [ "$magic_mount" = false ]; then
-    echo "[+] Using KernelSU OverlayFS mountify standalone script"
-    
-    # skip mount cuz we mount it ourselves
+    # skip mount because we mount it ourselves
     touch "$MODPATH/skip_mount"
     touch "$MODPATH/skip_mountify"
     use_mountify_script=true
