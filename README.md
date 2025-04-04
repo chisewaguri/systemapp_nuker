@@ -43,13 +43,28 @@ For advanced users who want complete control, Developer Mode allows manual white
 ---
 
 ## 💡 Acknowledgements  
-Huge thanks to everyone who contributed through code, feedback, and suggestions!  
 
-This project is inspired by:  
-- [backslashxx/mountify](https://github.com/backslashxx/mountify) – The foundation for the whiteout generator.  
-- [j-hc/zygisk-detach](https://github.com/j-hc/zygisk-detach) & [KOWX712/Tricky-Addon-Update-Target-List](https://github.com/KOWX712/Tricky-Addon-Update-Target-List) – Their app-handling techniques shaped the module’s functionality.  
+This module was built on top of hard work from some very cool people.
 
-Your contributions, ideas, and support are always appreciated!  
+- **[@backslashxx](https://github.com/backslashxx)**  
+Massive shoutout for more than just the standalone mounting scripts and whiteout logic from [`mountify`](https://github.com/backslashxx/mountify).  
+A big chunk of the backend shell scripts in this module were either inspired by or directly adapted from his work.
+
+- **[@KOWX712](https://github.com/KOWX712)**  
+WebUI wizard. He made the frontend actually usable.  
+Without this, you'd be staring at broken modals wondering why life suck.
+
+- **[@KOWX712](https://github.com/KOWX712)** *(again!)*  
+Also the author of [`Tricky-Addon-Update-Target-List`](https://github.com/KOWX712/Tricky-Addon-Update-Target-List), which inspired parts of the module's approach to package handling and list manipulation.
+
+- **[@j-hc](https://github.com/j-hc)**  
+Their work on [`zygisk-detach`](https://github.com/j-hc/zygisk-detach) helped shape how the module handles app list.
+
+- **All other contributors**  
+From code tweaks to bug reports to random late-night suggestions: thank you.  
+You helped shape this into something that doesn’t suck to use.
+
+Appreciate all of you. You made the thing not suck.
 
 ---
 
