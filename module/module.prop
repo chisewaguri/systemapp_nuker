@@ -1,7 +1,7 @@
 id=system_app_nuker
 name=App Nuker
-version=v1.1.2
-versionCode=112
+version=v1.1.3
+versionCode=113
 author=ChiseWaguri
-description=Simple system app debloater
+description=System app debloater and whiteout creator
 updateJson=https://raw.githubusercontent.com/ChiseWaguri/systemapp_nuker/master/update.json

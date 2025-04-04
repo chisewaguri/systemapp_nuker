@@ -33,7 +33,7 @@ We welcome code contributions to improve System App Nuker!
 - Format your code consistently
 - Follow the existing style patterns
 
-### Reporting Issues
+## Reporting Issues
 
 When reporting issues, please include:
 - Your device model

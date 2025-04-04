@@ -1,10 +1,24 @@
-## App Nuker
+## App Nuker  
 Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
 ---
-### v1.1.2  
+
+### v1.1.3
+
+#### WebUI  
+- Fixed partial loading issue when importing a package list 
+  Thanks to @KOWX712 (#32)
+
+#### Scripts  
+- Mount module globally using `mountify` standalone scripts  
+  (only supports env with tmpfs xattrs enabled or overlayfs-based manager)
+  Scripts are imported from [@backslashxx/mountify](https://github.com/backslashxx/mountify), massive thanks for standalone mounting scripts
+
+---
+
+### v1.1.2
 
 #### WebUI  
 - Fixed category badge on confirmation modal
@@ -19,11 +33,5 @@ Simple debloater and whiteout maker with WebUI support.
 - Optimized bootloop protection
 
 ---
-### v1.1.1  
-- **Fixed** category filter positioning on **MMRL**  
-- **Search & category filter now work together** instead of operating independently  
-- **Selected apps now move to the top** for better visibility  
-- **Fixed** issue where module content was not copied during the nuking process  
 
----
 Full changelog: [GitHub Commits](https://github.com/ChiseWaguri/systemapp_nuker/commits/master/)
