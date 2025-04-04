@@ -28,14 +28,10 @@ if [ $BOOTCOUNT -gt 1 ]; then # on bootloop (2nd boot)
     done
 
     # remove persist dir content
-    rm -rf "$PERSIST_DIR/*"
+    rm -rf "$PERSIST_DIR"/*
 
-    # reset version code to 0
-    string="versionCode=0"
-    sed -i "s/^versionCode=.*/$string/g" $MODDIR/module.prop
-
-    # tell user to reinstall module
-    string="description=bootloop protection triggered. whiteouts deleted. update or reinstall the module to re-activate."
+    # tell user to re-enable module
+    string="description=bootloop protection triggered. whiteouts deleted. enable module to re-activate."
     sed -i "s/^description=.*/$string/g" $MODDIR/module.prop
 
     # set bootcount and reboot

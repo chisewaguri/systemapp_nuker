@@ -6,15 +6,36 @@ ICON_DIR="$PERSIST_DIR/icons"
 
 # import config
 uninstall_fallback=false
+use_mountify_script=false
 [ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
 
 aapt() { "$MODDIR/common/aapt" "$@"; }
 
+# -- set module description --
 
+# base description
+string="description=Simple system app debloater and whiteout creator"
+
+# count nuked apps
+total=$(grep -c '"package_name":' "$REMOVE_LIST")
+string="$string | 💥 nuked: $total app$( [ "$total" -lt 2 ] && echo '' || echo 's' )"
+
+# detect mount mode
+if [ "$use_mountify_script" = true ]; then
+    string="$string | 🧰 mount mode: global (powered by mountify)"
+else
+    string="$string | ⚙️ mount mode: default"
+fi
+
+# set module desc
+sed -i "s/^description=.*/$string/g" $MODDIR/module.prop
+
+# wait for boot completed
 until [ "$(getprop sys.boot_completed)" = "1" ]; do
     sleep 1
 done
 
+# make sure persist dir exist
 [ ! -d "$PERSIST_DIR" ] && mkdir -p "$PERSIST_DIR"
 
 # reset bootcount
