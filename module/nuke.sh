@@ -39,8 +39,10 @@ nuke_system_apps() {
     total=$(grep -c '"package_name":' "$REMOVE_LIST")
 
     # first, remove any updates for the apps being nuked
-    for package_name in $(grep -E '"package_name":' "$REMOVE_LIST" | sed 's/.*"package_name": "\(.*\)",/\1/'); do
-        if pm list packages | grep -qx "package:$package_name"; then
+    for package_name in $(grep -o "\"package_name\":.*" "$REMOVE_LIST" | awk -F"\"" '{print $4}'); do
+        # check if it's a system app and has been updated
+        if pm list packages -s | grep -qx "package:$package_name" && pm path "$package_name" | grep -q "/data/app"; then
+            # uninstall system updates only if it's a system app that has been updated
             pm uninstall-system-updates "$package_name" >/dev/null 2>&1 || true
         fi
     done
