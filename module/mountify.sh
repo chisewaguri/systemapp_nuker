@@ -1,6 +1,7 @@
 #!/bin/sh
 # mountify.sh
 # mountify standalone script
+# imported from backslashxx/mountify@4cb2e3f with some changes
 
 PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
 MODDIR="${0%/*}"

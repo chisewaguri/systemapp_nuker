@@ -129,4 +129,10 @@ for line in $( sed '/#/d' "$PERSIST_DIR/raw_whiteouts.txt" ); do
 	ls "$MODULE_UPDATE_DIR$line" 2>/dev/null
 done
 
+# handle /my_bigball
+if [ -d "$MODULE_UPDATE_DIR/system/my_bigball"] && [ ! -L "/my_bigball" ]; then
+    echo "[-] Handling partition /my_bigball"
+    mv -f $MODULE_UPDATE_DIR/system/my_bigball $MODULE_UPDATE_DIR/$1 && ln -sf ../my_bigball $MODULE_UPDATE_DIR/system/my_bigball
+fi
+
 # EOF

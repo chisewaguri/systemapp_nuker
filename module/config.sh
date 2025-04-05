@@ -1,19 +1,22 @@
-# uninstall fallback if app aint nuked on late service
-# this execute pm uninstall -k --user 0 on late service if app still exist
+# uninstall fallback if app ain't nuked on late service
+# this executes: pm uninstall -k --user 0
+# only runs if the app still exists after on late-service
+# default is false
 uninstall_fallback=false
 
 # mount the module globally with mountify standalone script
-# need TMPFS_XATTR
-# this was set to true on install if your env supports it
-# DO NOT enable if you dont have TMPFS_XATTR enabled or not sure what does this do
+# requires **TMPFS_XATTR** or **OverlayFS manager**
+# this is auto-enabled during install if the environment supports it
+# DO NOT enable this manually unless you're sure the enviromentment is supported
 use_mountify_script=false
 
 # ----
+# ⚠️ DO NOT EDIT BELOW THIS LINE
 # configuration(s) after this are env-specific nor not meant to be edited
-# do not edit
+# these values are auto-set and may break things if changed manually
 # ----
 
-# mounting system
+# mounting system (true = manager is magic mount)
 magic_mount=true
 
 # EOF

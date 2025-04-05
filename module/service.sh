@@ -52,6 +52,7 @@ create_applist() {
     echo "[" > "$APP_LIST"
 
     system_app_path="/system/app /system/priv-app /vendor/app /product/app /product/priv-app /system_ext/app /system_ext/priv-app"
+    [ "$use_mountify_script" = true ] && [ -d "/my_bigball" ] && system_app_path="$system_app_path /my_bigball"
     for path in $system_app_path; do
         find "$path" -maxdepth 2 -type f -name "*.apk" | while read APK_PATH; do
             # skip if already on app list

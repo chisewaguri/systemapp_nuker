@@ -6,7 +6,7 @@ PERSIST_DIR="/data/adb/system_app_nuker"
 # import config
 use_mountify_script=false
 magic_mount=true
-[ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
+[ -f "$PERSIST_DIR/config.sh" ] && . "$PERSIST_DIR/config.sh"
 
 BOOTCOUNT=0
 [ -f "$PERSIST_DIR/count.sh" ] && . "$PERSIST_DIR/count.sh"
@@ -19,7 +19,7 @@ fi
 
 BOOTCOUNT=$(( BOOTCOUNT + 1))
 
-if [ $BOOTCOUNT -gt 1 ]; then # on bootloop (2nd boot)
+if [ $BOOTCOUNT -gt 1 ]; then # on 2nd post-fs-data without reaching service
     touch $MODDIR/disable
 
     # remove whiteouts
@@ -38,21 +38,33 @@ if [ $BOOTCOUNT -gt 1 ]; then # on bootloop (2nd boot)
     echo "BOOTCOUNT=-1" > "$PERSIST_DIR/count.sh"
     stop; reboot
 
-else # on normal boot
+else # on post-fs-data
+    # service will reset this count
     echo "BOOTCOUNT=1" > "$PERSIST_DIR/count.sh"
     chmod 755 "$PERSIST_DIR/count.sh"
 fi
 
 # --- mountify script ---
 
-# if magic mount manager
-if [ "$use_mountify_script" = true ] && [ "$magic_mount" = true ]; then
-    . $MODDIR/mountify.sh
-fi
+if [ "$use_mountify_script" = true ]; then
+    # skip mount because we mount it ourselves
+    touch "$MODPATH/skip_mount"
+    touch "$MODPATH/skip_mountify"
 
-# if overlayfs manager
-if [ "$use_mountify_script" = true ] && [ "$magic_mount" = false ]; then
-    . $MODDIR/mountify-symlink.sh
+    # mount
+    echo "app_nuker_debug: post-fs-data: mounting with mountify standalone script..." >> /dev/kmsg
+    if [ "$magic_mount" = true ]; then
+        # if magic mount manager
+        . $MODDIR/mountify.sh
+    elif [ "$magic_mount" = false ]; then
+        # if overlayfs manager
+        . $MODDIR/mountify-symlink.sh
+    fi
+else
+    echo "app_nuker_debug: post-fs-data: default mounting mode..." >> /dev/kmsg
+    rm -f "$MODPATH/skip_mount"
+    rm -f "$MODPATH/skip_mountify"
+
 fi
 
 # EOF

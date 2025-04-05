@@ -1,6 +1,7 @@
 #!/bin/sh
 # mountify-symlink.sh
 # standalone global mounting script meant for KernelSU OverlayFS
+# imported from backslashxx/mountify@1c8bef3 with some changes
 
 PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
 MODDIR="${0%/*}"
@@ -21,13 +22,13 @@ busybox ln -sf "$MODDIR" "$basefolder/$FAKE_MOUNT_NAME"
 
 # now we use the symlink as upperdir
 cd "$basefolder/$FAKE_MOUNT_NAME"
-for DIR in vendor/* product/* system_ext/* odm/* ; do
+for DIR in vendor/* product/* system_ext/* odm/* my_bigball/* ; do
 	busybox mount -t overlay -o "lowerdir=$basefolder/$FAKE_MOUNT_NAME/$DIR:/$DIR" overlay /$DIR
 done
 
 # handle system in a special way since ksu creates symlinks inside
 cd "$basefolder/$FAKE_MOUNT_NAME/system"
-for DIR in $( ls -d */ | sed 's/.$//'  | grep -vE "^(odm|product|system_ext|vendor)$" 2>/dev/null ); do
+for DIR in $( ls -d */ | sed 's/.$//'  | grep -vE "^(odm|product|system_ext|vendor|my_bigball)$" 2>/dev/null ); do
 	busybox mount -t overlay -o "lowerdir=$basefolder/$FAKE_MOUNT_NAME/system/$DIR:/system/$DIR" overlay /system/$DIR
 done
 
