@@ -27,8 +27,10 @@ if [ $BOOTCOUNT -gt 1 ]; then # on 2nd post-fs-data without reaching service
         rm -rf "$MODDIR/$dir"
     done
 
-    # remove persist dir content
-    rm -rf "$PERSIST_DIR"/*
+    # remove nuke list
+    rm -rf "$PERSIST_DIR"/nuke_list.json
+    rm -rf "$PERSIST_DIR"/raw_whiteouts.txt
+
 
     # tell user to re-enable module
     string="description=bootloop protection triggered. whiteouts deleted. enable module to re-activate."
