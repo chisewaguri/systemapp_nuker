@@ -12,6 +12,9 @@ export let appList = [],
 // Timer for delaying moveCheckedAppsToTop
 let moveCheckedAppsTimer = null;
 
+// Record footer click and href redirect event
+let footerClick = false;
+
 export  async function ksuExec(command) {
     return new Promise((resolve) => {
         let callbackName = `exec_callback_${Date.now()}`;
@@ -463,9 +466,9 @@ export function applyRippleEffect() {
                 element.addEventListener("pointerup", () => setTimeout(handlePointerUp, 80));
                 element.addEventListener("pointercancel", () => setTimeout(handlePointerUp, 80));
 
-                // Return if scroll detected in 80ms
+                // Return if scroll or footer click detected in 80ms
                 await new Promise(resolve => setTimeout(resolve, 80));
-                if (isScrolling) return;
+                if (isScrolling || footerClick) return;
                 const ripple = document.createElement("span");
                 ripple.classList.add("ripple");
 
@@ -989,6 +992,7 @@ export function initialTransition() {
     document.querySelectorAll('a').forEach(link => {
         link.addEventListener('click', (e) => {
             if (link.href && link.href.startsWith(window.location.origin)) {
+                footerClick = true;
                 e.preventDefault();
                 content.classList.remove('loaded');
                 floatingButton.style.transition = 'all 0.2s ease';

@@ -137,7 +137,10 @@
     position: fixed;
     bottom: 0;
     display: flex;
+    height: 80px;
     width: 100%;
+    padding-bottom: var(--bottom-inset);
+    align-items: center;
     justify-content: center;
     background-color: var(--bg-secondary);
     border-top-left-radius: 15px;
@@ -150,8 +153,6 @@
 .footer-btn {
     display: flex;
     flex-direction: column;
-    padding: 20px;
-    padding-bottom: calc(var(--bottom-inset) + 20px);
     width: 100%;
     max-width: 200px;
     align-items: center;
@@ -166,11 +167,15 @@
 }
 
 .footer-btn-icon {
+    height: 30px;
     width: fit-content;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 3px 0;
+    background-color: var(--bg-secondary);
+    padding: 0 20px;
+    border-radius: 50px;
+
     svg {
         fill: var(--filledTonalButtonContentColor, var(--text-primary));
     }
@@ -178,13 +183,13 @@
 
 .focus-btn {
     background-color: transparent;
-    border-radius: 50px;
+    padding: 0;
     transition: all 0.2s ease;
 }
 
 .focus-btn.loaded {
     background-color: var(--filledTonalButtonContainerColor, var(--border-color));
-    padding: 3px 20px;
+    padding: 0 20px;
 }
 
 #whiteout-btn{display:none;}
