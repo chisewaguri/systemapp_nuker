@@ -585,18 +585,15 @@ export function setupScrollEvent() {
 
         // IMPORTANT: Apply EXACT same transform to both elements
         // Using a variable to ensure they're exactly the same
-        const offset = scrollPosition;
-
         const searchContainer = document.querySelector('.search-container');
         if (searchContainer) {
-            searchContainer.style.transform = `translateY(-${offset}px)`;
+            searchContainer.style.transform = `translateY(-${scrollPosition}px)`;
         }
 
         const categoryFilters = document.querySelector('.category-filters');
         if (categoryFilters) {
-            const categoryFiltersHeight = categoryFilters.offsetHeight;
-            const progress = Math.min(Math.max(window.scrollY / (categoryFiltersHeight + 10), 0), 1);
-            const translateYPosition = progress * (categoryFiltersHeight + offset + 10);
+            const categoryFiltersScroll = scrollRange + categoryFilters.offsetHeight;
+            const translateYPosition = Math.min(Math.max(window.scrollY, 0), categoryFiltersScroll);
             categoryFilters.style.transform = `translateY(-${translateYPosition}px)`;
         }
 

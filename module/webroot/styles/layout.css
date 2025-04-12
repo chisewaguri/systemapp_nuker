@@ -10,7 +10,7 @@
     box-sizing: border-box;
     justify-content: space-between;
     align-items: center;
-    transition: transform 0.05s linear;
+    transition: transform 0.02s linear;
 }
 
 .header h1 {
@@ -30,8 +30,8 @@
     align-items: center;
     top: calc(var(--top-inset) + 80px);
     height: 40px;
-    z-index: 4;
-    transition: transform 0.05s linear;
+    z-index: 6;
+    transition: transform 0.02s linear;
 }
 
 .seach-input-wrapper {
@@ -82,7 +82,7 @@
     border-radius: 20px;
     opacity: 0;
     overflow-x: auto;
-    transition: all 0.1s ease, transform 0.05s linear;
+    transition: all 0.1s ease, transform 0.02s linear;
 }
 
 .category-filters.loaded {
