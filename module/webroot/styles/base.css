@@ -60,12 +60,15 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 16px;
+}
+
+.content-list {
     opacity: 0;
-    padding-top: 20px;
+    transform: translateY(10px);
     transition: all 0.2s ease;
 }
 
-.content.loaded {
-    padding-top: 0;
+.content-list.loaded {
+    transform: translateY(0);
     opacity: 1;
 }

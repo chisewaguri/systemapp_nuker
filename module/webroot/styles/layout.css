@@ -76,12 +76,18 @@
     z-index: 3;
     max-width: calc(100% - 20px);
     display: flex;
-    gap: 6px;
+    gap: 20px;
     padding: 5px;
     background-color: transparent;
     border-radius: 20px;
+    opacity: 0;
     overflow-x: auto;
-    transition: transform 0.05s linear;
+    transition: all 0.1s ease, transform 0.05s linear;
+}
+
+.category-filters.loaded {
+    opacity: 1;
+    gap: 6px;
 }
 
 /* ====== APP LISTS ====== */
@@ -184,7 +190,7 @@
 .focus-btn {
     background-color: transparent;
     padding: 0;
-    transition: all 0.2s ease;
+    transition: all 0.1s ease;
 }
 
 .focus-btn.loaded {
