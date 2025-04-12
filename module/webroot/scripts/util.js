@@ -977,7 +977,8 @@ fetch('link/raw_whiteouts.txt')
 
 // function to setup initial transition
 export function initialTransition() {
-    const content = document.querySelector('.content');
+    const content = document.querySelector('.content-list');
+    const categoryFilter = document.querySelector('.category-filters');
     const floatingButton = document.querySelector('.floating-button-container');
     const focusButton = document.querySelector(".focus-btn");
 
@@ -986,6 +987,7 @@ export function initialTransition() {
         floatingButton.style.transform = 'translateY(0)';
         content.classList.add('loaded');
         focusButton.classList.add('loaded');
+        categoryFilter.classList.add('loaded');
     }, 10);
 
     // Quit transition on switching page
@@ -995,12 +997,13 @@ export function initialTransition() {
                 footerClick = true;
                 e.preventDefault();
                 content.classList.remove('loaded');
-                floatingButton.style.transition = 'all 0.2s ease';
+                floatingButton.style.transition = 'all 0.s ease';
                 floatingButton.style.transform = 'translateY(90px)';
                 focusButton.classList.remove('loaded');
+                categoryFilter.classList.remove('loaded');
                 setTimeout(() => {
                     window.location.href = link.href;
-                }, 200);
+                }, 100);
             }
         });
     });
