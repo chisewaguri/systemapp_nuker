@@ -984,7 +984,7 @@ export function initialTransition() {
         floatingButton.style.transform = 'translateY(0)';
         content.classList.add('loaded');
         focusButton.classList.add('loaded');
-        categoryFilter.classList.add('loaded');
+        if (categoryFilter) categoryFilter.classList.add('loaded');
     }, 10);
 
     // Quit transition on switching page
@@ -997,7 +997,7 @@ export function initialTransition() {
                 floatingButton.style.transition = 'all 0.s ease';
                 floatingButton.style.transform = 'translateY(90px)';
                 focusButton.classList.remove('loaded');
-                categoryFilter.classList.remove('loaded');
+                if (categoryFilter) categoryFilter.classList.remove('loaded');
                 setTimeout(() => {
                     window.location.href = link.href;
                 }, 100);
