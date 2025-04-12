@@ -412,6 +412,15 @@ export function setupDropdownMenu() {
         if (menuDropdown.style.display === 'flex') {
             closeDropdownMenu();
         } else {
+            // Move the dropdown to the body element
+            document.body.appendChild(menuDropdown);
+            
+            // Position it correctly
+            const rect = menuButton.getBoundingClientRect();
+            menuDropdown.style.top = (rect.bottom + 5) + 'px';
+            menuDropdown.style.right = (window.innerWidth - rect.right) + 'px';
+            menuDropdown.style.zIndex = '10';
+            
             menuDropdown.style.display = 'flex';
             setTimeout(() => {
                 menuDropdown.style.opacity = 1;
