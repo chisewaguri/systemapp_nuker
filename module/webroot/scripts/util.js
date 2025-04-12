@@ -516,11 +516,29 @@ export async function checkMMRL() {
             console.log("Error setting status bars theme:", error)
         }
 
-        // Request API permission, supported version: 33045+
+        // Check MMRL version
         try {
-            $system_app_nuker.requestAdvancedKernelSUAPI();
+            const mmrlJson = $system_app_nuker.getMmrl();
+            const mmrlData = JSON.parse(mmrlJson);
+            if (mmrlData.versionCode < 33329) {
+                // Minimum MMRL version that working for SAN WebUI is 33329
+                throw new Error('MMRL version is less than 33329');
+            } else if (mmrlData.versionCode < 33348) {
+                // requestAdvancedKernelSUAPI deprecated in v33348
+                $system_app_nuker.requestAdvancedKernelSUAPI();
+            }
         } catch (error) {
-            console.log("Error requesting API:", error);
+            console.error('MMRL version check failed:', error);
+            const mmrlModal = document.getElementById('mmrl-version-modal');
+            if (mmrlModal) {
+                mmrlModal.style.display = 'flex';
+                mmrlModal.style.opacity = '1';
+                document.body.classList.add('no-scroll');
+            }
+            $system_app_nuker.requestAdvancedKernelSUAPI(); // Just to ensure linkRedirect work
+            setTimeout(() => {
+                ksuExec(`am start -a android.intent.action.VIEW -d 'https://github.com/MMRLApp/MMRL/releases/latest'`);
+            }, 3000)
         }
     }
 }
