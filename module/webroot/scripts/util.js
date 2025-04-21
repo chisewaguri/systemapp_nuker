@@ -530,12 +530,15 @@ export async function checkMMRL() {
 
         // Check MMRL version
         try {
-            const mmrlJson = $system_app_nuker.getMmrl();
-            const mmrlData = JSON.parse(mmrlJson);
-            if (mmrlData.versionCode < 33329) {
-                // Minimum MMRL version that working for SAN WebUI is 33329
+            const { stdout } = await ksuExec(
+                `dumpsys package com.dergoogler.mmrl | grep versionCode | head -1 | sed -n 's/^.*versionCode=\\([0-9]\\+\\).*$/\\1/p'`
+            );
+            const versionCode = parseInt(stdout.trim()) || 0;
+
+            if (versionCode < 33329) {
+                // Minimum MMRL version that works for SAN WebUI is 33329
                 throw new Error('MMRL version is less than 33329');
-            } else if (mmrlData.versionCode < 33348) {
+            } else if (versionCode < 33348) {
                 // requestAdvancedKernelSUAPI deprecated in v33348
                 $system_app_nuker.requestAdvancedKernelSUAPI();
             }
