@@ -5,6 +5,20 @@ Simple debloater and whiteout maker with WebUI support.
 
 ---
 
+### v1.1.4
+
+#### WebUI  
+- Enhance ripple animation's scroll detection (@KOWX712, #34)
+- Drop support for MMRL version < 33329 (@KOWX712, #34)
+- Optimize UI animation (@KOWX712, #35, #36)
+
+#### Scripts  
+- Initial /my_bigball partition support (on mountify-supported env)
+- Add dynamic module desc
+- Improved bootloop protection and nuking logic
+
+---
+
 ### v1.1.3
 
 #### WebUI  
