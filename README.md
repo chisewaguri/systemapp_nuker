@@ -1,8 +1,10 @@
 # System App Nuker
-### Take Back Control – Because Your Device Should Work for You, Not the Other Way Around
+### Take Back Control – Your Device, Your Rules
 
-A simple yet powerful module that lets you reclaim control over your device by disabling pre-installed system apps.  
-Because stock firmware thinks it knows best — and we respectfully, *aggressively*, disagree.
+Tired of your phone coming pre-loaded with junk you never asked for? Same. OEMs love stuffing your device with useless apps, shady services, and bloated nonsense that serves *them*, not you.   
+This lightweight but mighty module puts you back in charge by letting you disable those pesky, pre-installed system apps.
+
+It’s your device. Not theirs.
 
 ---
 
@@ -10,9 +12,13 @@ Because stock firmware thinks it knows best — and we respectfully, *aggressive
 - **Web-Based Interface** – Manage app nuking through a user-friendly WebUI
 - **App Categorization System** – Know what’s safe, what’s risky, and what might summon a bootloop demon
 - **Compatibility** – Plays nice with **Magisk**, **KernelSU**, and **Apatch**
-- **Bootloop Recovery** – If you break something vital, the module politely disables itself so you (hopefully) live to nuke another day
-- **Package List Management** – Import/export app lists for backups or trading war stories
-- **Developer Mode** – Manually create whiteouts if you're into that kind of power
+- **Bootloop Recovery** – Go too far? The module disables itself before things get ugly
+- **Package List Management** – Import/export your nukes for backups, sharing, or just bragging them
+- **Developer Mode** – Manually create whiteouts and surgically remove shits like a system surgeon
+
+---
+
+OEMs had their fun. Now it’s your turn.
 
 ---
 
