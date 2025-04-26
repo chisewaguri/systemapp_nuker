@@ -9,6 +9,8 @@ export let appList = [],
            currentSearchTerm = '',
            activeCategory = 'all';
 
+let uadListsData = null;
+
 // Timer for delaying moveCheckedAppsToTop
 let moveCheckedAppsTimer = null;
 
@@ -402,6 +404,35 @@ export async function updateAppList(isNuke = false) {
     }
 }
 
+// Function to update UAD list
+async function updateUADList() {
+    try {
+        const response = await fetch('https://raw.githubusercontent.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json');
+        if (!response.ok) throw new Error('Failed to fetch UAD list');
+        
+        const data = await response.json();
+        
+        // Save the updated list
+        await ksuExec(`echo '${JSON.stringify(data, null, 2)}' > /data/adb/system_app_nuker/uad_lists.json`);
+        
+        // Update symlink if needed
+        await ksuExec('[ -L "/data/adb/modules/system_app_nuker/webroot/link" ] || ln -s /data/adb/system_app_nuker /data/adb/modules/system_app_nuker/webroot/link');
+        
+        // Reload the data
+        uadListsData = data;
+        
+        // Refresh the display
+        if (appList.length > 0) {
+            displayAppList(appList);
+        }
+        
+        toast("UAD list updated successfully");
+    } catch (error) {
+        console.error("Failed to update UAD list:", error);
+        toast("Failed to update UAD list");
+    }
+}
+
 // Function to setup dropdown menu
 export function setupDropdownMenu() {
     const menuButton = document.getElementById('menu-button');
@@ -450,6 +481,9 @@ export function setupDropdownMenu() {
 
     const exportOption = document.getElementById('export-option');
     if (exportOption) exportOption.addEventListener('click', () => exportPackageList());
+
+    const updateUADOption = document.getElementById('update-uad-option');
+    if (updateUADOption) updateUADOption.addEventListener('click', () => updateUADList());
 }
 
 /**
@@ -634,29 +668,28 @@ async function showAppInfoModal(app) {
 
     // Set category display
     const categoryDisplay = appInfoModal.querySelector('#app-category');
-
-    if (category.id === "unknown") {
-        // For unknown category, only show the description without the badge
-        categoryDisplay.innerHTML = `
-            <span class="category-description">${category.description}</span>
-        `;
-    } else {
-        // Stacked layout with description below the badge and name
-        categoryDisplay.innerHTML = `
-            <div class="category-container">
-                <div class="category-header">
-                    <span class="category-indicator-dot" style="background-color: ${category.color};"></span>
-                    <span class="category-name">${category.name}</span>
-                </div>
-                <span class="category-description">${category.description}</span>
+    categoryDisplay.innerHTML = `
+        <div class="category-container">
+            <div class="category-header">
+                <span class="category-indicator-dot" style="background-color: ${category.color};"></span>
+                <span class="category-name">${category.name}</span>
             </div>
-        `;
-    }
+            <span class="category-description">${category.description}</span>
+        </div>
+    `;
+
+    // Set removal recommendation
+    const removalDisplay = appInfoModal.querySelector('#app-removal');
+    removalDisplay.innerHTML = `<span class="removal-${category.removal.toLowerCase()}">${category.removal}</span>`;
+
+    // Set details
+    const detailsDisplay = appInfoModal.querySelector('#app-details');
+    detailsDisplay.textContent = category.details;
 
     // Show the modal
     appInfoModal.style.display = 'flex';
     document.body.classList.add('no-scroll');
-     setTimeout(() => {
+    setTimeout(() => {
         appInfoModal.style.opacity = 1;
         appInfoModalContent.style.transform = 'scale(1)';
     }, 10);
@@ -707,30 +740,55 @@ async function loadCategories() {
     if (categoriesData) return categoriesData;
 
     try {
-        const response = await fetch('categories.json');
-        categoriesData = await response.json();
+        const [categoriesResponse, uadListsResponse] = await Promise.all([
+            fetch('categories.json'),
+            fetch('uad_lists.json')
+        ]);
+        
+        categoriesData = await categoriesResponse.json();
+        uadListsData = await uadListsResponse.json();
+        
         return categoriesData;
     } catch (error) {
-        console.error("Failed to load categories:", error);
+        console.error("Failed to load data:", error);
         // Fallback to basic categories
         return {
             categories: [
-                { id: "unknown", name: "Unknown", color: "#9e9e9e", icon: "help", description: "Uncategorized app" }
-            ],
-            apps: {}
+                { 
+                    id: "unlisted", 
+                    name: "Unlisted", 
+                    color: "#795548", 
+                    description: "Uncategorized app" 
+                }
+            ]
         };
     }
 }
 
 // Function to get category info for a package
 function getCategoryInfo(packageName) {
-    if (!categoriesData) return { id: "unknown", name: "Unknown", color: "#9e9e9e", icon: "help", description: "Uncategorized app" };
+    if (!categoriesData || !uadListsData) return { 
+        id: "unlisted", 
+        name: "Unlisted", 
+        color: "#795548", 
+        description: "Uncategorized app",
+        removal: "Unknown",
+        details: "No additional information available"
+    };
 
-    const categoryId = categoriesData.apps[packageName] || "unknown";
+    const uadInfo = uadListsData[packageName] || {};
+    const categoryId = uadInfo.list ? uadInfo.list.toLowerCase() : "unlisted";
     const category = categoriesData.categories.find(c => c.id === categoryId) || 
-                    { id: "unknown", name: "Unknown", color: "#9e9e9e", icon: "help", description: "Uncategorized app" };
+                    categoriesData.categories.find(c => c.id === "unlisted");
 
-    return category;
+    return {
+        id: category.id,
+        name: category.name,
+        color: category.color,
+        description: uadInfo.description || category.description,
+        removal: uadInfo.removal || "Unknown",
+        details: uadInfo.description || "No additional information available"
+    };
 }
 
 // Create category filters

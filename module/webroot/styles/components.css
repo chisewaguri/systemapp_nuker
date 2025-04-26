@@ -317,3 +317,52 @@ mark {
         background-color: #5a5a00;
     }
 }
+
+/* Removal recommendation badges */
+.removal-recommended {
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.removal-expert {
+    color: #ff9800;
+    font-weight: bold;
+}
+
+.removal-advanced {
+    color: #f44336;
+    font-weight: bold;
+}
+
+.removal-unsafe {
+    color: #d32f2f;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.removal-unknown {
+    color: #9e9e9e;
+    font-style: italic;
+}
+
+@media (prefers-color-scheme: dark) {
+    .removal-recommended {
+        color: #81c784;
+    }
+
+    .removal-expert {
+        color: #ffb74d;
+    }
+
+    .removal-advanced {
+        color: #e57373;
+    }
+
+    .removal-unsafe {
+        color: #ef5350;
+    }
+
+    .removal-unknown {
+        color: #bdbdbd;
+    }
+}
