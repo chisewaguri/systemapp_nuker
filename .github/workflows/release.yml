@@ -17,19 +17,18 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Get commit message
-      id: commit_msg
-      run: |
-        COMMIT_MSG=$(git log -1 --pretty=%s -- update.json | tr -d '\n')
-        echo "COMMIT_MSG=$COMMIT_MSG" >> $GITHUB_ENV
-
     - name: Read update.json
       id: setup
       run: |
-        ZIP_URL=$(jq -r .zipUrl update.json)
-        ZIP_NAME=$(basename "$ZIP_URL")
-        echo "ZIP_NAME=$ZIP_NAME" >> $GITHUB_ENV
-        echo "ZIP_URL=$ZIP_URL" >> $GITHUB_ENV
+        echo "VERSION=$(jq -r .version update.json)" >> $GITHUB_ENV
+        echo "ZIP_NAME=$(basename $(jq -r .zipUrl update.json))" >> $GITHUB_ENV
+
+    - name: Read changelog
+      run: |
+        CHANGELOG=$(git diff HEAD^ HEAD -- CHANGELOG.md | grep '^+[^+]' | sed 's/^+//; /---/d')
+        echo "CHANGELOG<<CHANGELOG_EOF" >> $GITHUB_ENV
+        echo "$CHANGELOG" >> $GITHUB_ENV
+        echo "CHANGELOG_EOF" >> $GITHUB_ENV
 
     - name: Create dummy zip
       run: |
@@ -41,15 +40,25 @@ jobs:
     - name: Create module zip
       run: |
         cd module
-        zip -r "$ZIP_NAME" *
+        zip -r "${{ env.ZIP_NAME }}" *
 
-    - name: Create Draft GitHub Release
+    - name: Validate release
+      run: |
+        git fetch --tags
+        if git tag | grep -qx "^${{ env.VERSION }}"; then
+          echo "RELEASE=false" >> $GITHUB_ENV
+        else
+          echo "RELEASE=true" >> $GITHUB_ENV
+        fi
+
+    - name: Create release
+      if: env.RELEASE == 'true'
       uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       with:
-        tag_name: "${{ env.COMMIT_MSG }}"
-        name: "${{ env.COMMIT_MSG }}"
-        body: "See changelog for details."
-        draft: true
+        tag_name: "${{ env.VERSION }}"
+        name: "${{ env.VERSION }}"
+        body: "${{ env.CHANGELOG }}"
+        draft: false
         files: "module/${{ env.ZIP_NAME }}" 
