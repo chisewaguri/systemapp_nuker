@@ -630,25 +630,16 @@ export function setupScrollEvent() {
         document.querySelector('.header').style.opacity = opacity.toString();
         document.querySelector('.header').style.transform = `scale(${scale}) translateY(-${translateY}px)`;
 
-        // IMPORTANT: Apply EXACT same transform to search container and filters
+        // Apply transform to search container and filters wrapper
         const searchContainer = document.querySelector('.search-container');
+        const filtersWrapper = document.querySelector('.filters-wrapper');
+        
         if (searchContainer) {
             searchContainer.style.transform = `translateY(-${scrollPosition}px)`;
         }
-
-        // Apply transform to both category and removal filters
-        const categoryFilters = document.querySelector('.category-filters:not(.removal-filters)');
-        const removalFilters = document.querySelector('.removal-filters');
         
-        if (categoryFilters) {
-            const categoryFiltersScroll = scrollRange + categoryFilters.offsetHeight;
-            const translateYPosition = Math.min(Math.max(window.scrollY, 0), categoryFiltersScroll);
-            categoryFilters.style.transform = `translateY(-${translateYPosition}px)`;
-            
-            // Apply same transform to removal filters if they exist
-            if (removalFilters) {
-                removalFilters.style.transform = `translateY(-${translateYPosition}px)`;
-            }
+        if (filtersWrapper) {
+            filtersWrapper.style.transform = `translateY(-${scrollPosition}px)`;
         }
 
         lastScrollY = window.scrollY;
@@ -837,19 +828,24 @@ function getCategoryInfo(packageName) {
 function createCategoryFilters() {
     if (!categoriesData) return;
 
-    // Create category filters container
-    const categoryContainer = document.querySelector('.category-filters') || document.createElement('div');
-    if (!document.querySelector('.category-filters')) {
-        categoryContainer.className = 'category-filters';
+    // Create filters wrapper
+    const filtersWrapper = document.querySelector('.filters-wrapper') || document.createElement('div');
+    if (!document.querySelector('.filters-wrapper')) {
+        filtersWrapper.className = 'filters-wrapper';
         const searchContainer = document.querySelector('.search-container');
-        searchContainer.parentNode.insertBefore(categoryContainer, searchContainer.nextSibling);
+        searchContainer.parentNode.insertBefore(filtersWrapper, searchContainer.nextSibling);
     }
+
+    // Create category filters container
+    const categoryContainer = document.createElement('div');
+    categoryContainer.className = 'category-filters';
+    filtersWrapper.appendChild(categoryContainer);
     categoryContainer.innerHTML = '';
 
     // Create removal filters container
     const removalContainer = document.createElement('div');
     removalContainer.className = 'category-filters removal-filters';
-    categoryContainer.parentNode.insertBefore(removalContainer, categoryContainer.nextSibling);
+    filtersWrapper.appendChild(removalContainer);
     removalContainer.innerHTML = '';
 
     // Add filters for each category
