@@ -71,14 +71,11 @@
 
 /* ====== FILTERS CONTAINER ====== */
 .filters-wrapper {
-    position: fixed;
-    top: calc(var(--top-inset) + 125px);
-    z-index: 3;
     width: 100%;
     display: flex;
     flex-direction: column;
     gap: 5px;
-    transition: transform 0.02s linear;
+    margin-top: calc(var(--top-inset) + 125px);
 }
 
 /* ====== CATEGORY FILTERS ====== */
@@ -109,7 +106,7 @@
 #app-list {
     width: calc(100vw - 30px);
     max-width: 900px;
-    margin-top: calc(240px + 1em);
+    margin-top: 20px;
     margin-bottom: 100px;
     display: flex;
     padding: 0 10px;

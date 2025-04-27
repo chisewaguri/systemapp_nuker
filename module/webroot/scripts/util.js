@@ -630,16 +630,10 @@ export function setupScrollEvent() {
         document.querySelector('.header').style.opacity = opacity.toString();
         document.querySelector('.header').style.transform = `scale(${scale}) translateY(-${translateY}px)`;
 
-        // Apply transform to search container and filters wrapper
+        // Apply transform to search container
         const searchContainer = document.querySelector('.search-container');
-        const filtersWrapper = document.querySelector('.filters-wrapper');
-        
         if (searchContainer) {
             searchContainer.style.transform = `translateY(-${scrollPosition}px)`;
-        }
-        
-        if (filtersWrapper) {
-            filtersWrapper.style.transform = `translateY(-${scrollPosition}px)`;
         }
 
         lastScrollY = window.scrollY;
