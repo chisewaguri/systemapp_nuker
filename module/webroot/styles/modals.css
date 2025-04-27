@@ -24,7 +24,7 @@
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     transform: scale(0.8);
-    transition: transform 0.3s ease-in-out, transform 0.3s ease-in-out;
+    transition: transform 0.3s ease-in-out;
 }
 
 .modal-header {

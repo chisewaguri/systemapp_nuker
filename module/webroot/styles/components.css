@@ -61,7 +61,7 @@
     border-radius: 15px;
     transition: all 0.2s ease;
     user-select: none;
-    cursor: pointer;
+    cursor: auto;
 }
 
 .filter-btn.active {
@@ -77,7 +77,6 @@
 /* Category filters container */
 .category-filters {
     display: flex;
-    gap: 6px;
     padding: 5px 15px;
     margin: 0 auto;
     overflow-x: auto;
@@ -88,13 +87,6 @@
 
 .category-filters::-webkit-scrollbar {
     display: none;
-}
-
-/* Removal filters specific styles */
-.removal-filters {
-    background-color: var(--bg-primary);
-    border-radius: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* ====== APP COMPONENTS ====== */

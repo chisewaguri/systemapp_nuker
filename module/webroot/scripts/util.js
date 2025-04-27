@@ -670,6 +670,19 @@ export function setupScrollEvent() {
             searchContainer.style.transform = `translateY(-${scrollPosition}px)`;
         }
 
+        const categoryFilters = document.querySelector('.category-filters');
+        const removalFilters = document.querySelector('.removal-filters');
+        if (categoryFilters) {
+            const categoryFiltersScroll = scrollRange + categoryFilters.offsetHeight;
+            const translateYPosition = Math.min(Math.max(window.scrollY, 0), categoryFiltersScroll);
+            categoryFilters.style.transform = `translateY(-${translateYPosition}px)`;
+
+            const removalFiltersScroll = categoryFiltersScroll + removalFilters.offsetHeight;
+            const removaltranslateYPosition = Math.min(Math.max(window.scrollY, 0), removalFiltersScroll);
+            removalFilters.style.transform = `translateY(-${removaltranslateYPosition}px)`;
+        }
+
+
         lastScrollY = window.scrollY;
         scrollTimeout = setTimeout(() => {
             isScrolling = false;
@@ -856,27 +869,13 @@ function getCategoryInfo(packageName) {
 function createCategoryFilters() {
     if (!categoriesData) return;
 
-    // Get or create filters wrapper
-    let filtersWrapper = document.querySelector('.filters-wrapper');
-    if (!filtersWrapper) {
-        filtersWrapper = document.createElement('div');
-        filtersWrapper.className = 'filters-wrapper';
-        const searchContainer = document.querySelector('.search-container');
-        searchContainer.parentNode.insertBefore(filtersWrapper, searchContainer.nextSibling);
-    } else {
-        // Clear existing filters
-        filtersWrapper.innerHTML = '';
-    }
+    // Get existing filter containers from HTML
+    const categoryContainer = document.getElementById('category-filters');
+    const removalContainer = document.getElementById('removal-filters');
 
-    // Create category filters container
-    const categoryContainer = document.createElement('div');
-    categoryContainer.className = 'category-filters';
-    filtersWrapper.appendChild(categoryContainer);
-
-    // Create removal filters container
-    const removalContainer = document.createElement('div');
-    removalContainer.className = 'category-filters removal-filters';
-    filtersWrapper.appendChild(removalContainer);
+    // Clear existing filters if any
+    categoryContainer.innerHTML = '';
+    removalContainer.innerHTML = '';
 
     // Add filters for each category
     categoriesData.categories.forEach(category => {
@@ -941,13 +940,6 @@ function createCategoryFilters() {
             applyFilters();
         });
     });
-
-    // Add loaded class to both containers
-    setTimeout(() => {
-        categoryContainer.classList.add('loaded');
-        removalContainer.classList.add('loaded');
-    }, 10);
-
     applyRippleEffect();
 }
 
@@ -1153,6 +1145,7 @@ fetch('link/raw_whiteouts.txt')
 export function initialTransition() {
     const content = document.querySelector('.content-list');
     const categoryFilter = document.querySelector('.category-filters');
+    const removalFilters = document.querySelector('.removal-filters');
     const floatingButton = document.querySelector('.floating-button-container');
     const focusButton = document.querySelector(".focus-btn");
 
@@ -1161,7 +1154,10 @@ export function initialTransition() {
         floatingButton.style.transform = 'translateY(0)';
         content.classList.add('loaded');
         focusButton.classList.add('loaded');
-        if (categoryFilter) categoryFilter.classList.add('loaded');
+        if (categoryFilter) {
+            categoryFilter.classList.add('loaded');
+            removalFilters.classList.add('loaded');
+        }
     }, 10);
 
     // Quit transition on switching page
@@ -1171,10 +1167,13 @@ export function initialTransition() {
                 footerClick = true;
                 e.preventDefault();
                 content.classList.remove('loaded');
-                floatingButton.style.transition = 'all 0.s ease';
+                floatingButton.style.transition = 'all 0.1s ease';
                 floatingButton.style.transform = 'translateY(90px)';
                 focusButton.classList.remove('loaded');
-                if (categoryFilter) categoryFilter.classList.remove('loaded');
+                if (categoryFilter) {
+                    categoryFilter.classList.remove('loaded');
+                    removalFilters.classList.remove('loaded');
+                }
                 setTimeout(() => {
                     window.location.href = link.href;
                 }, 100);
