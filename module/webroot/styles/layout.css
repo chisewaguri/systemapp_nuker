@@ -90,12 +90,17 @@
     gap: 6px;
 }
 
+/* Removal filters positioning */
+.removal-filters {
+    top: calc(var(--top-inset) + 170px);
+}
+
 /* ====== APP LISTS ====== */
 #removed-list,
 #app-list {
     width: calc(100vw - 30px);
     max-width: 900px;
-    margin-top: calc(150px + 1em);
+    margin-top: calc(195px + 1em);
     margin-bottom: 100px;
     display: flex;
     padding: 0 10px;

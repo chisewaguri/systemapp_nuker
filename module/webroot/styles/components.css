@@ -32,6 +32,13 @@
     transform: scale(0);
     transition: opacity 0.3s ease, transform 0.3s ease;
     transform-origin: top right;
+    flex-direction: column;
+}
+
+.menu-dropdown.show {
+    display: flex;
+    opacity: 1;
+    transform: scale(1);
 }
 
 .menu-item {
@@ -284,6 +291,35 @@ mark {
     padding: 0 2px;
     border-radius: 2px;
     font-weight: bold;
+}
+
+/* App info modal details formatting */
+.formatted-details {
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.formatted-details p {
+    margin: 8px 0;
+}
+
+.formatted-details p:first-child {
+    margin-top: 0;
+}
+
+.formatted-details p:last-child {
+    margin-bottom: 0;
+}
+
+.formatted-details a {
+    color: var(--btn-primary);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.formatted-details a:hover {
+    border-bottom-color: var(--btn-primary);
 }
 
 /* Dark mode styles */

@@ -1,46 +1,84 @@
 {
-    "categories": [
-      {
-        "id": "all",
-        "name": "All",
-        "description": "Shows all system applications regardless of category",
-        "color": "#2196f3"
-      },
-      {
-        "id": "aosp",
-        "name": "Aosp",
-        "description": "Core Android Open Source Project applications",
-        "color": "#4caf50"
-      },
-      {
-        "id": "carrier",
-        "name": "Carrier",
-        "description": "Applications installed by mobile carriers/network providers",
-        "color": "#ff9800"
-      },
-      {
-        "id": "google",
-        "name": "Google",
-        "description": "Google apps and services that may be required for the Play Store ecosystem",
-        "color": "#4285f4"
-      },
-      {
-        "id": "misc",
-        "name": "Misc",
-        "description": "Miscellaneous system applications",
-        "color": "#9e9e9e"
-      },
-      {
-        "id": "oem",
-        "name": "Oem",
-        "description": "Applications pre-installed by device manufacturer",
-        "color": "#e91e63"
-      },
-      {
-        "id": "unlisted",
-        "name": "Unlisted",
-        "description": "Applications not yet categorized in the database",
-        "color": "#795548"
-      }
-    ]
+	"categories": [
+		{
+			"id": "all",
+			"name": "All",
+			"description": "Shows all system applications regardless of category",
+			"color": "#2196f3"
+		},
+		{
+			"id": "aosp",
+			"name": "Aosp",
+			"description": "Core Android Open Source Project applications",
+			"color": "#4caf50"
+		},
+		{
+			"id": "carrier",
+			"name": "Carrier",
+			"description": "Applications installed by mobile carriers/network providers",
+			"color": "#ff9800"
+		},
+		{
+			"id": "google",
+			"name": "Google",
+			"description": "Google apps and services that may be required for the Play Store ecosystem",
+			"color": "#4285f4"
+		},
+		{
+			"id": "misc",
+			"name": "Misc",
+			"description": "Miscellaneous system applications",
+			"color": "#9e9e9e"
+		},
+		{
+			"id": "oem",
+			"name": "Oem",
+			"description": "Applications pre-installed by device manufacturer",
+			"color": "#e91e63"
+		},
+		{
+			"id": "unlisted",
+			"name": "Unlisted",
+			"description": "Applications not yet categorized in the database",
+			"color": "#795548"
+		}
+	],
+	"removal_categories": [
+		{
+			"id": "all",
+			"name": "All",
+			"description": "Shows all system applications regardless of removal category",
+			"color": "#2196f3"
+		},
+		{
+			"id": "recommended",
+			"name": "Recommended",
+			"description": "Safe to remove for most users",
+			"color": "#4caf50"
+		},
+		{
+			"id": "expert",
+			"name": "Expert",
+			"description": "Requires expert knowledge to safely remove",
+			"color": "#ff9800"
+		},
+		{
+			"id": "advanced",
+			"name": "Advanced",
+			"description": "Advanced users should understand implications before removal",
+			"color": "#f44336"
+		},
+		{
+			"id": "unsafe",
+			"name": "Unsafe",
+			"description": "Not recommended to remove, may cause system instability",
+			"color": "#d32f2f"
+		},
+		{
+			"id": "unknown",
+			"name": "Unknown",
+			"description": "Unknown removal category, we do not have the information about this app",
+			"color": "#9e9e9e"
+		}
+	]
 }

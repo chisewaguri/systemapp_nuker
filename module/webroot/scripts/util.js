@@ -7,7 +7,8 @@ export let appList = [],
            initialized = false, 
            categoriesData = null,
            currentSearchTerm = '',
-           activeCategory = 'all';
+           activeCategory = 'all',
+           activeRemovalFilter = 'recommended';
 
 let uadListsData = null;
 
@@ -408,7 +409,7 @@ export async function updateAppList(isNuke = false) {
 async function updateUADList() {
     try {
         const response = await fetch('https://raw.githubusercontent.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json');
-        if (!response.ok) throw new Error('Failed to fetch UAD list');
+        if (!response.ok) throw new Error('Failed to fetch App list');
         
         const data = await response.json();
         
@@ -426,10 +427,10 @@ async function updateUADList() {
             displayAppList(appList);
         }
         
-        toast("UAD list updated successfully");
+        toast("App list updated successfully");
     } catch (error) {
-        console.error("Failed to update UAD list:", error);
-        toast("Failed to update UAD list");
+        console.error("Failed to update App list:", error);
+        toast("Failed to update App list");
     }
 }
 
@@ -666,7 +667,7 @@ async function showAppInfoModal(app) {
     appInfoModal.querySelector('#app-package').textContent = app.package_name;
     appInfoModal.querySelector('#app-path').textContent = app.app_path;
 
-    // Set category display
+    // Set category display - only show name and color indicator
     const categoryDisplay = appInfoModal.querySelector('#app-category');
     categoryDisplay.innerHTML = `
         <div class="category-container">
@@ -674,7 +675,6 @@ async function showAppInfoModal(app) {
                 <span class="category-indicator-dot" style="background-color: ${category.color};"></span>
                 <span class="category-name">${category.name}</span>
             </div>
-            <span class="category-description">${category.description}</span>
         </div>
     `;
 
@@ -682,9 +682,44 @@ async function showAppInfoModal(app) {
     const removalDisplay = appInfoModal.querySelector('#app-removal');
     removalDisplay.innerHTML = `<span class="removal-${category.removal.toLowerCase()}">${category.removal}</span>`;
 
-    // Set details
+    // Format and set details with better styling and error handling
     const detailsDisplay = appInfoModal.querySelector('#app-details');
-    detailsDisplay.textContent = category.details;
+    try {
+        // Only proceed with formatting if we have details
+        if (category.details && typeof category.details === 'string') {
+            const lines = category.details.split('\n').filter(line => line.trim());
+            
+            // If we have multiple lines, format them as paragraphs
+            if (lines.length > 1) {
+                const formattedLines = lines.map(line => {
+                    // Check if line contains a URL and format it if present
+                    const urlRegex = /(https?:\/\/[^\s]+)/g;
+                    if (urlRegex.test(line)) {
+                        return `<p>${line.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')}</p>`;
+                    }
+                    return `<p>${line}</p>`;
+                });
+                detailsDisplay.innerHTML = formattedLines.join('');
+            } else {
+                // Single line - check if it contains a URL
+                const urlRegex = /(https?:\/\/[^\s]+)/g;
+                if (urlRegex.test(category.details)) {
+                    detailsDisplay.innerHTML = `<p>${category.details.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')}</p>`;
+                } else {
+                    // Just wrap in a paragraph if no URL
+                    detailsDisplay.innerHTML = `<p>${category.details}</p>`;
+                }
+            }
+        } else {
+            // Fallback for no details
+            detailsDisplay.innerHTML = '<p>No additional information available.</p>';
+        }
+    } catch (error) {
+        // If anything goes wrong, display the details as-is or a fallback message
+        console.error('Error formatting app details:', error);
+        detailsDisplay.innerHTML = `<p>${category.details || 'No additional information available.'}</p>`;
+    }
+    detailsDisplay.classList.add('formatted-details');
 
     // Show the modal
     appInfoModal.style.display = 'flex';
@@ -795,50 +830,83 @@ function getCategoryInfo(packageName) {
 function createCategoryFilters() {
     if (!categoriesData) return;
 
-    const filterContainer = document.querySelector('.category-filters') || document.createElement('div');
-
+    // Create category filters container
+    const categoryContainer = document.querySelector('.category-filters') || document.createElement('div');
     if (!document.querySelector('.category-filters')) {
-        filterContainer.className = 'category-filters';
+        categoryContainer.className = 'category-filters';
         const searchContainer = document.querySelector('.search-container');
-        searchContainer.parentNode.insertBefore(filterContainer, searchContainer.nextSibling);
+        searchContainer.parentNode.insertBefore(categoryContainer, searchContainer.nextSibling);
     }
+    categoryContainer.innerHTML = '';
 
-    // Clear existing filters
-    filterContainer.innerHTML = '';
+    // Create removal filters container
+    const removalContainer = document.querySelector('.removal-filters') || document.createElement('div');
+    if (!document.querySelector('.removal-filters')) {
+        removalContainer.className = 'category-filters removal-filters';
+        categoryContainer.parentNode.insertBefore(removalContainer, categoryContainer.nextSibling);
+    }
+    removalContainer.innerHTML = '';
 
-    // Add "All" filter
-    const allBtn = document.createElement('button');
-    allBtn.className = 'filter-btn filter-all active ripple-element';
-    allBtn.dataset.category = 'all';
-    allBtn.textContent = 'All';
-    filterContainer.appendChild(allBtn);
-
-    // Add filters for each category that has apps
-    const usedCategories = new Set(Object.values(categoriesData.apps));
-
+    // Add filters for each category
     categoriesData.categories.forEach(category => {
-        // Skip the "unknown" category
+        // Skip the "unknown" category if it exists
         if (category.id === 'unknown') return;
 
-        // Only add categories that are actually used by apps
-        if (usedCategories.has(category.id)) {
-            const btn = document.createElement('button');
-            btn.className = `filter-btn filter-${category.id} ripple-element`;
-            btn.dataset.category = category.id;
-            btn.style.backgroundColor = category.color;
-            btn.style.color = 'white';
-            btn.textContent = category.name;
-            filterContainer.appendChild(btn);
+        const btn = document.createElement('button');
+        btn.className = `filter-btn filter-${category.id} ripple-element`;
+        btn.dataset.category = category.id;
+        btn.style.backgroundColor = category.color;
+        btn.style.color = 'white';
+        btn.textContent = category.name;
+        
+        if (category.id === 'all') {
+            btn.style.backgroundColor = 'white';
+            btn.style.color = category.color;
+            btn.style.border = `1px solid ${category.color}`;
+            btn.classList.add('active');
         }
+        
+        categoryContainer.appendChild(btn);
     });
 
-    // Add filter functionality
-    document.querySelectorAll('.filter-btn').forEach(btn => {
+    // Add filters for each removal category
+    categoriesData.removal_categories.forEach(category => {
+        if (category.id === 'unknown') return;
+
+        const btn = document.createElement('button');
+        btn.className = `filter-btn filter-${category.id} ripple-element`;
+        btn.dataset.removal = category.id;
+        btn.style.backgroundColor = category.color;
+        btn.style.color = 'white';
+        btn.textContent = category.name;
+        
+        if (category.id === 'all') {
+            btn.style.backgroundColor = 'white';
+            btn.style.color = category.color;
+            btn.style.border = `1px solid ${category.color}`;
+        } else if (category.id === 'recommended') {
+            btn.classList.add('active');
+        }
+        
+        removalContainer.appendChild(btn);
+    });
+
+    // Add filter functionality for category buttons
+    categoryContainer.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            categoryContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            
             activeCategory = this.dataset.category;
+            applyFilters();
+        });
+    });
+
+    // Add filter functionality for removal buttons
+    removalContainer.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            removalContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            activeRemovalFilter = this.dataset.removal;
             applyFilters();
         });
     });
@@ -873,17 +941,19 @@ function applyFilters() {
         const appPath = app.querySelector('span.app-path').textContent;
         const apkFilename = appPath.substring(appPath.lastIndexOf('/') + 1).toLowerCase();
         const appCategory = app.dataset.category;
+        const appRemoval = (uadListsData[app.dataset.packageName] || {}).removal || 'unknown';
 
-        // Check if app passes both filters
+        // Check if app passes all filters
         const matchesSearch = !currentSearchTerm || 
                               fuzzyMatch(appName, currentSearchTerm) || 
                               fuzzyMatch(appPackage, currentSearchTerm) ||
                               fuzzyMatch(apkFilename, currentSearchTerm);
                               
         const matchesCategory = activeCategory === 'all' || appCategory === activeCategory;
+        const matchesRemoval = activeRemovalFilter === 'all' || appRemoval.toLowerCase() === activeRemovalFilter;
 
-        // Only show the app if it matches both filters
-        if (matchesSearch && matchesCategory) {
+        // Only show the app if it matches all filters
+        if (matchesSearch && matchesCategory && matchesRemoval) {
             app.style.display = 'flex';
             visibleCount++;
 
@@ -915,7 +985,7 @@ function applyFilters() {
     });
 
     // If search/filter is active and not many results are visible, load more content
-    if ((currentSearchTerm || activeCategory !== 'all') && 
+    if ((currentSearchTerm || activeCategory !== 'all' || activeRemovalFilter !== 'all') && 
         visibleCount < 10 && 
         currentlyLoadedApps < allAppsData.length) {
         
