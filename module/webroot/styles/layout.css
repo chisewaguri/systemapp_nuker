@@ -100,7 +100,7 @@
 #app-list {
     width: calc(100vw - 30px);
     max-width: 900px;
-    margin-top: calc(195px + 1em);
+    margin-top: calc(240px + 1em);
     margin-bottom: 100px;
     display: flex;
     padding: 0 10px;

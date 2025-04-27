@@ -840,11 +840,9 @@ function createCategoryFilters() {
     categoryContainer.innerHTML = '';
 
     // Create removal filters container
-    const removalContainer = document.querySelector('.removal-filters') || document.createElement('div');
-    if (!document.querySelector('.removal-filters')) {
-        removalContainer.className = 'category-filters removal-filters';
-        categoryContainer.parentNode.insertBefore(removalContainer, categoryContainer.nextSibling);
-    }
+    const removalContainer = document.createElement('div');
+    removalContainer.className = 'category-filters removal-filters';
+    categoryContainer.parentNode.insertBefore(removalContainer, categoryContainer.nextSibling);
     removalContainer.innerHTML = '';
 
     // Add filters for each category
@@ -910,6 +908,12 @@ function createCategoryFilters() {
             applyFilters();
         });
     });
+
+    // Add loaded class to both containers
+    setTimeout(() => {
+        categoryContainer.classList.add('loaded');
+        removalContainer.classList.add('loaded');
+    }, 10);
 
     applyRippleEffect();
 }
