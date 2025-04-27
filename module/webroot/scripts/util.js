@@ -81,7 +81,7 @@ export async function fetchAppList(file, display = false) {
         // Check if we need to reload the UAD list data (if it was updated recently)
         const currentTime = Date.now();
         if (!uadListsData || (currentTime - lastUadUpdateTime < 5000 && lastUadUpdateTime > 0)) {
-            await loadUADLists();
+            loadUADLists();
         }
 
         const response = await fetch(file);
@@ -412,38 +412,44 @@ export async function updateAppList(isNuke = false) {
     }
 }
 
-// Function to update UAD list
+/**
+ * Fetch UAD list and output to /data/adb/system_app_nuker/uad_lists.json
+ * @returns {Promise<void>}
+ */
 export async function updateUADList() {
     try {
-        const response = await fetch('https://raw.githubusercontent.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json');
-        if (!response.ok) throw new Error('Failed to fetch App list');
-        
-        const data = await response.json();
-        
+        let response = await fetch('https://raw.githubusercontent.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json');
+        if (!response.ok) {
+            response = await fetch('https://raw.gitmirror.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json');
+        }
+        if (!response.ok) throw new Error('Failed to UAD list');
+        const data = await response.text();
+
         // Save the updated list
-        await ksuExec(`echo '${JSON.stringify(data, null, 2)}' > /data/adb/system_app_nuker/uad_lists.json`);
-        
-        // Update symlink if needed
-        await ksuExec('[ -L "/data/adb/modules/system_app_nuker/webroot/link" ] || ln -s /data/adb/system_app_nuker /data/adb/modules/system_app_nuker/webroot/link');
-        
+        await ksuExec(`
+            cat << 'UAD_EOF' > /data/adb/system_app_nuker/uad_lists.json
+${data}
+UAD_EOF
+        `);
+
         // Update the current data and timestamp
         uadListsData = data;
         lastUadUpdateTime = Date.now();
         localStorage.setItem('uadUpdateTimestamp', lastUadUpdateTime.toString());
-        
+
         // Refresh the display
-        if (appList.length > 0) {
-            displayAppList(appList);
-        }
-        
+        if (appList.length > 0) displayAppList(appList);
         toast("App list updated successfully");
     } catch (error) {
         console.error("Failed to update App list:", error);
-        toast("Failed to update App list");
+        toast("Failed to update App list!");
     }
 }
 
-// Function to load UAD lists data
+/**
+ * Load UAD lists data
+ * @returns {String} - uad list data
+ */
 export async function loadUADLists() {
     try {
         const uadListsResponse = await fetch('uad_lists.json');
