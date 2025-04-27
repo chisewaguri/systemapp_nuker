@@ -630,18 +630,25 @@ export function setupScrollEvent() {
         document.querySelector('.header').style.opacity = opacity.toString();
         document.querySelector('.header').style.transform = `scale(${scale}) translateY(-${translateY}px)`;
 
-        // IMPORTANT: Apply EXACT same transform to both elements
-        // Using a variable to ensure they're exactly the same
+        // IMPORTANT: Apply EXACT same transform to search container and filters
         const searchContainer = document.querySelector('.search-container');
         if (searchContainer) {
             searchContainer.style.transform = `translateY(-${scrollPosition}px)`;
         }
 
-        const categoryFilters = document.querySelector('.category-filters');
+        // Apply transform to both category and removal filters
+        const categoryFilters = document.querySelector('.category-filters:not(.removal-filters)');
+        const removalFilters = document.querySelector('.removal-filters');
+        
         if (categoryFilters) {
             const categoryFiltersScroll = scrollRange + categoryFilters.offsetHeight;
             const translateYPosition = Math.min(Math.max(window.scrollY, 0), categoryFiltersScroll);
             categoryFilters.style.transform = `translateY(-${translateYPosition}px)`;
+            
+            // Apply same transform to removal filters if they exist
+            if (removalFilters) {
+                removalFilters.style.transform = `translateY(-${translateYPosition}px)`;
+            }
         }
 
         lastScrollY = window.scrollY;

@@ -83,6 +83,7 @@
     opacity: 0;
     overflow-x: auto;
     transition: all 0.1s ease, transform 0.02s linear;
+    will-change: transform;
 }
 
 .category-filters.loaded {
@@ -93,6 +94,7 @@
 /* Removal filters positioning */
 .removal-filters {
     top: calc(var(--top-inset) + 170px);
+    will-change: transform;
 }
 
 /* ====== APP LISTS ====== */
