@@ -40,11 +40,11 @@ if (restoreButton) {
         await updateAppList(true);
     });
 
-    document.addEventListener('DOMContentLoaded', async () => {
+    document.addEventListener('DOMContentLoaded', () => {
         initialTransition();
-        setTimeout(async () => {
-            await fetchAppList("link/nuke_list.json", true);
-            await fetchAppList("link/app_list.json");
+        setTimeout(() => {
+            fetchAppList("link/nuke_list.json", true);
+            fetchAppList("link/app_list.json");
             checkMMRL();
         }, 10);
         setupSearch();
