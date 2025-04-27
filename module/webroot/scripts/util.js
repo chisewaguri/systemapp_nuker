@@ -11,6 +11,7 @@ export let appList = [],
            activeRemovalFilter = 'recommended';
 
 let uadListsData = null;
+let lastUadUpdateTime = 0;
 
 // Timer for delaying moveCheckedAppsToTop
 let moveCheckedAppsTimer = null;
@@ -74,36 +75,13 @@ async function linkFile() {
     }
 }
 
-// Function to load UAD list data
-async function loadUADList() {
-    try {
-        // First try to load from webroot
-        const response = await fetch('uad_lists.json');
-        if (response.ok) {
-            uadListsData = await response.json();
-            return;
-        }
-
-        // If webroot fetch fails, try loading from the link directory
-        const linkResponse = await fetch('link/uad_lists.json');
-        if (linkResponse.ok) {
-            uadListsData = await linkResponse.json();
-            return;
-        }
-
-        throw new Error('Failed to load UAD lists from both locations');
-    } catch (error) {
-        console.error("Failed to load UAD list:", error);
-        uadListsData = {};
-    }
-}
-
 // Fetch system apps
 export async function fetchAppList(file, display = false) {
     try {
-        // Ensure UAD list is loaded
-        if (!uadListsData) {
-            await loadUADList();
+        // Check if we need to reload the UAD list data (if it was updated recently)
+        const currentTime = Date.now();
+        if (!uadListsData || (currentTime - lastUadUpdateTime < 5000 && lastUadUpdateTime > 0)) {
+            await loadUADLists();
         }
 
         const response = await fetch(file);
@@ -118,7 +96,6 @@ export async function fetchAppList(file, display = false) {
             nukeList = data;
         }
         if (display) {
-            await loadCategories(); // Ensure categories are loaded
             displayAppList(data);
             applyRippleEffect();
         }
@@ -436,29 +413,26 @@ export async function updateAppList(isNuke = false) {
 }
 
 // Function to update UAD list
-async function updateUADList() {
+export async function updateUADList() {
     try {
         const response = await fetch('https://raw.githubusercontent.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json');
         if (!response.ok) throw new Error('Failed to fetch App list');
         
         const data = await response.json();
-        const jsonString = JSON.stringify(data, null, 2);
         
-        // Save to both locations to ensure persistence
-        await Promise.all([
-            ksuExec(`echo '${jsonString}' > /data/adb/system_app_nuker/uad_lists.json`),
-            ksuExec(`echo '${jsonString}' > /data/adb/modules/system_app_nuker/webroot/uad_lists.json`)
-        ]);
+        // Save the updated list
+        await ksuExec(`echo '${JSON.stringify(data, null, 2)}' > /data/adb/system_app_nuker/uad_lists.json`);
         
         // Update symlink if needed
         await ksuExec('[ -L "/data/adb/modules/system_app_nuker/webroot/link" ] || ln -s /data/adb/system_app_nuker /data/adb/modules/system_app_nuker/webroot/link');
         
-        // Reload the data
+        // Update the current data and timestamp
         uadListsData = data;
+        lastUadUpdateTime = Date.now();
+        localStorage.setItem('uadUpdateTimestamp', lastUadUpdateTime.toString());
         
         // Refresh the display
         if (appList.length > 0) {
-            await loadCategories(); // Reload categories
             displayAppList(appList);
         }
         
@@ -466,6 +440,25 @@ async function updateUADList() {
     } catch (error) {
         console.error("Failed to update App list:", error);
         toast("Failed to update App list");
+    }
+}
+
+// Function to load UAD lists data
+export async function loadUADLists() {
+    try {
+        const uadListsResponse = await fetch('uad_lists.json');
+        uadListsData = await uadListsResponse.json();
+        
+        // Get the last update timestamp from localStorage
+        const storedTimestamp = localStorage.getItem('uadUpdateTimestamp');
+        if (storedTimestamp) {
+            lastUadUpdateTime = parseInt(storedTimestamp);
+        }
+        
+        return uadListsData;
+    } catch (error) {
+        console.error("Failed to load UAD lists data:", error);
+        return null;
     }
 }
 
@@ -802,15 +795,12 @@ async function loadCategories() {
     if (categoriesData) return categoriesData;
 
     try {
-        // Load categories
         const categoriesResponse = await fetch('categories.json');
-        if (!categoriesResponse.ok) throw new Error('Failed to load categories');
-        
         categoriesData = await categoriesResponse.json();
         
-        // Ensure UAD list is loaded
+        // Load UAD lists if not already loaded
         if (!uadListsData) {
-            await loadUADList();
+            await loadUADLists();
         }
         
         return categoriesData;

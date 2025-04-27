@@ -125,11 +125,11 @@ if (nukeButton) {
         await updateAppList();
     });
 
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
         initialTransition();
-        setTimeout(() => {
-            fetchAppList("link/app_list.json", true);
-            fetchAppList("link/nuke_list.json");
+        setTimeout(async () => {
+            await fetchAppList("link/app_list.json", true);
+            await fetchAppList("link/nuke_list.json");
             checkMMRL();
         }, 10);
         setupSearch();
