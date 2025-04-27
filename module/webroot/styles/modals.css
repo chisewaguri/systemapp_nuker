@@ -52,12 +52,6 @@
     padding-top: 0;
 }
 
-.modal-text-content {
-    padding: 15px 30px;
-    text-align: center;
-    user-select: none;
-}
-
 /* ====== MODAL CONTENT STYLES ====== */
 #package-list-input {
     width: 100%;
