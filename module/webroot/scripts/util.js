@@ -74,9 +74,38 @@ async function linkFile() {
     }
 }
 
+// Function to load UAD list data
+async function loadUADList() {
+    try {
+        // First try to load from webroot
+        const response = await fetch('uad_lists.json');
+        if (response.ok) {
+            uadListsData = await response.json();
+            return;
+        }
+
+        // If webroot fetch fails, try loading from the link directory
+        const linkResponse = await fetch('link/uad_lists.json');
+        if (linkResponse.ok) {
+            uadListsData = await linkResponse.json();
+            return;
+        }
+
+        throw new Error('Failed to load UAD lists from both locations');
+    } catch (error) {
+        console.error("Failed to load UAD list:", error);
+        uadListsData = {};
+    }
+}
+
 // Fetch system apps
 export async function fetchAppList(file, display = false) {
     try {
+        // Ensure UAD list is loaded
+        if (!uadListsData) {
+            await loadUADList();
+        }
+
         const response = await fetch(file);
         if (!response.ok) {
             throw new Error(`Failed to fetch ${file}`);
@@ -89,6 +118,7 @@ export async function fetchAppList(file, display = false) {
             nukeList = data;
         }
         if (display) {
+            await loadCategories(); // Ensure categories are loaded
             displayAppList(data);
             applyRippleEffect();
         }
@@ -428,6 +458,7 @@ async function updateUADList() {
         
         // Refresh the display
         if (appList.length > 0) {
+            await loadCategories(); // Reload categories
             displayAppList(appList);
         }
         
@@ -771,22 +802,17 @@ async function loadCategories() {
     if (categoriesData) return categoriesData;
 
     try {
-        // First try to load from webroot
-        const [categoriesResponse, uadListsResponse] = await Promise.all([
-            fetch('categories.json'),
-            fetch('uad_lists.json')
-        ]);
-
-        if (!uadListsResponse.ok) {
-            // If webroot fetch fails, try loading from the link directory
-            const linkResponse = await fetch('link/uad_lists.json');
-            if (!linkResponse.ok) throw new Error('Failed to load UAD lists from both locations');
-            uadListsData = await linkResponse.json();
-        } else {
-            uadListsData = await uadListsResponse.json();
-        }
+        // Load categories
+        const categoriesResponse = await fetch('categories.json');
+        if (!categoriesResponse.ok) throw new Error('Failed to load categories');
         
         categoriesData = await categoriesResponse.json();
+        
+        // Ensure UAD list is loaded
+        if (!uadListsData) {
+            await loadUADList();
+        }
+        
         return categoriesData;
     } catch (error) {
         console.error("Failed to load data:", error);
