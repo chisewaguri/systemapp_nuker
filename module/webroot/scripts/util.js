@@ -408,19 +408,16 @@ export async function updateAppList(isNuke = false) {
 // Function to update UAD list
 async function updateUADList() {
     try {
-        // Show loading toast
-        toast("Updating app list...");
-
-        // Fetch new data from GitHub
         const response = await fetch('https://raw.githubusercontent.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json');
         if (!response.ok) throw new Error('Failed to fetch App list');
         
         const data = await response.json();
+        const jsonString = JSON.stringify(data, null, 2);
         
-        // Save the updated list to both module and webroot directories
+        // Save to both locations to ensure persistence
         await Promise.all([
-            ksuExec(`echo '${JSON.stringify(data, null, 2)}' > /data/adb/system_app_nuker/uad_lists.json`),
-            ksuExec(`echo '${JSON.stringify(data, null, 2)}' > /data/adb/modules/system_app_nuker/webroot/uad_lists.json`)
+            ksuExec(`echo '${jsonString}' > /data/adb/system_app_nuker/uad_lists.json`),
+            ksuExec(`echo '${jsonString}' > /data/adb/modules/system_app_nuker/webroot/uad_lists.json`)
         ]);
         
         // Update symlink if needed
@@ -429,9 +426,9 @@ async function updateUADList() {
         // Reload the data
         uadListsData = data;
         
-        // Refresh the display if we have app data
+        // Refresh the display
         if (appList.length > 0) {
-            displayAppList(appList, true);
+            displayAppList(appList);
         }
         
         toast("App list updated successfully");
@@ -770,60 +767,40 @@ async function showAppInfoModal(app) {
     });
 }
 
-// Function to load categories and UAD data
 async function loadCategories() {
     if (categoriesData) return categoriesData;
 
     try {
-        // Load both files with proper error handling
+        // First try to load from webroot
         const [categoriesResponse, uadListsResponse] = await Promise.all([
-            fetch('categories.json').then(response => {
-                if (!response.ok) throw new Error('Failed to load categories.json');
-                return response.json();
-            }),
-            fetch('uad_lists.json').then(response => {
-                if (!response.ok) throw new Error('Failed to load uad_lists.json');
-                return response.json();
-            })
+            fetch('categories.json'),
+            fetch('uad_lists.json')
         ]);
+
+        if (!uadListsResponse.ok) {
+            // If webroot fetch fails, try loading from the link directory
+            const linkResponse = await fetch('link/uad_lists.json');
+            if (!linkResponse.ok) throw new Error('Failed to load UAD lists from both locations');
+            uadListsData = await linkResponse.json();
+        } else {
+            uadListsData = await uadListsResponse.json();
+        }
         
-        categoriesData = categoriesResponse;
-        uadListsData = uadListsResponse;
-        
+        categoriesData = await categoriesResponse.json();
         return categoriesData;
     } catch (error) {
         console.error("Failed to load data:", error);
-        // Try to load from module directory if webroot fails
-        try {
-            const [categoriesResponse, uadListsResponse] = await Promise.all([
-                fetch('/data/adb/system_app_nuker/categories.json').then(response => {
-                    if (!response.ok) throw new Error('Failed to load categories.json from module');
-                    return response.json();
-                }),
-                fetch('/data/adb/system_app_nuker/uad_lists.json').then(response => {
-                    if (!response.ok) throw new Error('Failed to load uad_lists.json from module');
-                    return response.json();
-                })
-            ]);
-            
-            categoriesData = categoriesResponse;
-            uadListsData = uadListsResponse;
-            
-            return categoriesData;
-        } catch (fallbackError) {
-            console.error("Failed to load data from fallback:", fallbackError);
-            // Return basic categories as last resort
-            return {
-                categories: [
-                    { 
-                        id: "unlisted", 
-                        name: "Unlisted", 
-                        color: "#795548", 
-                        description: "Uncategorized app" 
-                    }
-                ]
-            };
-        }
+        // Fallback to basic categories
+        return {
+            categories: [
+                { 
+                    id: "unlisted", 
+                    name: "Unlisted", 
+                    color: "#795548", 
+                    description: "Uncategorized app" 
+                }
+            ]
+        };
     }
 }
 
