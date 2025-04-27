@@ -1,6 +1,1 @@
-** text eol=lf
-* -text
-**/*.html text eol=lf
-**/*.js text eol=lf
-**/*.json text eol=lf
-**/*.sh text eol=lf
+* text eol=lf
