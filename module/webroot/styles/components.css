@@ -66,8 +66,13 @@
 
 .filter-btn.active {
     transform: scale(1.08);
+    margin: 0 4px;
     font-weight: bold;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.filter-btn.active:first-child {
+    margin-left: 0;
 }
 
 .filter-btn:not(.active) {

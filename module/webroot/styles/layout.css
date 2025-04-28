@@ -87,14 +87,13 @@
     gap: 20px;
     padding: 5px;
     background-color: transparent;
-    border-radius: 20px;
     opacity: 0;
     overflow-x: auto;
     transition: all 0.1s ease, transform 0.02s linear;
 }
 
 .category-filters.loaded {
-    opacity: 1;
+    opacity: calc(1 - var(--scroll-opacity, 0));
     gap: 6px;
 }
 

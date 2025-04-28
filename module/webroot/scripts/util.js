@@ -452,7 +452,7 @@ UAD_EOF
  */
 export async function loadUADLists() {
     try {
-        const uadListsResponse = await fetch('uad_lists.json');
+        const uadListsResponse = await fetch('link/uad_lists.json');
         uadListsData = await uadListsResponse.json();
         
         // Get the last update timestamp from localStorage
@@ -642,18 +642,20 @@ export function setupScrollEvent() {
             searchContainer.style.transform = `translateY(-${scrollPosition}px)`;
         }
 
+        // category filter animation
         const categoryFilters = document.querySelector('.category-filters');
         const removalFilters = document.querySelector('.removal-filters');
         if (categoryFilters) {
-            const categoryFiltersScroll = scrollRange + categoryFilters.offsetHeight;
-            const translateYPosition = Math.min(Math.max(window.scrollY, 0), categoryFiltersScroll);
-            categoryFilters.style.transform = `translateY(-${translateYPosition}px)`;
+            const categoryFiltersScroll = scrollRange + categoryFilters.offsetHeight + 2;
+            const categoryFilterstranslateYPosition = Math.min(Math.max(window.scrollY, 0), categoryFiltersScroll);
+            categoryFilters.style.transform = `translateY(-${categoryFilterstranslateYPosition}px)`;
+            categoryFilters.style.setProperty('--scroll-opacity', ((categoryFilterstranslateYPosition - scrollPosition) / (categoryFiltersScroll - scrollPosition)).toString());
 
             const removalFiltersScroll = categoryFiltersScroll + removalFilters.offsetHeight;
-            const removaltranslateYPosition = Math.min(Math.max(window.scrollY, 0), removalFiltersScroll);
-            removalFilters.style.transform = `translateY(-${removaltranslateYPosition}px)`;
+            const removalTranslateYPosition = Math.min(Math.max(window.scrollY, 0), removalFiltersScroll);
+            removalFilters.style.transform = `translateY(-${removalTranslateYPosition}px)`;
+            removalFilters.style.setProperty('--scroll-opacity', ((removalTranslateYPosition - scrollPosition) / (removalFiltersScroll - scrollPosition)).toString());
         }
-
 
         lastScrollY = window.scrollY;
         scrollTimeout = setTimeout(() => {
