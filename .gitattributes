@@ -1,6 +1,6 @@
-** text eol=lf
-* -text
-**/*.html text eol=lf
-**/*.js text eol=lf
-**/*.json text eol=lf
-**/*.sh text eol=lf
+# Declare files that will always have LF line endings on checkout.
+* text eol=lf
+
+# Denote all files that are truly binary and should not be modified.
+module/bin/**/** binary
+*.png binary

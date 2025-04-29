@@ -12,8 +12,9 @@ PERSIST_DIR="/data/adb/system_app_nuker"
 # create persistent directory if it doesn't exist
 mkdir -p "$PERSIST_DIR"
 
-# move config to persist dir
+# move config and uad list to persist dir
 [ -f "$PERSIST_DIR/config.sh" ] && rm -f "$MODPATH/config.sh" || mv "$MODPATH/config.sh" "$PERSIST_DIR/"
+mv -f "$MODPATH/uad_lists.json" "$PERSIST_DIR/"
 
 # set permissions for config
 set_perm "$PERSIST_DIR/config.sh" 0 2000 0755
