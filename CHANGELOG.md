@@ -3,6 +3,15 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v1.1.5
+
+#### WebUI  
+- Add support for Universal Android Debloater (UAD) lists (@Dwtexe #38, @KOWX712)
+- Drop MMRL version check (@KOWX712)
+
+#### Scripts  
+- Add WebUI X redirect support (@KOWX712)
+
 ---
 
 ### v1.1.4
