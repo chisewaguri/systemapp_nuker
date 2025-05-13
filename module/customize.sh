@@ -74,7 +74,6 @@ if [ -n "$KSU" ] || [ -n "$APATCH" ]; then
 fi
 
 # --- check for mountify requirements ---
-# --- use mountify scripts if possible ---
 
 # check for overlayfs
 if grep -q "overlay" /proc/filesystems > /dev/null 2>&1; then
@@ -106,35 +105,40 @@ else
     magic_mount=true
     echo "[+] Config: Magic Mount manager detected"
 fi
-sed -i "s/magic_mount=.*/magic_mount=$magic_mount/" ${PERSISTENT_DIR}/config.sh "$PERSIST_DIR/config.sh"
+sed -i "s/magic_mount=.*/magic_mount=$magic_mount/" "$PERSIST_DIR/config.sh"
 
-# --- if mountify is supported ---
+# --- check mountify ---
+use_mountify_script=false
 
-if [ "$overlay_supported" = true ] && [ "$tmpfs_xattr_supported" = true ] || [ "$magic_mount" = false ]; then
-    # if (overlayfs and xattr) or manager is overlayfs
-    # display msg in manager
-    if [ "$overlay_supported" = true ] && [ "$tmpfs_xattr_supported" = true ]; then
-        echo "[+] OverlayFS and TMPFS_XATTR detected. Mountify script will be used for mounting"
-    else
-        echo "[+] Using KernelSU OverlayFS mountify standalone script"
+if [ -f "/data/adb/modules/mountify.sh" ] && [ ! -f /data/adb/modules/mountify/disable ] && [ ! -f /data/adb/modules/mountify/remove ]; then
+    mountify_mounts=$(grep -o 'mountify_mounts=[0-9]' /data/adb/modules/mountify.sh | cut -d= -f2)
+
+    if [ "$mountify_mounts" = "2" ] || { [ "$mountify_mounts" = "1" ] && grep -q "system_app_nuker" /data/adb/modules/mountify/modules.txt; }; then
+        echo "[!] mountify detected, skipping mountify script"
+        # remove skip_mountify
+        rm -f "$MODPATH/skip_mountify"
+    elif [ "$overlay_supported" = true ] && [ "$tmpfs_xattr_supported" = true ] || [ "$magic_mount" = false ]; then
+        echo "[+] Mountify supported. Activating mountify script."
+        # skip default mount
+        touch "$MODPATH/skip_mount"
+        # skip mountify mount (just in case)
+        touch "$MODPATH/skip_mountify"
+        # update config.sh
+        use_mountify_script=true
+        sed -i "s/^use_mountify_script=.*/use_mountify_script=true/" "$PERSIST_DIR/config.sh"
     fi
-    
-    # skip mount because we mount it ourselves
-    touch "$MODPATH/skip_mount"
-    touch "$MODPATH/skip_mountify"
-    use_mountify_script=true
-    sed -i "s/^use_mountify_script=.*/use_mountify_script=true/" ${PERSISTENT_DIR}/config.sh "$PERSIST_DIR/config.sh"
 fi
+
 
 echo "[✓] System App Nuker setup completed successfully"
 
-# warn ksu and ap user that module is not globally mounted
-if [ ! "$use_mountify_script" = true ] && { [ -n "$KSU" ] || [ -n "$APATCH" ]; }; then
-    echo "[!] Notice: KernelSU or APatch detected. Module would not mounted globally"
-    echo "[!] Please disable umount modules by default to avoid problems"
+# warn KSU or APatch user if module would not be mounted globally
+if [ "$use_mountify_script" != true ] && { [ -n "$KSU" ] || [ -n "$APATCH" ]; }; then
+    echo "[!] Notice: KernelSU or APatch detected. Module will not be mounted globally"
+    echo "[!] Tip: Disable 'unmount modules by default' to avoid problems"
 fi
 
-# give space before post-customize manager thing
+# give space before post-customize.sh manager thing
 echo ""
 
 # EOF
