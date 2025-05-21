@@ -70,7 +70,6 @@ elif busybox touch --help 2>&1 | grep -q '\-t'; then
     busybox touch -m -t 197001010000.00 "$PERSIST_DIR/uad_lists.json"
 else
     echo "touch does not support -t; skipping time modification"
-    rm -f "$PERSIST_DIR/uad_lists.json"
 fi
 
 # set permissions for config
