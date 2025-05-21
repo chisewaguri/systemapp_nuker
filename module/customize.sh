@@ -147,7 +147,8 @@ fi
 echo "[✓] System App Nuker setup completed successfully"
 
 # warn KSU or APatch user if module would not be mounted globally
-if [ "$use_mountify_script" != true ] && { [ -n "$KSU" ] || [ -n "$APATCH" ]; }; then
+if { [ -n "$KSU" ] || [ -n "$APATCH" ]; } && \
+   [ "$use_mountify_script" != true ] && [ "$mountify_mounted" != true ]; then
     echo "[!] Notice: KernelSU or APatch detected. Module will not be mounted globally"
     echo "[!] Tip: Disable 'unmount modules by default' to avoid problems"
 fi
