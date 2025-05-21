@@ -7,6 +7,8 @@ MODDIR="/data/adb/modules/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
 
 # import config
+uninstall_fallback=false
+refresh_applist=true
 [ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
 
 # === FUNCTIONS ===
