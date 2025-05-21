@@ -110,25 +110,39 @@ sed -i "s/magic_mount=.*/magic_mount=$magic_mount/" "$PERSIST_DIR/config.sh"
 # --- check mountify ---
 use_mountify_script=false
 
-if [ -f "/data/adb/modules/mountify/config.sh" ] && [ ! -f /data/adb/modules/mountify/disable ] && [ ! -f /data/adb/modules/mountify/remove ]; then
+mountify_active=false
+mountify_mounted=false
+
+# if mountify module is active
+if [ -f "/data/adb/modules/mountify/config.sh" ] && \
+   [ ! -f "/data/adb/modules/mountify/disable" ] && \
+   [ ! -f "/data/adb/modules/mountify/remove" ]; then
+    mountify_active=true
     mountify_mounts=$(grep -o 'mountify_mounts=[0-9]' /data/adb/modules/mountify/config.sh | cut -d= -f2)
 
-    if [ "$mountify_mounts" = "2" ] || { [ "$mountify_mounts" = "1" ] && grep -q "system_app_nuker" /data/adb/modules/mountify/modules.txt; }; then
-        echo "[!] mountify detected, skipping mountify script"
-        # remove skip_mountify
+    # if mountify module will mount this module
+    if [ "$mountify_mounts" = "2" ] || \
+       { [ "$mountify_mounts" = "1" ] && grep -q "system_app_nuker" /data/adb/modules/mountify/modules.txt; }; then
+        mountify_mounted=true
+        echo "[!] mountify will handle mounting this module."
         rm -f "$MODPATH/skip_mountify"
-    elif [ "$overlay_supported" = true ] && [ "$tmpfs_xattr_supported" = true ] || [ "$magic_mount" = false ]; then
-        echo "[+] Mountify supported. Activating mountify script."
-        # skip default mount
-        touch "$MODPATH/skip_mount"
-        # skip mountify mount (just in case)
-        touch "$MODPATH/skip_mountify"
-        # update config.sh
-        use_mountify_script=true
-        sed -i "s/^use_mountify_script=.*/use_mountify_script=true/" "$PERSIST_DIR/config.sh"
     fi
 fi
 
+# fallback path
+# if mountify won't mount us but standalone script is supported
+if { [ "$mountify_active" = false ] || [ "$mountify_mounted" = false ]; } && \
+   { { [ "$overlay_supported" = true ] && [ "$tmpfs_xattr_supported" = true ]; } || [ "$magic_mount" = false ]; }; then
+    echo "[+] Conditions met. Activating mountify standalone script."
+
+    # skip mount (cuz standalone script will mount us)
+    touch "$MODPATH/skip_mount"
+    # skip mountify (just in case)
+    touch "$MODPATH/skip_mountify"
+    # config
+    use_mountify_script=true
+    sed -i "s/^use_mountify_script=.*/use_mountify_script=true/" "$PERSIST_DIR/config.sh"
+fi
 
 echo "[✓] System App Nuker setup completed successfully"
 
