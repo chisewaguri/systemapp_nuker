@@ -6,6 +6,9 @@ SKIPUNZIP=0
 MODDIR="/data/adb/modules/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
 
+# import config
+[ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
+
 # === FUNCTIONS ===
 
 # set config.sh value
@@ -57,7 +60,7 @@ check_magic_mount() {
 mkdir -p "$PERSIST_DIR"
 
 # move config and uad list to persist dir
-[ -f "$PERSIST_DIR/config.sh" ] && rm -f "$MODPATH/config.sh" || mv "$MODPATH/config.sh" "$PERSIST_DIR/"
+mv "$MODPATH/config.sh" "$PERSIST_DIR/"
 mv -f "$MODPATH/uad_lists.json" "$PERSIST_DIR/"
 
 # mark uad list as ancient to make it to appear outdated
@@ -180,6 +183,25 @@ if { [ "$mountify_active" = false ] || [ "$mountify_mounted" = false ]; } && \
     use_mountify_script=true
     set_config use_mountify_script $use_mountify_script
 fi
+
+# migrate config (in case when it has a new value)
+# variable of the config is defined by sourcing the old config.sh and the script
+# value like uninstall_fallback would be persist, but mounting stuff would not.
+while IFS='=' read key _; do
+    # skip empty, commented, or lines with spaces
+    [ -z "$key" ] && continue
+    echo "$key" | grep -q '^[[:space:]]*#' && continue
+    echo "$key" | grep -Eq '^[a-zA-Z_][a-zA-Z0-9_]*$' || continue
+
+    # trim whitespace
+    key=$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+    # get current value of the variable
+    eval val="\$$key"
+
+    # call set_config with the key and its current value
+    set_config "$key" "$val"
+done < "$PERSIST_DIR/config.sh"
 
 echo "[✓] System App Nuker setup completed successfully"
 
