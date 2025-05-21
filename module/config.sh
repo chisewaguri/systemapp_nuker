@@ -10,6 +10,10 @@ uninstall_fallback=false
 # DO NOT enable this manually unless you're sure the enviromentment is supported
 use_mountify_script=false
 
+# refresh (regenerate) the app list cache every boot
+# this is set to true by default to ensure correct app list when it is changing
+refresh_applist=true
+
 # ----
 # ⚠️ DO NOT EDIT BELOW THIS LINE
 # configuration(s) after this are env-specific nor not meant to be edited

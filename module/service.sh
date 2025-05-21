@@ -7,47 +7,15 @@ ICON_DIR="$PERSIST_DIR/icons"
 # import config
 uninstall_fallback=false
 use_mountify_script=false
+refresh_applist=true
 [ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
 
+# === FUNCTIONS ===
+
+# appt binary
 aapt() { "$MODDIR/common/aapt" "$@"; }
 
-# -- set module description --
-
-# base description
-string="description=Simple system app debloater and whiteout creator"
-
-# count nuked apps
-total=$(grep -c '"package_name":' "$REMOVE_LIST")
-string="$string | 💥 nuked: $total app$( [ "$total" -lt 2 ] && echo '' || echo 's' )"
-
-# detect mount mode
-if [ "$use_mountify_script" = true ]; then
-    string="$string | 🧰 mount mode: global (powered by mountify)"
-else
-    string="$string | ⚙️ mount mode: default"
-fi
-
-# set module desc
-sed -i "s/^description=.*/$string/g" $MODDIR/module.prop
-
-# wait for boot completed
-until [ "$(getprop sys.boot_completed)" = "1" ]; do
-    sleep 1
-done
-
-# make sure persist dir exist
-[ ! -d "$PERSIST_DIR" ] && mkdir -p "$PERSIST_DIR"
-
-# reset bootcount
-echo "BOOTCOUNT=0" > "$PERSIST_DIR/count.sh"
-chmod 755 "$PERSIST_DIR/count.sh"
-
-# ensure the remove list exists
-[ -s "$REMOVE_LIST" ] || echo "[]" > "$REMOVE_LIST"
-
-# get list of app paths to be removed
-NUKED_PATHS=$(grep -o "\"app_path\":.*" "$REMOVE_LIST" | awk -F"\"" '{print $4}')
-
+# create applist cache
 create_applist() {
     echo "[" > "$APP_LIST"
 
@@ -102,10 +70,51 @@ create_applist() {
     echo "]" >> "$APP_LIST"
 }
 
+# === MAIN SCRIPT ===
+
+# -- set module description --
+
+# base description
+string="description=Simple system app debloater and whiteout creator"
+
+# count nuked apps
+total=$(grep -c '"package_name":' "$REMOVE_LIST")
+string="$string | 💥 nuked: $total app$( [ "$total" -lt 2 ] && echo '' || echo 's' )"
+
+# detect mount mode
+if [ "$use_mountify_script" = true ]; then
+    string="$string | 🧰 mount mode: global (powered by mountify)"
+else
+    string="$string | ⚙️ mount mode: default"
+fi
+
+# set module desc
+sed -i "s/^description=.*/$string/g" $MODDIR/module.prop
+
+# wait for boot completed
+until [ "$(getprop sys.boot_completed)" = "1" ]; do
+    sleep 1
+done
+
+# make sure persist dir exist
+[ ! -d "$PERSIST_DIR" ] && mkdir -p "$PERSIST_DIR"
+
+# reset bootcount
+echo "BOOTCOUNT=0" > "$PERSIST_DIR/count.sh"
+chmod 755 "$PERSIST_DIR/count.sh"
+
+# ensure the remove list exists
+[ -s "$REMOVE_LIST" ] || echo "[]" > "$REMOVE_LIST"
+
+# get list of app paths to be removed
+NUKED_PATHS=$(grep -o "\"app_path\":.*" "$REMOVE_LIST" | awk -F"\"" '{print $4}')
 # ensure the icon directory exists
 [ ! -d "$ICON_DIR" ] && mkdir -p "$ICON_DIR"
 
-create_applist
+# create or refresh app list
+if [ ! -f "$APP_LIST" ] || [ "$refresh_applist" = true ]; then
+    create_applist
+fi
 
 # create symlink for app icon
 [ ! -L "$MODDIR/webroot/link" ] && ln -s $PERSIST_DIR $MODDIR/webroot/link
