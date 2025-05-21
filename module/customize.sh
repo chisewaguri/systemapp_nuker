@@ -6,6 +6,50 @@ SKIPUNZIP=0
 MODDIR="/data/adb/modules/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
 
+# === FUNCTIONS ===
+
+# set config.sh value
+set_config() {
+    sed -i "s/$1=.*/$1=$2/" "$PERSIST_DIR/config.sh"
+}
+
+# check for overlayfs support
+check_overlayfs() {
+    if grep -q "overlay" /proc/filesystems > /dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# check if tmpfs xattr is supported
+check_tmpfs_xattr() {
+    MNT_FOLDER=""
+    [ -w /mnt ] && MNT_FOLDER=/mnt
+    [ -w /mnt/vendor ] && MNT_FOLDER=/mnt/vendor
+    testfile="$MNT_FOLDER/tmpfs_xattr_testfile"
+    rm $testfile > /dev/null 2>&1
+    busybox mknod "$testfile" c 0 0 > /dev/null 2>&1
+    if busybox setfattr -n trusted.overlay.whiteout -v y "$testfile" > /dev/null 2>&1 ; then
+        rm $testfile > /dev/null 2>&1
+        return 0
+    else
+        rm $testfile > /dev/null 2>&1
+        return 1
+    fi
+}
+
+# check mounting system
+check_magic_mount() {
+    if { [ "$KSU" = true ] && [ ! "$KSU_MAGIC_MOUNT" = true ]; } || { [ "$APATCH" = true ] && [ ! "$APATCH_BIND_MOUNT" = true ]; }; then
+        return 1 # overlayfs manager detected
+    else
+        return 0 # magic mount manager detected
+    fi
+}
+
+# === MAIN SCRIPT ===
+
 # exit when MODPATH is undefined
 [ -z "$MODPATH" ] && { echo "[ERROR] MODPATH is undefined. Exiting setup."; exit 1; }
 
@@ -76,36 +120,29 @@ fi
 # --- check for mountify requirements ---
 
 # check for overlayfs
-if grep -q "overlay" /proc/filesystems > /dev/null 2>&1; then
+if check_overlayfs; then
     overlay_supported=true
 else
     overlay_supported=false
 fi
 
 # check if tmpfs xattr is supported
-MNT_FOLDER=""
-[ -w /mnt ] && MNT_FOLDER=/mnt
-[ -w /mnt/vendor ] && MNT_FOLDER=/mnt/vendor
-testfile="$MNT_FOLDER/tmpfs_xattr_testfile"
-rm $testfile > /dev/null 2>&1
-busybox mknod "$testfile" c 0 0 > /dev/null 2>&1
-if busybox setfattr -n trusted.overlay.whiteout -v y "$testfile" > /dev/null 2>&1 ; then
+if check_tmpfs_xattr; then
     tmpfs_xattr_supported=true
-    rm $testfile > /dev/null 2>&1
 else
     tmpfs_xattr_supported=false
-    rm $testfile > /dev/null 2>&1
 fi
 
 # check mounting system
-if { [ "$KSU" = true ] && [ ! "$KSU_MAGIC_MOUNT" = true ]; } || { [ "$APATCH" = true ] && [ ! "$APATCH_BIND_MOUNT" = true ]; }; then
-    magic_mount=false
-    echo "[+] Config: OverlayFS manager detected"
-else
+if check_magic_mount; then
     magic_mount=true
     echo "[+] Config: Magic Mount manager detected"
+else
+    magic_mount=false
+    echo "[+] Config: OverlayFS manager detected"
 fi
-sed -i "s/magic_mount=.*/magic_mount=$magic_mount/" "$PERSIST_DIR/config.sh"
+# set config
+set_config magic_mount $magic_mount
 
 # --- check mountify ---
 use_mountify_script=false
@@ -141,7 +178,7 @@ if { [ "$mountify_active" = false ] || [ "$mountify_mounted" = false ]; } && \
     touch "$MODPATH/skip_mountify"
     # config
     use_mountify_script=true
-    sed -i "s/^use_mountify_script=.*/use_mountify_script=true/" "$PERSIST_DIR/config.sh"
+    set_config use_mountify_script $use_mountify_script
 fi
 
 echo "[✓] System App Nuker setup completed successfully"
