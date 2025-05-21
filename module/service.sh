@@ -80,7 +80,7 @@ create_applist() {
             ICON_FILE="$ICON_DIR/$PACKAGE_NAME.png"
 
             if [ -n "$ICON_PATH" ]; then
-                unzip -p "$APK_PATH" "$ICON_PATH" > "$ICON_FILE"
+                [ ! -f "$ICON_FILE" ] && unzip -p "$APK_PATH" "$ICON_PATH" > "$ICON_FILE"
             fi
         done
     done
