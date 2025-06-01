@@ -32,13 +32,6 @@
     transform: scale(0);
     transition: opacity 0.3s ease, transform 0.3s ease;
     transform-origin: top right;
-    flex-direction: column;
-}
-
-.menu-dropdown.show {
-    display: flex;
-    opacity: 1;
-    transform: scale(1);
 }
 
 .menu-item {
@@ -61,37 +54,16 @@
     border-radius: 15px;
     transition: all 0.2s ease;
     user-select: none;
-    cursor: auto;
 }
 
 .filter-btn.active {
     transform: scale(1.08);
-    margin: 0 4px;
     font-weight: bold;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.filter-btn.active:first-child {
-    margin-left: 0;
-}
-
 .filter-btn:not(.active) {
     filter: opacity(0.7);
-}
-
-/* Category filters container */
-.category-filters {
-    display: flex;
-    padding: 5px 15px;
-    margin: 0 auto;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    -webkit-overflow-scrolling: touch;
-}
-
-.category-filters::-webkit-scrollbar {
-    display: none;
 }
 
 /* ====== APP COMPONENTS ====== */
@@ -314,35 +286,6 @@ mark {
     font-weight: bold;
 }
 
-/* App info modal details formatting */
-.formatted-details {
-    line-height: 1.5;
-    color: var(--text-primary);
-}
-
-.formatted-details p {
-    margin: 8px 0;
-}
-
-.formatted-details p:first-child {
-    margin-top: 0;
-}
-
-.formatted-details p:last-child {
-    margin-bottom: 0;
-}
-
-.formatted-details a {
-    color: var(--btn-primary);
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.2s ease;
-}
-
-.formatted-details a:hover {
-    border-bottom-color: var(--btn-primary);
-}
-
 /* Dark mode styles */
 @media (prefers-color-scheme: dark) {
     .app-package {
@@ -372,54 +315,5 @@ mark {
 
     mark {
         background-color: #5a5a00;
-    }
-}
-
-/* Removal recommendation badges */
-.removal-recommended {
-    color: #4caf50;
-    font-weight: bold;
-}
-
-.removal-expert {
-    color: #ff9800;
-    font-weight: bold;
-}
-
-.removal-advanced {
-    color: #f44336;
-    font-weight: bold;
-}
-
-.removal-unsafe {
-    color: #d32f2f;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-
-.removal-unknown {
-    color: #9e9e9e;
-    font-style: italic;
-}
-
-@media (prefers-color-scheme: dark) {
-    .removal-recommended {
-        color: #81c784;
-    }
-
-    .removal-expert {
-        color: #ffb74d;
-    }
-
-    .removal-advanced {
-        color: #e57373;
-    }
-
-    .removal-unsafe {
-        color: #ef5350;
-    }
-
-    .removal-unknown {
-        color: #bdbdbd;
     }
 }

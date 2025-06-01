@@ -24,7 +24,7 @@
     border-radius: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     transform: scale(0.8);
-    transition: transform 0.3s ease-in-out;
+    transition: transform 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
 .modal-header {
@@ -50,12 +50,6 @@
 .modal-body {
     padding: 20px;
     padding-top: 0;
-}
-
-.modal-text-content {
-    padding: 15px 30px;
-    text-align: center;
-    user-select: none;
 }
 
 /* ====== MODAL CONTENT STYLES ====== */

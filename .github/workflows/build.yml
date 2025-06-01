@@ -83,19 +83,6 @@ jobs:
         echo "$CHANGELOG" >> $GITHUB_ENV
         echo "CHANGELOG_EOF" >> $GITHUB_ENV
 
-    - name: Update dependency
-      run: |
-        curl -Ls https://raw.githubusercontent.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json > module/uad_lists.json
-
-        # Push commit if found changes
-        if ! git diff --exit-code module/uad_lists.json > /dev/null; then
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
-          git add module/uad_lists.json
-          git commit -m "deps: update uad_lists.json"
-          git push
-        fi
-
     - name: Create dummy zip
       run: |
         cd module/dummy_zip

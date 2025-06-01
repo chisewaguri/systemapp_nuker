@@ -61,18 +61,8 @@ check_magic_mount() {
 # create persistent directory if it doesn't exist
 mkdir -p "$PERSIST_DIR"
 
-# move config and uad list to persist dir
+# move config to persist dir
 mv "$MODPATH/config.sh" "$PERSIST_DIR/"
-mv -f "$MODPATH/uad_lists.json" "$PERSIST_DIR/"
-
-# mark uad list as ancient to make it to appear outdated
-if touch --help 2>&1 | grep -q '\-t'; then
-    touch -m -t 197001010000.00 "$PERSIST_DIR/uad_lists.json"
-elif busybox touch --help 2>&1 | grep -q '\-t'; then
-    busybox touch -m -t 197001010000.00 "$PERSIST_DIR/uad_lists.json"
-else
-    echo "touch does not support -t; skipping time modification"
-fi
 
 # set permissions for config
 set_perm "$PERSIST_DIR/config.sh" 0 2000 0755

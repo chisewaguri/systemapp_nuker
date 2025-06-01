@@ -7,11 +7,7 @@ export let appList = [],
            initialized = false, 
            categoriesData = null,
            currentSearchTerm = '',
-           activeCategory = 'all',
-           activeRemovalFilter = 'recommended';
-
-let uadListsData = null;
-let lastUadUpdateTime = 0;
+           activeCategory = 'all';
 
 // Timer for delaying moveCheckedAppsToTop
 let moveCheckedAppsTimer = null;
@@ -78,12 +74,6 @@ async function linkFile() {
 // Fetch system apps
 export async function fetchAppList(file, display = false) {
     try {
-        // Check if we need to reload the UAD list data (if it was updated recently)
-        const currentTime = Date.now();
-        if (!uadListsData || (currentTime - lastUadUpdateTime < 5000 && lastUadUpdateTime > 0)) {
-            loadUADLists();
-        }
-
         const response = await fetch(file);
         if (!response.ok) {
             throw new Error(`Failed to fetch ${file}`);
@@ -412,62 +402,6 @@ export async function updateAppList(isNuke = false) {
     }
 }
 
-/**
- * Fetch UAD list and output to /data/adb/system_app_nuker/uad_lists.json
- * @returns {Promise<void>}
- */
-export async function updateUADList() {
-    try {
-        let response = await fetch('https://raw.githubusercontent.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json');
-        if (!response.ok) {
-            response = await fetch('https://raw.gitmirror.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json');
-        }
-        if (!response.ok) throw new Error('Failed to UAD list');
-        const data = await response.text();
-
-        // Save the updated list
-        await ksuExec(`
-            cat << 'UAD_EOF' > /data/adb/system_app_nuker/uad_lists.json
-${data}
-UAD_EOF
-        `);
-
-        // Update the current data and timestamp
-        uadListsData = data;
-        lastUadUpdateTime = Date.now();
-        localStorage.setItem('uadUpdateTimestamp', lastUadUpdateTime.toString());
-
-        // Refresh the display
-        if (appList.length > 0) displayAppList(appList);
-        toast("App list updated successfully");
-    } catch (error) {
-        console.error("Failed to update App list:", error);
-        toast("Failed to update App list!");
-    }
-}
-
-/**
- * Load UAD lists data
- * @returns {String} - uad list data
- */
-export async function loadUADLists() {
-    try {
-        const uadListsResponse = await fetch('link/uad_lists.json');
-        uadListsData = await uadListsResponse.json();
-        
-        // Get the last update timestamp from localStorage
-        const storedTimestamp = localStorage.getItem('uadUpdateTimestamp');
-        if (storedTimestamp) {
-            lastUadUpdateTime = parseInt(storedTimestamp);
-        }
-        
-        return uadListsData;
-    } catch (error) {
-        console.error("Failed to load UAD lists data:", error);
-        return null;
-    }
-}
-
 // Function to setup dropdown menu
 export function setupDropdownMenu() {
     const menuButton = document.getElementById('menu-button');
@@ -516,9 +450,6 @@ export function setupDropdownMenu() {
 
     const exportOption = document.getElementById('export-option');
     if (exportOption) exportOption.addEventListener('click', () => exportPackageList());
-
-    const updateUADOption = document.getElementById('update-uad-option');
-    if (updateUADOption) updateUADOption.addEventListener('click', () => updateUADList());
 }
 
 /**
@@ -636,25 +567,18 @@ export function setupScrollEvent() {
         document.querySelector('.header').style.opacity = opacity.toString();
         document.querySelector('.header').style.transform = `scale(${scale}) translateY(-${translateY}px)`;
 
-        // Apply transform to search container
+        // IMPORTANT: Apply EXACT same transform to both elements
+        // Using a variable to ensure they're exactly the same
         const searchContainer = document.querySelector('.search-container');
         if (searchContainer) {
             searchContainer.style.transform = `translateY(-${scrollPosition}px)`;
         }
 
-        // category filter animation
         const categoryFilters = document.querySelector('.category-filters');
-        const removalFilters = document.querySelector('.removal-filters');
         if (categoryFilters) {
-            const categoryFiltersScroll = scrollRange + categoryFilters.offsetHeight + 2;
-            const categoryFilterstranslateYPosition = Math.min(Math.max(window.scrollY, 0), categoryFiltersScroll);
-            categoryFilters.style.transform = `translateY(-${categoryFilterstranslateYPosition}px)`;
-            categoryFilters.style.setProperty('--scroll-opacity', ((categoryFilterstranslateYPosition - scrollPosition) / (categoryFiltersScroll - scrollPosition)).toString());
-
-            const removalFiltersScroll = categoryFiltersScroll + removalFilters.offsetHeight;
-            const removalTranslateYPosition = Math.min(Math.max(window.scrollY, 0), removalFiltersScroll);
-            removalFilters.style.transform = `translateY(-${removalTranslateYPosition}px)`;
-            removalFilters.style.setProperty('--scroll-opacity', ((removalTranslateYPosition - scrollPosition) / (removalFiltersScroll - scrollPosition)).toString());
+            const categoryFiltersScroll = scrollRange + categoryFilters.offsetHeight;
+            const translateYPosition = Math.min(Math.max(window.scrollY, 0), categoryFiltersScroll);
+            categoryFilters.style.transform = `translateY(-${translateYPosition}px)`;
         }
 
         lastScrollY = window.scrollY;
@@ -680,64 +604,31 @@ async function showAppInfoModal(app) {
     appInfoModal.querySelector('#app-package').textContent = app.package_name;
     appInfoModal.querySelector('#app-path').textContent = app.app_path;
 
-    // Set category display - only show name and color indicator
+    // Set category display
     const categoryDisplay = appInfoModal.querySelector('#app-category');
-    categoryDisplay.innerHTML = `
-        <div class="category-container">
-            <div class="category-header">
-                <span class="category-indicator-dot" style="background-color: ${category.color};"></span>
-                <span class="category-name">${category.name}</span>
+
+    if (category.id === "unknown") {
+        // For unknown category, only show the description without the badge
+        categoryDisplay.innerHTML = `
+            <span class="category-description">${category.description}</span>
+        `;
+    } else {
+        // Stacked layout with description below the badge and name
+        categoryDisplay.innerHTML = `
+            <div class="category-container">
+                <div class="category-header">
+                    <span class="category-indicator-dot" style="background-color: ${category.color};"></span>
+                    <span class="category-name">${category.name}</span>
+                </div>
+                <span class="category-description">${category.description}</span>
             </div>
-        </div>
-    `;
-
-    // Set removal recommendation
-    const removalDisplay = appInfoModal.querySelector('#app-removal');
-    removalDisplay.innerHTML = `<span class="removal-${category.removal.toLowerCase()}">${category.removal}</span>`;
-
-    // Format and set details with better styling and error handling
-    const detailsDisplay = appInfoModal.querySelector('#app-details');
-    try {
-        // Only proceed with formatting if we have details
-        if (category.details && typeof category.details === 'string') {
-            const lines = category.details.split('\n').filter(line => line.trim());
-            
-            // If we have multiple lines, format them as paragraphs
-            if (lines.length > 1) {
-                const formattedLines = lines.map(line => {
-                    // Check if line contains a URL and format it if present
-                    const urlRegex = /(https?:\/\/[^\s]+)/g;
-                    if (urlRegex.test(line)) {
-                        return `<p>${line.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')}</p>`;
-                    }
-                    return `<p>${line}</p>`;
-                });
-                detailsDisplay.innerHTML = formattedLines.join('');
-            } else {
-                // Single line - check if it contains a URL
-                const urlRegex = /(https?:\/\/[^\s]+)/g;
-                if (urlRegex.test(category.details)) {
-                    detailsDisplay.innerHTML = `<p>${category.details.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')}</p>`;
-                } else {
-                    // Just wrap in a paragraph if no URL
-                    detailsDisplay.innerHTML = `<p>${category.details}</p>`;
-                }
-            }
-        } else {
-            // Fallback for no details
-            detailsDisplay.innerHTML = '<p>No additional information available.</p>';
-        }
-    } catch (error) {
-        // If anything goes wrong, display the details as-is or a fallback message
-        console.error('Error formatting app details:', error);
-        detailsDisplay.innerHTML = `<p>${category.details || 'No additional information available.'}</p>`;
+        `;
     }
-    detailsDisplay.classList.add('formatted-details');
 
     // Show the modal
     appInfoModal.style.display = 'flex';
     document.body.classList.add('no-scroll');
-    setTimeout(() => {
+     setTimeout(() => {
         appInfoModal.style.opacity = 1;
         appInfoModalContent.style.transform = 'scale(1)';
     }, 10);
@@ -788,132 +679,84 @@ async function loadCategories() {
     if (categoriesData) return categoriesData;
 
     try {
-        const categoriesResponse = await fetch('categories.json');
-        categoriesData = await categoriesResponse.json();
-        
-        // Load UAD lists if not already loaded
-        if (!uadListsData) {
-            await loadUADLists();
-        }
-        
+        const response = await fetch('categories.json');
+        categoriesData = await response.json();
         return categoriesData;
     } catch (error) {
-        console.error("Failed to load data:", error);
+        console.error("Failed to load categories:", error);
         // Fallback to basic categories
         return {
             categories: [
-                { 
-                    id: "unlisted", 
-                    name: "Unlisted", 
-                    color: "#795548", 
-                    description: "Uncategorized app" 
-                }
-            ]
+                { id: "unknown", name: "Unknown", color: "#9e9e9e", icon: "help", description: "Uncategorized app" }
+            ],
+            apps: {}
         };
     }
 }
 
 // Function to get category info for a package
 function getCategoryInfo(packageName) {
-    if (!categoriesData || !uadListsData) return { 
-        id: "unlisted", 
-        name: "Unlisted", 
-        color: "#795548", 
-        description: "Uncategorized app",
-        removal: "Unknown",
-        details: "No additional information available"
-    };
+    if (!categoriesData) return { id: "unknown", name: "Unknown", color: "#9e9e9e", icon: "help", description: "Uncategorized app" };
 
-    const uadInfo = uadListsData[packageName] || {};
-    const categoryId = uadInfo.list ? uadInfo.list.toLowerCase() : "unlisted";
+    const categoryId = categoriesData.apps[packageName] || "unknown";
     const category = categoriesData.categories.find(c => c.id === categoryId) || 
-                    categoriesData.categories.find(c => c.id === "unlisted");
+                    { id: "unknown", name: "Unknown", color: "#9e9e9e", icon: "help", description: "Uncategorized app" };
 
-    return {
-        id: category.id,
-        name: category.name,
-        color: category.color,
-        description: uadInfo.description || category.description,
-        removal: uadInfo.removal || "Unknown",
-        details: uadInfo.description || "No additional information available"
-    };
+    return category;
 }
 
 // Create category filters
 function createCategoryFilters() {
     if (!categoriesData) return;
 
-    // Get existing filter containers from HTML
-    const categoryContainer = document.getElementById('category-filters');
-    const removalContainer = document.getElementById('removal-filters');
+    const filterContainer = document.querySelector('.category-filters') || document.createElement('div');
 
-    // Clear existing filters if any
-    categoryContainer.innerHTML = '';
-    removalContainer.innerHTML = '';
+    if (!document.querySelector('.category-filters')) {
+        filterContainer.className = 'category-filters';
+        const searchContainer = document.querySelector('.search-container');
+        searchContainer.parentNode.insertBefore(filterContainer, searchContainer.nextSibling);
+    }
 
-    // Add filters for each category
+    // Clear existing filters
+    filterContainer.innerHTML = '';
+
+    // Add "All" filter
+    const allBtn = document.createElement('button');
+    allBtn.className = 'filter-btn filter-all active ripple-element';
+    allBtn.dataset.category = 'all';
+    allBtn.textContent = 'All';
+    filterContainer.appendChild(allBtn);
+
+    // Add filters for each category that has apps
+    const usedCategories = new Set(Object.values(categoriesData.apps));
+
     categoriesData.categories.forEach(category => {
-        // Skip the "unknown" category if it exists
+        // Skip the "unknown" category
         if (category.id === 'unknown') return;
 
-        const btn = document.createElement('button');
-        btn.className = `filter-btn filter-${category.id} ripple-element`;
-        btn.dataset.category = category.id;
-        btn.style.backgroundColor = category.color;
-        btn.style.color = 'white';
-        btn.textContent = category.name;
-        
-        if (category.id === 'all') {
-            btn.style.backgroundColor = 'white';
-            btn.style.color = category.color;
-            btn.style.border = `1px solid ${category.color}`;
-            btn.classList.add('active');
+        // Only add categories that are actually used by apps
+        if (usedCategories.has(category.id)) {
+            const btn = document.createElement('button');
+            btn.className = `filter-btn filter-${category.id} ripple-element`;
+            btn.dataset.category = category.id;
+            btn.style.backgroundColor = category.color;
+            btn.style.color = 'white';
+            btn.textContent = category.name;
+            filterContainer.appendChild(btn);
         }
-        
-        categoryContainer.appendChild(btn);
     });
 
-    // Add filters for each removal category
-    categoriesData.removal_categories.forEach(category => {
-        if (category.id === 'unknown') return;
-
-        const btn = document.createElement('button');
-        btn.className = `filter-btn filter-${category.id} ripple-element`;
-        btn.dataset.removal = category.id;
-        btn.style.backgroundColor = category.color;
-        btn.style.color = 'white';
-        btn.textContent = category.name;
-        
-        if (category.id === 'all') {
-            btn.style.backgroundColor = 'white';
-            btn.style.color = category.color;
-            btn.style.border = `1px solid ${category.color}`;
-        } else if (category.id === 'recommended') {
-            btn.classList.add('active');
-        }
-        
-        removalContainer.appendChild(btn);
-    });
-
-    // Add filter functionality for category buttons
-    categoryContainer.querySelectorAll('.filter-btn').forEach(btn => {
+    // Add filter functionality
+    document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            categoryContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
+            
             activeCategory = this.dataset.category;
             applyFilters();
         });
     });
 
-    // Add filter functionality for removal buttons
-    removalContainer.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            removalContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            activeRemovalFilter = this.dataset.removal;
-            applyFilters();
-        });
-    });
     applyRippleEffect();
 }
 
@@ -944,19 +787,17 @@ function applyFilters() {
         const appPath = app.querySelector('span.app-path').textContent;
         const apkFilename = appPath.substring(appPath.lastIndexOf('/') + 1).toLowerCase();
         const appCategory = app.dataset.category;
-        const appRemoval = (uadListsData[app.dataset.packageName] || {}).removal || 'unknown';
 
-        // Check if app passes all filters
+        // Check if app passes both filters
         const matchesSearch = !currentSearchTerm || 
                               fuzzyMatch(appName, currentSearchTerm) || 
                               fuzzyMatch(appPackage, currentSearchTerm) ||
                               fuzzyMatch(apkFilename, currentSearchTerm);
                               
         const matchesCategory = activeCategory === 'all' || appCategory === activeCategory;
-        const matchesRemoval = activeRemovalFilter === 'all' || appRemoval.toLowerCase() === activeRemovalFilter;
 
-        // Only show the app if it matches all filters
-        if (matchesSearch && matchesCategory && matchesRemoval) {
+        // Only show the app if it matches both filters
+        if (matchesSearch && matchesCategory) {
             app.style.display = 'flex';
             visibleCount++;
 
@@ -988,7 +829,7 @@ function applyFilters() {
     });
 
     // If search/filter is active and not many results are visible, load more content
-    if ((currentSearchTerm || activeCategory !== 'all' || activeRemovalFilter !== 'all') && 
+    if ((currentSearchTerm || activeCategory !== 'all') && 
         visibleCount < 10 && 
         currentlyLoadedApps < allAppsData.length) {
         
@@ -1119,7 +960,6 @@ fetch('link/raw_whiteouts.txt')
 export function initialTransition() {
     const content = document.querySelector('.content-list');
     const categoryFilter = document.querySelector('.category-filters');
-    const removalFilters = document.querySelector('.removal-filters');
     const floatingButton = document.querySelector('.floating-button-container');
     const focusButton = document.querySelector(".focus-btn");
 
@@ -1128,10 +968,7 @@ export function initialTransition() {
         floatingButton.style.transform = 'translateY(0)';
         content.classList.add('loaded');
         focusButton.classList.add('loaded');
-        if (categoryFilter) {
-            categoryFilter.classList.add('loaded');
-            removalFilters.classList.add('loaded');
-        }
+        if (categoryFilter) categoryFilter.classList.add('loaded');
     }, 10);
 
     // Quit transition on switching page
@@ -1141,13 +978,10 @@ export function initialTransition() {
                 footerClick = true;
                 e.preventDefault();
                 content.classList.remove('loaded');
-                floatingButton.style.transition = 'all 0.1s ease';
+                floatingButton.style.transition = 'all 0.s ease';
                 floatingButton.style.transform = 'translateY(90px)';
                 focusButton.classList.remove('loaded');
-                if (categoryFilter) {
-                    categoryFilter.classList.remove('loaded');
-                    removalFilters.classList.remove('loaded');
-                }
+                if (categoryFilter) categoryFilter.classList.remove('loaded');
                 setTimeout(() => {
                     window.location.href = link.href;
                 }, 100);
