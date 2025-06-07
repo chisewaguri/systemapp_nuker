@@ -3,6 +3,18 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v1.1.6
+
+#### WebUI  
+- Revert to the old categorization system (Revert #38)
+
+#### Scripts  
+- Update WebUI X package name (@KOWX712)
+- Make regenerating app list every reboot optional
+- Skip icon extraction if icon file exist
+- Fix mountify checking and skip standalone script if mountify module will mount this
+- Code refactor
+
 ### v1.1.5
 
 #### WebUI  
