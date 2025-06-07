@@ -28,6 +28,7 @@ if [ $BOOTCOUNT -gt 1 ]; then # on 2nd post-fs-data without reaching service
     done
 
     # remove nuke list
+    rm -rf "$PERSIST_DIR"/app_list.json
     rm -rf "$PERSIST_DIR"/nuke_list.json
     rm -rf "$PERSIST_DIR"/raw_whiteouts.txt
 
