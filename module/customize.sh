@@ -192,6 +192,7 @@ while IFS='=' read key _; do
 
     # call set_config with the key and its current value
     set_config "$key" "$val"
+    echo "config: $key: $val"
 done < "$PERSIST_DIR/config.sh"
 
 echo "[✓] System App Nuker setup completed successfully"
