@@ -75,7 +75,7 @@ create_applist() {
 # -- set module description --
 
 # base description
-string="description=Simple system app debloater and whiteout creator"
+string="description=WebUI-based debloater and whiteout creator"
 
 # count nuked apps
 total=$(grep -c '"package_name":' "$REMOVE_LIST")
