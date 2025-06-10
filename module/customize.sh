@@ -193,6 +193,7 @@ while IFS='=' read key _; do
     set_config "$key" "$val"
     echo "config: $key: $val"
 done < "$PERSIST_DIR/config.sh"
+echo "[*] Tip: You could edit config.sh in /data/adb/system_app_nuker/config.sh"
 
 echo "[✓] System App Nuker setup completed successfully"
 
