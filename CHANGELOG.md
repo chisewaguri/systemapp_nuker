@@ -5,6 +5,7 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### v1.1.6
 
+- fix update.json URL (@ZG089, Thanks!)
 #### WebUI  
 - Revert to the old categorization system (Revert #38)
 
