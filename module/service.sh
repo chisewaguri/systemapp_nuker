@@ -77,9 +77,22 @@ create_applist() {
 # base description
 string="description=WebUI-based debloater and whiteout creator"
 
-# count nuked apps
-total=$(grep -c '"package_name":' "$REMOVE_LIST")
-string="$string | 💥 nuked: $total app$( [ "$total" -lt 2 ] && echo '' || echo 's' )"
+# count nuked apps (fallback to 0 if file missing or grep fails)
+if [ -f "$REMOVE_LIST" ]; then
+    total=$(grep -c '"package_name":' "$REMOVE_LIST")
+else
+    total=0
+fi
+
+# fallback if grep somehow returns blank
+[ -z "$total" ] && total=0
+
+# pluralize
+suffix=""
+[ "$total" -ne 1 ] && suffix="s"
+
+# add nuked app count
+string="$string | 💥 nuked: $total app$suffix"
 
 # detect mount mode
 if [ "$use_mountify_script" = true ]; then
@@ -88,8 +101,8 @@ else
     string="$string | ⚙️ mount mode: default"
 fi
 
-# set module desc
-sed -i "s/^description=.*/$string/g" $MODDIR/module.prop
+# set module description
+sed -i "s/^description=.*/$string/g" "$MODDIR/module.prop"
 
 # wait for boot completed
 until [ "$(getprop sys.boot_completed)" = "1" ]; do
