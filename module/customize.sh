@@ -135,8 +135,7 @@ else
     magic_mount=false
     echo "[+] Config: OverlayFS manager detected"
 fi
-# set config
-set_config magic_mount $magic_mount
+# set_config magic_mount $magic_mount
 
 # --- check mountify ---
 use_mountify_script=false
@@ -172,7 +171,7 @@ if { [ "$mountify_active" = false ] || [ "$mountify_mounted" = false ]; } && \
     touch "$MODPATH/skip_mountify"
     # config
     use_mountify_script=true
-    set_config use_mountify_script $use_mountify_script
+    # set_config use_mountify_script $use_mountify_script
 fi
 
 # migrate config (in case when it has a new value)
