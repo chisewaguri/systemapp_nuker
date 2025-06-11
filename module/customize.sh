@@ -72,7 +72,7 @@ if [ "$MMRL" = "true" ] || { [ "$KSU" = "true" ] && [ "$KSU_VER_CODE" -ge 11998 
     { [ "$KSU_NEXT" = "true" ] && [ "$KSU_VER_CODE" -ge 12144 ]; } ||
     { [ "$APATCH" = "true" ] && [ "$APATCH_VER_CODE" -ge 11022 ]; }; then
         clear
-        echo "[*] Initializing System App Nuker... Please wait."
+        echo "[*] Installing System App Nuker... Please wait."
         sleep 0.5
         
         for _ in $(seq 1 3); do
@@ -83,7 +83,7 @@ if [ "$MMRL" = "true" ] || { [ "$KSU" = "true" ] && [ "$KSU_VER_CODE" -ge 11998 
             done
         done
 else
-    echo "[*] Initializing System App Nuker..."
+    echo "[*] Installing System App Nuker..."
     sleep 1.5 # sleep a bit to make it look like something is happening!!
 fi
 
@@ -105,6 +105,8 @@ rm -rf "$MODPATH/bin"
     echo "[*] Migrating previous configuration..."
     sh "$MODPATH/nuke.sh" update
 }
+
+echo ""
 
 # remove action.sh on webui-supported env
 if [ -n "$KSU" ] || [ -n "$APATCH" ]; then
@@ -130,10 +132,10 @@ fi
 # check mounting system
 if check_magic_mount; then
     magic_mount=true
-    echo "[+] Config: Magic Mount manager detected"
+    echo "[+] Magic Mount manager detected."
 else
     magic_mount=false
-    echo "[+] Config: OverlayFS manager detected"
+    echo "[+] Detected an overlayfs-based root manager."
 fi
 # set_config magic_mount $magic_mount
 
@@ -154,7 +156,7 @@ if [ -f "/data/adb/modules/mountify/config.sh" ] && \
     if [ "$mountify_mounts" = "2" ] || \
        { [ "$mountify_mounts" = "1" ] && grep -q "system_app_nuker" /data/adb/modules/mountify/modules.txt; }; then
         mountify_mounted=true
-        echo "[!] mountify will handle mounting this module."
+        echo "[!] This module will be mounted by mountify module."
         rm -f "$MODPATH/skip_mountify"
     fi
 fi
@@ -163,7 +165,7 @@ fi
 # if mountify won't mount us but standalone script is supported
 if { [ "$mountify_active" = false ] || [ "$mountify_mounted" = false ]; } && \
    { { [ "$overlay_supported" = true ] && [ "$tmpfs_xattr_supported" = true ]; } || [ "$magic_mount" = false ]; }; then
-    echo "[+] Conditions met. Activating mountify standalone script."
+    echo "[+] Requirements met. Enabling standalone mountify script."
 
     # skip mount (cuz standalone script will mount us)
     touch "$MODPATH/skip_mount"
@@ -174,9 +176,12 @@ if { [ "$mountify_active" = false ] || [ "$mountify_mounted" = false ]; } && \
     # set_config use_mountify_script $use_mountify_script
 fi
 
+echo ""
+
 # migrate config (in case when it has a new value)
 # variable of the config is defined by sourcing the old config.sh and the script
 # value like uninstall_fallback would be persist, but mounting stuff would not.
+echo "[-] Migrating config.sh..."
 while IFS='=' read key _; do
     # skip empty, commented, or lines with spaces
     [ -z "$key" ] && continue
@@ -195,13 +200,14 @@ while IFS='=' read key _; do
 done < "$PERSIST_DIR/config.sh"
 echo "[*] Tip: You could edit config.sh in /data/adb/system_app_nuker/config.sh"
 
-echo "[✓] System App Nuker setup completed successfully"
+echo ""
+echo "[✓] System App Nuker has been set up successfully."
 
 # warn KSU or APatch user if module would not be mounted globally
 if { [ -n "$KSU" ] || [ -n "$APATCH" ]; } && \
    [ "$use_mountify_script" != true ] && [ "$mountify_mounted" != true ]; then
-    echo "[!] Notice: KernelSU or APatch detected. Module will not be mounted globally"
-    echo "[!] Tip: Disable 'unmount modules by default' to avoid problems"
+    echo "[!] Notice: KernelSU or APatch detected. Module will not be mounted globally."
+    echo "[!] Tip: Disable 'unmount modules by default' to avoid problems."
 fi
 
 # give space before post-customize.sh manager thing
