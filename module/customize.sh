@@ -101,8 +101,6 @@ set_perm "$MODPATH/nuke.sh" 0 2000 0755
 # clean up bin directory
 rm -rf "$MODPATH/bin"
 
-echo ""
-
 # remove action.sh on webui-supported env
 if [ -n "$KSU" ] || [ -n "$APATCH" ]; then
     rm -f "$MODPATH/action.sh"
@@ -151,13 +149,15 @@ if [ -f "/data/adb/modules/mountify/config.sh" ] && \
     if [ "$mountify_mounts" = "2" ] || \
        { [ "$mountify_mounts" = "1" ] && grep -q "system_app_nuker" /data/adb/modules/mountify/modules.txt; }; then
         mountify_mounted=true
-        echo "[!] This module will be mounted by mountify module."
+        echo "[!] This module will be mounted by the mountify module."
         rm -f "$MODPATH/skip_mountify"
+    else
+        echo "[!] This module will NOT be mounted by the mountify module."
     fi
 fi
 
 # fallback path
-# if mountify won't mount us but standalone script is supported
+# if mountify will not mount us but standalone script is supported
 if { [ "$mountify_active" = false ] || [ "$mountify_mounted" = false ]; } && \
    { { [ "$overlay_supported" = true ] && [ "$tmpfs_xattr_supported" = true ]; } || [ "$magic_mount" = false ]; }; then
     echo "[+] Requirements met. Enabling standalone mountify script."
@@ -204,8 +204,7 @@ echo ""
 #
 if [ ! -f "$APP_LIST" ]; then
     echo "[+] Generating app list..."
-    . "$MODPATH/service.sh" 
-    echo ""   
+    . "$MODPATH/service.sh"   
 fi
 
 echo "[✓] System App Nuker has been set up successfully."
