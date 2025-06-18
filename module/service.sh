@@ -1,6 +1,7 @@
 MODDIR="/data/adb/modules/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
 APP_LIST="$PERSIST_DIR/app_list.json"
+APP_LIST_TMP="$PERSIST_DIR/app_list.json.tmp"
 REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
 ICON_DIR="$PERSIST_DIR/icons"
 
@@ -17,14 +18,14 @@ aapt() { "$MODDIR/common/aapt" "$@"; }
 
 # create applist cache
 create_applist() {
-    echo "[" > "$APP_LIST"
+    echo "[" > "$APP_LIST_TMP"
 
     system_app_path="/system/app /system/priv-app /vendor/app /product/app /product/priv-app /system_ext/app /system_ext/priv-app"
     [ "$use_mountify_script" = true ] && [ -d "/my_bigball" ] && system_app_path="$system_app_path /my_bigball"
     for path in $system_app_path; do
         find "$path" -maxdepth 2 -type f -name "*.apk" | while read APK_PATH; do
             # skip if already on app list
-            if grep -q "$APK_PATH" "$APP_LIST"; then
+            if grep -q "$APK_PATH" "$APP_LIST_TMP"; then
                 continue
             fi
             
@@ -41,7 +42,7 @@ create_applist() {
             APP_NAME=$(aapt dump badging "$APK_PATH" 2>/dev/null | grep "application-label:" | sed "s/application-label://g; s/'//g")
             [ -z "$APP_NAME" ] && APP_NAME="$PACKAGE_NAME"
 
-            echo "  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$PACKAGE_NAME\", \"app_path\": \"$APK_PATH\"}," >> "$APP_LIST"
+            echo "  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$PACKAGE_NAME\", \"app_path\": \"$APK_PATH\"}," >> "$APP_LIST_TMP"
             
             ICON_PATH=$(aapt dump badging "$APK_PATH" 2>/dev/null | grep "application:" | awk -F "icon=" '{print $2}' | sed "s/'//g")
             # Extract the icon if it exists
@@ -55,7 +56,7 @@ create_applist() {
 
     # Fallback for no package name found
     for package_name in $(pm list packages -s | sed 's/package://g'); do
-        if grep -q "\"$package_name\"" "$APP_LIST"; then
+        if grep -q "\"$package_name\"" "$APP_LIST_TMP"; then
             continue
         fi
         APP_NAME=$(aapt dump badging "$package_name" 2>/dev/null | grep "application-label:" | sed "s/application-label://g; s/'//g")
@@ -63,11 +64,13 @@ create_applist() {
 
         APK_PATH=$(pm path $package_name | sed 's/package://g')
         echo "$APK_PATH" | grep -qE "/system/app|/system/priv-app|/vendor/app|/product/app|/product/priv-app|/system_ext/app|/system_ext/priv-app" || continue
-        echo "  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$package_name\", \"app_path\": \"$APK_PATH\"}, " >> "$APP_LIST"
+        echo "  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$package_name\", \"app_path\": \"$APK_PATH\"}, " >> "$APP_LIST_TMP"
     done
 
-    sed -i '$ s/,$//' "$APP_LIST"
-    echo "]" >> "$APP_LIST"
+    sed -i '$ s/,$//' "$APP_LIST_TMP"
+    echo "]" >> "$APP_LIST_TMP"
+
+    mv -f "$APP_LIST_TMP" "$APP_LIST"
 }
 
 # === MAIN SCRIPT ===
