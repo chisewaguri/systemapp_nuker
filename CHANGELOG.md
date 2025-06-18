@@ -3,6 +3,18 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v1.1.7
+
+#### WebUI  
+- Fix broken endline (@KOWX712)
+
+#### Scripts  
+- Remove MMRL from action WebUI redirect (@KOWX712, ThanhCN0)
+- Improve UI feedbacks
+- Fix dynamic module desc
+- Make a backup of nuke list before deleting on bootloop
+- Generate app list on tmp file before renaming it
+
 ### v1.1.6
 
 - fix update.json URL (@ZG089, Thanks!)
