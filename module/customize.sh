@@ -5,6 +5,7 @@
 SKIPUNZIP=0
 MODDIR="/data/adb/modules/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
+APP_LIST="$PERSIST_DIR/app_list.json"
 
 # import config
 uninstall_fallback=false
@@ -199,6 +200,14 @@ while IFS='=' read key _; do
 done < "$PERSIST_DIR/config.sh"
 echo "[*] Tip: You could edit config.sh in /data/adb/system_app_nuker/config.sh"
 echo ""
+
+#
+if [ ! -f "$APP_LIST" ]; then
+    echo "[+] Generating app list..."
+    . "$MODPATH/service.sh" 
+    echo ""   
+fi
+
 echo "[✓] System App Nuker has been set up successfully."
 
 # warn KSU or APatch user if module would not be mounted globally

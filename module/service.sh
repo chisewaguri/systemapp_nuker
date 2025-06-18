@@ -14,7 +14,12 @@ refresh_applist=true
 # === FUNCTIONS ===
 
 # appt binary
-aapt() { "$MODDIR/common/aapt" "$@"; }
+if [ -f "$MODDIR/common/aapt" ]; then
+    aapt() { "$MODDIR/common/aapt" "$@"; }
+elif [ -f "$MODPATH/common/aapt" ]; then
+    aapt() { "$MODPATH/common/aapt" "$@"; }
+fi
+
 
 # create applist cache
 create_applist() {
