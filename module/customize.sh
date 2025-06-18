@@ -100,12 +100,6 @@ set_perm "$MODPATH/nuke.sh" 0 2000 0755
 # clean up bin directory
 rm -rf "$MODPATH/bin"
 
-# migrate old config
-[ -f "$PERSIST_DIR/nuke_list.json" ] && {
-    echo "[*] Migrating previous configuration..."
-    sh "$MODPATH/nuke.sh" update
-}
-
 echo ""
 
 # remove action.sh on webui-supported env
@@ -178,10 +172,15 @@ fi
 
 echo ""
 
+# migrate old things
+[ -f "$PERSIST_DIR/nuke_list.json" ] && {
+    echo "[*] Migrating previous configuration..."
+    sh "$MODPATH/nuke.sh" update
+}
+
 # migrate config (in case when it has a new value)
 # variable of the config is defined by sourcing the old config.sh and the script
 # value like uninstall_fallback would be persist, but mounting stuff would not.
-echo "[-] Migrating config.sh..."
 while IFS='=' read key _; do
     # skip empty, commented, or lines with spaces
     [ -z "$key" ] && continue
@@ -199,7 +198,6 @@ while IFS='=' read key _; do
     echo "config: $key: $val"
 done < "$PERSIST_DIR/config.sh"
 echo "[*] Tip: You could edit config.sh in /data/adb/system_app_nuker/config.sh"
-
 echo ""
 echo "[✓] System App Nuker has been set up successfully."
 
