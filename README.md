@@ -1,64 +1,34 @@
 # System App Nuker
-### Take Back Control – Your Device, Your Rules
+### Take back control. Your device, your rules
 
-Tired of your phone coming pre-loaded with junk you never asked for? Same. OEMs love stuffing your device with useless apps, shady services, and bloated nonsense that serves *them*, not you.   
-This lightweight but mighty module puts you back in charge by letting you disable those pesky, pre-installed system apps.
-
-It’s your device. Not theirs.
+Bloatware sucks. This module lets you disable pre-installed system apps and services that don’t serve you.
 
 ---
 
-## 🧩 Features
-- **Web-Based Interface** – Manage app nuking through a user-friendly WebUI
-- **App Categorization System** – Know what’s safe, what’s risky, and what might summon a bootloop demon
-- **Compatibility** – Plays nice with **Magisk**, **KernelSU**, and **Apatch**
-- **Bootloop Recovery** – Go too far? The module disables itself before things get ugly
-- **Package List Management** – Import/export your nukes for backups, sharing, or just bragging them
-- **Developer Mode** – Manually create whiteouts and surgically remove shits like a system surgeon
+## Features
+- **Web-Based Interface** – Manage apps through an intuitive WebUI
+- **Smart Categorization** – See what's safe to remove and what's risky
+- **Universal Compatibility** – Works with Magisk, KernelSU, and Apatch
+- **Bootloop Protection** – Auto-disables before breaking your device
+- **Backup & Restore** – Import/export app lists and restore removed apps
+- **Developer Mode** – Advanced manual control for power users
 
 ---
 
-OEMs had their fun. Now it’s your turn.
+## Getting Started
+
+### WebUI Access
+**KernelSU & Apatch:** Built-in WebUI ready to use  
+**Magisk:** Use third-party apps like [WebUI X](https://github.com/MMRLApp/WebUI-X-Portable) or [KSUWebUIStandalone](https://github.com/5ec1cff/KsuWebUIStandalone) (auto-installed if needed). Launch it from the action button
+
+### Key Functions
+- **Package Management** – Import lists manually or from files, export for backup
+- **Restore Page** – Bring back removed apps
+- **Developer Mode** – Triple-tap the title for advanced whiteout creation (nuke *almost* anything in /system)
 
 ---
 
-## 🌐 WebUI Usage
-
-### On KernelSU & Apatch
-- Both come with a **built-in WebUI** for managing system app removal
-- No setup, no fuss — it's already there, waiting for you to make some chaos
-
-### On Magisk
-- **Action Button** – Launch the WebUI directly from the Magisk app
-- **Third-Party Integrations**:
-  - [KSUWebUIStandalone](https://github.com/5ec1cff/KsuWebUIStandalone)
-  - [MMRL](https://github.com/MMRLApp/MMRL)
-- **Auto Installation** – Don’t have a WebUI? We’ll handle it. KSUWebUIStandalone gets installed automatically
-
----
-
-## ⚙️ Advanced Features
-
-### 📦 Package List Management 
-- **Import**
-  - Paste in package names manually
-  - Or load from a text file on your device 
-- **Export**
-  - Save your nuked apps as a list
-  - Share it, back it up, frame it on your wall, your call
-
-### ♻️ Restore Functionality
-- Accidentally killed something important?
-  - Use the **Restore** page to bring it back from the dead
-
-### 🧑‍💻 Developer Mode
-For when you want *total* control:
-- Triple-tap the “System App Nuker” title to unlock Developer Mode
-- Manually create whiteouts and nuke anything in `/system`
-
----
-
-## 💡 Acknowledgements
+## Acknowledgements
 
 This module was built on top of hard work from some very cool people.
 
