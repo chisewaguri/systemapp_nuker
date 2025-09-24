@@ -131,7 +131,7 @@ fi
 # set_config magic_mount $magic_mount
 
 # --- check mountify ---
-use_mountify_script=false
+mounting_mode=0
 
 mountify_active=false
 mountify_mounted=false
@@ -148,6 +148,8 @@ if [ -f "/data/adb/modules/mountify/config.sh" ] && \
        { [ "$mountify_mounts" = "1" ] && grep -q "system_app_nuker" /data/adb/modules/mountify/modules.txt; }; then
         mountify_mounted=true
         echo "[✓] Mounting will be handled by the mountify module."
+        mounting_mode=2
+        # set_config mounting_mode 2
         rm -f "$MODPATH/skip_mountify"
     else
         echo "[x] mountify module won't mount this module."
@@ -165,9 +167,11 @@ if { [ "$mountify_active" = false ] || [ "$mountify_mounted" = false ]; } && \
     # skip mountify (just in case)
     touch "$MODPATH/skip_mountify"
     # config
-    use_mountify_script=true
-    # set_config use_mountify_script $use_mountify_script
+    mounting_mode=1
+    # set_config mounting_mode $mounting_mode
 fi
+# set mounting mode config
+set_config mounting_mode $mounting_mode
 
 echo ""
 
@@ -201,7 +205,7 @@ echo ""
 
 # warn KSU or APatch user if module would not be mounted globally
 if { [ -n "$KSU" ] || [ -n "$APATCH" ]; } && \
-   [ "$use_mountify_script" != true ] && [ "$mountify_mounted" != true ]; then
+   [ "$mounting_mode" = "0" ] && [ "$mountify_mounted" != true ]; then
     echo "[!] KSU/APatch detected. Module won’t mount globally."
     echo "[i] Hint: Turn off 'unmount by default' to fix that."
 fi

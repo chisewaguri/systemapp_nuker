@@ -4,12 +4,14 @@
 # default is false
 uninstall_fallback=false
 
-# mount the module globally using the standalone mountify script
-# needs either **TMPFS_XATTR** support or the OverlayFS manager
-# auto-enabled during install if the env can handle it
-# if mountify's already installed and will mount this module, this gets auto-disabled
+# --- mounting mode ---
+# 0 = default; manager will handle this module's mounting
+# 1 = mountify standalone script; this module will be mounted using mountify standalone script thats shipped with this module
+# 2 = mountify module; the mountify module will handle this module's mounting
+# mountify standalone script needs either **TMPFS_XATTR** support or the OverlayFS manager
 # DO NOT flip this manually unless you're sure the env supports it
-use_mountify_script=false
+# prefered mounting mode is 2, 1, 0
+mounting_mode=0
 
 # refresh (regenerate) the app list cache every boot
 # default is true to make sure app list stays accurate when things change
