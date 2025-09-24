@@ -7,7 +7,7 @@ ICON_DIR="$PERSIST_DIR/icons"
 
 # import config
 uninstall_fallback=false
-use_mountify_script=false
+mounting_mode=0
 refresh_applist=true
 [ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
 
@@ -24,7 +24,7 @@ create_applist() {
     system_app_path="/system/app /system/priv-app /vendor/app /product/app /product/priv-app /system_ext/app /system_ext/priv-app"
 
     # append additional partition on mountify
-    if [ "$use_mountify_script" = true ]; then
+    if [ "$mounting_mode" = "1" ]; then
         system_app_path="$system_app_path my_bigball mi_ext my_carrier my_company my_engineering my_heytap my_manifest my_preload my_product my_region my_reserve my_stock"
     fi
     for path in $system_app_path; do
@@ -103,10 +103,12 @@ suffix=""
 string="$string | 💥 nuked: $total app$suffix"
 
 # detect mount mode
-if [ "$use_mountify_script" = true ]; then
-    string="$string | 🧰 mount mode: global (powered by mountify)"
-else
+if [ "$mounting_mode" = "0" ]; then
     string="$string | ⚙️ mount mode: default"
+elif [ "$mounting_mode" = "1" ]; then
+    string="$string | 🧰 mount mode: mountify standalone script"
+elif [ "$mounting_mode" = "2" ]; then
+    string="$string | 🧰 mount mode: mountify module"
 fi
 
 # set module description

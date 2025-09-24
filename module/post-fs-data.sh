@@ -4,7 +4,7 @@ MODDIR="${0%/*}"
 PERSIST_DIR="/data/adb/system_app_nuker"
 
 # import config
-use_mountify_script=false
+mounting_mode=0
 magic_mount=true
 [ -f "$PERSIST_DIR/config.sh" ] && . "$PERSIST_DIR/config.sh"
 
@@ -52,7 +52,7 @@ fi
 
 # --- mountify script ---
 
-if [ "$use_mountify_script" = true ]; then
+if [ "$mounting_mode" = "1" ]; then
     # skip mount because we mount it ourselves
     touch "$MODPATH/skip_mount"
     touch "$MODPATH/skip_mountify"
