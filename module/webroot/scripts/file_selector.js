@@ -31,16 +31,19 @@ async function listFiles(path, skipAnimation = false) {
     }
     
     try {
-        const result = await ksuExec(`find "${path}" -maxdepth 1 -type f -name "*.txt" -o -type d ! -name ".*" | sort`);
+        const result = await ksuExec(
+            `find "${path}" -maxdepth 1 \\( -type f \\( -name "*.txt" -o -name "*.json" \\) -o -type d ! -name ".*" \\) | sort`
+        );
+
         const items = result.stdout.split('\n').filter(Boolean).map(item => ({
             path: item,
             name: item.split('/').pop(),
-            isDirectory: !item.endsWith('.txt')
+            isDirectory: !/\.(txt|json)$/i.test(item)
         }));
         
         fileList.innerHTML = '';
 
-        // Add back button item if not in root directory
+        // Add back button if not in root
         if (currentPath !== '/storage/emulated/0') {
             const backItem = document.createElement('div');
             backItem.className = 'file-item ripple-element';
@@ -75,7 +78,10 @@ async function listFiles(path, skipAnimation = false) {
                     updateCurrentPath();
                     await listFiles(item.path);
                 } else {
-                    await importPackageList(item.path);
+                    const ext = item.name.split('.').pop().toLowerCase();
+                    if (ext === 'txt' || ext === 'json') {
+                        await importPackageList(item.path);
+                    }
                 }
             });
             
@@ -95,6 +101,7 @@ async function listFiles(path, skipAnimation = false) {
     applyRippleEffect();
 }
 
+
 // Function to import package list from a file
 async function importPackageList(filePath) {
     try {
@@ -104,16 +111,25 @@ async function importPackageList(filePath) {
             toast("Error reading file");
             return;
         }
-        
-        // Split by new line and filter empty lines
-        const packages = result.stdout.trim().split('\n').map(pkg => pkg.trim()).filter(Boolean);
-        
+
+        const content = result.stdout.trim();
+        let packages = [];
+
+        if (filePath.endsWith(".json")) {
+            // Parse JSON package list (supports array of strings or array of { packageName })
+            packages = parsePackageList(content);
+        } else {
+            // Split by new line and filter empty lines (for .txt format)
+            packages = content.split('\n').map(pkg => pkg.trim()).filter(Boolean);
+        }
+
         if (packages.length === 0) {
             toast("No package names found in file");
             closeFileSelector();
             return;
         }
 
+        // Insert the package list into the textarea
         document.getElementById('package-list-input').value = packages.join('\n');
         closeFileSelector();
     } catch (error) {
@@ -121,6 +137,33 @@ async function importPackageList(filePath) {
         toast("Error importing package list");
     }
 }
+
+// Helper to parse JSON package lists
+function parsePackageList(fileContent) {
+    let data;
+    try {
+        data = JSON.parse(fileContent);
+    } catch {
+        throw new Error("Invalid JSON");
+    }
+
+    if (Array.isArray(data)) {
+        return data.map(entry => {
+            if (typeof entry === "string") {
+                // Direct string entry
+                return entry;
+            }
+            if (entry && typeof entry === "object" && entry.packageName) {
+                // Object entry with "packageName" property
+                return entry.packageName;
+            }
+            // Ignore unsupported entries
+            return null;
+        }).filter(Boolean);
+    }
+    throw new Error("Unsupported JSON format");
+}
+
 
 // Function to open file selector
 export function openFileSelector() {
