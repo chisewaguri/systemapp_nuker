@@ -23,7 +23,18 @@ targets="odm
 product
 system_ext
 vendor
-my_bigball"
+mi_ext
+my_bigball
+my_carrier
+my_company
+my_engineering
+my_heytap
+my_manifest
+my_preload
+my_product
+my_region
+my_reserve
+my_stock"
 
 # --- functions ---
 

@@ -15,6 +15,20 @@ REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
 # so yeah, symlinks.
 IFS="
 "
+# vendor partitions
+targets="
+mi_ext
+my_bigball
+my_carrier
+my_company
+my_engineering
+my_heytap
+my_manifest
+my_preload
+my_product
+my_region
+my_reserve
+my_stock"
 
 # args handling
 [ "$1" = "update" ] && update=true || update=false
@@ -129,10 +143,13 @@ for line in $( sed '/#/d' "$PERSIST_DIR/raw_whiteouts.txt" ); do
 	ls "$MODULE_UPDATE_DIR$line" 2>/dev/null
 done
 
-# handle /my_bigball
-if [ -d "$MODULE_UPDATE_DIR/system/my_bigball"] && [ ! -L "/my_bigball" ]; then
-    echo "[-] Handling partition /my_bigball"
-    mv -f $MODULE_UPDATE_DIR/system/my_bigball $MODULE_UPDATE_DIR/$1 && ln -sf ../my_bigball $MODULE_UPDATE_DIR/system/my_bigball
-fi
+# handle vendor partitions
+for part in $targets; do
+    if [ -d "$MODULE_UPDATE_DIR/system/$part" ] && [ ! -L "/$part" ]; then
+        echo "[-] Handling partition /$part"
+        mv -f "$MODULE_UPDATE_DIR/system/$part" "$MODULE_UPDATE_DIR/$part"
+        ln -sf "../$part" "$MODULE_UPDATE_DIR/system/$part"
+    fi
+done
 
 # EOF
