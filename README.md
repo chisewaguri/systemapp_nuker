@@ -1,7 +1,17 @@
 # System App Nuker
-### Take back control. Your device, your rules
 
 Bloatware sucks. This module lets you disable pre-installed system apps and services that don’t serve you.
+
+## What's this all about?
+
+It lets you *nuke* unwanted pre-installed apps (bloatware), all systemlessly, through an easy-to-use WebUI.
+
+## How does it work?
+
+It creates "whiteouts" for the apps you want to nuke. Then, the root manager or mountify mount it and fools Android into thinking those apps don't exist.
+## Why use it?
+
+Really, why not? Maybe for the sense of control over evil OEM ^^
 
 ---
 
@@ -38,10 +48,7 @@ A big chunk of the backend shell scripts in this module were either inspired by 
 
 - **[@KOWX712](https://github.com/KOWX712)**  
 WebUI wizard. He made the frontend actually usable.  
-Without this, you'd be staring at broken modals wondering why life suck.
-
-- **[@KOWX712](https://github.com/KOWX712)** *(again!)*  
-Also the author of [`Tricky-Addon-Update-Target-List`](https://github.com/KOWX712/Tricky-Addon-Update-Target-List), which inspired parts of the module's approach to package handling and list manipulation.
+Without this, you'd be staring at broken modals wondering why life suck. He's also the author of [`Tricky-Addon-Update-Target-List`](https://github.com/KOWX712/Tricky-Addon-Update-Target-List), which inspired parts of the module's approach to package handling and list manipulation.
 
 - **[@j-hc](https://github.com/j-hc)**  
 Their work on [`zygisk-detach`](https://github.com/j-hc/zygisk-detach) helped shape how the module handles app list.
@@ -56,7 +63,7 @@ Appreciate all of you. You made the thing not suck.
 
 ## ⚠️ Disclaimer
 
-Yes, this is powerful. No, it does not come with training wheels.   
+Yes, this is powerful. No, it does not come with training wheels (it does have a simple anti bootloop mechanism tho).   
 Disabling critical system apps can:
 - Break your phone
 - Trigger boot loops
