@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,6 +13,7 @@
     <link rel="stylesheet" type="text/css" href="styles/animations.css">
     <link rel="stylesheet" type="text/css" href="styles/file_selector.css">
 </head>
+
 <body>
     <div class="content">
         <!-- Header -->
@@ -58,8 +60,11 @@
                 <span class="close-modal">&times;</span>
             </div>
             <div class="modal-body">
-                <p>Paste a list of package names (one per line):</p>
-                <textarea id="package-list-input" placeholder="com.example.app1&#10;com.example.app2&#10;com.example.app3"></textarea>
+                <p>Paste package names (one per line) or JSON format:</p>
+                <textarea id="package-list-input" placeholder="Text format:&#10;com.example.app1&#10;com.example.app2&#10;&#10;JSON format:&#10;{&quot;apps&quot;: [{&quot;packageName&quot;: &quot;com.example.app1&quot;}]}"></textarea>
+                <div class="format-help">
+                    <small><strong>Supported formats:</strong> Plain text (one package per line) or Canta JSON with "apps" array containing "packageName" properties</small>
+                </div>
                 <div class="file-import-option">
                     <button id="file-import-btn" class="modal-btn ripple-element">Import From File</button>
                 </div>
