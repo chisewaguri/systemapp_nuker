@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+    tags:
+      - '*'
     paths:
       - '.github/workflows/build.yml'
       - 'module/**'
@@ -17,7 +19,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -26,23 +28,60 @@ jobs:
         fetch-depth: 0
 
     - name: Set variables
-      id: setup
       run: |
         COMMIT_NUM=$(git rev-list --count HEAD)
         COMMIT_HASH=$(git rev-parse --short HEAD)
         VERSION=$(jq -r .version update.json)
         ZIP_NAME=SAN_$VERSION-$COMMIT_NUM-$COMMIT_HASH
-
+        RELEASE_ZIP_NAME=SAN_$VERSION
+        
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "ZIP_NAME=$ZIP_NAME" >> $GITHUB_ENV
+        echo "RELEASE_ZIP_NAME=$RELEASE_ZIP_NAME" >> $GITHUB_ENV
+
+    - name: Extract changelog for version
+      if: github.ref_type == 'tag'
+      run: |
+        # Extract changelog for the specific version from CHANGELOG.md
+        CHANGELOG=$(awk -v version="v${{ env.VERSION }}" '
+        BEGIN { found=0; content="" }
+        /^### v[0-9]+\.[0-9]+\.[0-9]+/ {
+          if (found) exit
+          if ($0 ~ "### " version) {
+            found=1
+            next
+          }
+        }
+        found && /^### v[0-9]+\.[0-9]+\.[0-9]+/ { exit }
+        found && !/^---$/ { 
+          if (content == "") {
+            content = $0
+          } else {
+            content = content "\n" $0
+          }
+        }
+        END { print content }
+        ' CHANGELOG.md)
+        
+        echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+        echo "$CHANGELOG" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
 
     - name: Create dummy zip
       run: |
+        # Create dummy zip
         cd module/dummy_zip
         cp -r ../META-INF .
         zip -r dummy.zip *
         mv dummy.zip ../
-      
+        
+    - name: Create module zip for release
+      if: github.ref_type == 'tag'
+      run: |
+        cd module
+        zip -r "${{ env.RELEASE_ZIP_NAME }}" *
+        mv "${{ env.RELEASE_ZIP_NAME }}" ../
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
@@ -51,58 +90,14 @@ jobs:
           module/
           !module/dummy_zip
 
-    - name: Validate release
-      run: |
-        git fetch --tags
-        if git tag | grep -qx "^${{ env.VERSION }}"; then
-          echo "RELEASE=false" >> $GITHUB_OUTPUT
-        else
-          echo "RELEASE=true" >> $GITHUB_OUTPUT
-        fi
-
-  release:
-    runs-on: ubuntu-latest
-    needs: build
-    if: ${{ needs.build.outputs.RELEASE == 'true' }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Read update.json
-      id: setup
-      run: |
-        echo "VERSION=$(jq -r .version update.json)" >> $GITHUB_ENV
-        echo "ZIP_NAME=$(basename $(jq -r .zipUrl update.json))" >> $GITHUB_ENV
-
-    - name: Read changelog
-      run: |
-        CHANGELOG=$(git diff HEAD^ HEAD -- CHANGELOG.md | grep '^+[^+]' | sed 's/^+//; /---/d')
-        echo "CHANGELOG<<CHANGELOG_EOF" >> $GITHUB_ENV
-        echo "$CHANGELOG" >> $GITHUB_ENV
-        echo "CHANGELOG_EOF" >> $GITHUB_ENV
-
-    - name: Create dummy zip
-      run: |
-        cd module/dummy_zip
-        cp -r ../META-INF .
-        zip -r dummy.zip *
-        mv dummy.zip ../
-
-    - name: Create module zip
-      run: |
-        cd module
-        zip -r "${{ env.ZIP_NAME }}" *
-
     - name: Create release
-      if: env.RELEASE == 'true'
+      if: github.ref_type == 'tag'
       uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       with:
-        tag_name: "${{ env.VERSION }}"
-        name: "${{ env.VERSION }}"
-        body: "${{ env.CHANGELOG }}"
+        tag_name: ${{ env.VERSION }}
+        name: ${{ env.VERSION }}
+        body: ${{ env.CHANGELOG }}
         draft: false
-        files: "module/${{ env.ZIP_NAME }}" 
+        files: ${{ env.RELEASE_ZIP_NAME }}
