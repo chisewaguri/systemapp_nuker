@@ -3,6 +3,17 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v1.1.8
+
+#### WebUI
+- update WebUI-X css import address (@KOWX712)
+- support canta preset import
+
+#### Scripts
+- properly support mountify
+- add more vendor-related partitions
+- revert useless app list generation on installation
+
 ### v1.1.7
 
 #### WebUI  
