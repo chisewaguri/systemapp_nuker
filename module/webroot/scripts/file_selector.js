@@ -31,11 +31,11 @@ async function listFiles(path, skipAnimation = false) {
     }
     
     try {
-        const result = await ksuExec(`find "${path}" -maxdepth 1 -type f -name "*.txt" -o -type d ! -name ".*" | sort`);
+        const result = await ksuExec(`find "${path}" -maxdepth 1 \\( -type f -name "*.txt" -o -type f -name "*.json" \\) -o -type d ! -name ".*" | sort`);
         const items = result.stdout.split('\n').filter(Boolean).map(item => ({
             path: item,
             name: item.split('/').pop(),
-            isDirectory: !item.endsWith('.txt')
+            isDirectory: !item.endsWith('.txt') && !item.endsWith('.json')
         }));
         
         fileList.innerHTML = '';
@@ -104,9 +104,33 @@ async function importPackageList(filePath) {
             toast("Error reading file");
             return;
         }
+
+        let packages = [];
         
-        // Split by new line and filter empty lines
-        const packages = result.stdout.trim().split('\n').map(pkg => pkg.trim()).filter(Boolean);
+        // Check if file is JSON by extension
+        if (filePath.endsWith('.json')) {
+            try {
+                const jsonData = JSON.parse(result.stdout.trim());
+                
+                // Check if it has the expected structure with apps array
+                if (jsonData.apps && Array.isArray(jsonData.apps)) {
+                    packages = jsonData.apps
+                        .filter(app => app.packageName)
+                        .map(app => app.packageName.trim())
+                        .filter(Boolean);
+                } else {
+                    toast("Invalid JSON format - expected 'apps' array with 'packageName' properties");
+                    return;
+                }
+            } catch (jsonError) {
+                toast("Error parsing JSON file");
+                console.error('JSON parsing error:', jsonError);
+                return;
+            }
+        } else {
+            // Handle text files (original behavior)
+            packages = result.stdout.trim().split('\n').map(pkg => pkg.trim()).filter(Boolean);
+        }
         
         if (packages.length === 0) {
             toast("No package names found in file");

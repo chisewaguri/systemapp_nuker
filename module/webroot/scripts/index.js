@@ -56,10 +56,45 @@ export function importModalMenu() {
         });
     });
 
-    document.getElementById('confirm-import').addEventListener('click', async () => {
-        const packages = packageListInput.value.trim().split('\n').map(pkg => pkg.trim());
-        if (packages.length === 0) {
+    document.getElementById('confirm-import').addEventListener('click', async() => {
+        const inputValue = packageListInput.value.trim();
+        if (inputValue.length === 0) {
             toast("Please enter valid package names");
+            closeImportModal();
+            return;
+        }
+
+        let packages = [];
+        
+        // Check if input looks like JSON (starts with { and ends with })
+        if (inputValue.startsWith('{') && inputValue.endsWith('}')) {
+            try {
+                const jsonData = JSON.parse(inputValue);
+                
+                // Check if it has the expected structure with apps array
+                if (jsonData.apps && Array.isArray(jsonData.apps)) {
+                    packages = jsonData.apps
+                        .filter(app => app.packageName)
+                        .map(app => app.packageName.trim())
+                        .filter(Boolean);
+                } else {
+                    toast("Invalid JSON format - expected 'apps' array with 'packageName' properties");
+                    closeImportModal();
+                    return;
+                }
+            } catch (jsonError) {
+                toast("Error parsing JSON - please check format");
+                console.error('JSON parsing error:', jsonError);
+                closeImportModal();
+                return;
+            }
+        } else {
+            // Handle text format (original behavior)
+            packages = inputValue.split('\n').map(pkg => pkg.trim()).filter(Boolean);
+        }
+        
+        if (packages.length === 0) {
+            toast("No package names found");
             closeImportModal();
             return;
         }

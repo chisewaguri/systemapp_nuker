@@ -36,7 +36,7 @@ export async function exportPackageList() {
  */
 const restoreButton = document.getElementById('restore-button');
 if (restoreButton) {
-    restoreButton.addEventListener('click', async () => {
+    restoreButton.addEventListener('click', async() => {
         await updateAppList(true);
     });
 
