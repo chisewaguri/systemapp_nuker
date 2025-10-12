@@ -9,6 +9,85 @@ export let appList = [],
            currentSearchTerm = '',
            activeCategory = 'all';
 
+// Loading screen management
+let loadingInterval = null;
+let loadingCheckInterval = null;
+
+export function showLoadingScreen(status = "Initializing...") {
+    const loadingScreen = document.getElementById('loading-screen');
+    const appListContainer = document.getElementById('app-list');
+    const loadingStatus = document.querySelector('.loading-status');
+    
+    if (loadingScreen && appListContainer) {
+        loadingScreen.style.display = 'flex';
+        if (loadingStatus) {
+            loadingStatus.textContent = status;
+        }
+        
+        // Hide the app list content
+        const appItems = appListContainer.querySelectorAll('.app-item');
+        appItems.forEach(item => item.style.display = 'none');
+        
+        // Start periodic app list checking if not already running
+        if (!loadingCheckInterval) {
+            startPeriodicAppListCheck();
+        }
+    }
+}
+
+export function hideLoadingScreen() {
+    const loadingScreen = document.getElementById('loading-screen');
+    const appListContainer = document.getElementById('app-list');
+    
+    if (loadingScreen) {
+        loadingScreen.style.display = 'none';
+    }
+    
+    // Show the app list content
+    if (appListContainer) {
+        const appItems = appListContainer.querySelectorAll('.app-item');
+        appItems.forEach(item => item.style.display = '');
+    }
+    
+    // Stop periodic checking
+    if (loadingCheckInterval) {
+        clearInterval(loadingCheckInterval);
+        loadingCheckInterval = null;
+    }
+}
+
+function startPeriodicAppListCheck() {
+    loadingCheckInterval = setInterval(async () => {
+        try {
+            // Check if app list file exists and is valid
+            const response = await fetch("link/app_list.json");
+            if (response.ok) {
+                const data = await response.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    // App list is ready, fetch it properly
+                    await fetchAppList("link/app_list.json", true);
+                    return; // fetchAppList will call hideLoadingScreen
+                }
+            }
+            
+            // Update loading status
+            const loadingStatus = document.querySelector('.loading-status');
+            if (loadingStatus) {
+                const statuses = [
+                    "Scanning system applications...",
+                    "Processing app data...",
+                    "Building app list...",
+                    "Almost ready..."
+                ];
+                const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+                loadingStatus.textContent = randomStatus;
+            }
+        } catch (error) {
+            console.log("App list not ready yet, continuing to check...");
+        }
+    }, 1000); // Check every second
+}
+
 // Timer for delaying moveCheckedAppsToTop
 let moveCheckedAppsTimer = null;
 
@@ -79,9 +158,22 @@ export async function fetchAppList(file, display = false) {
             throw new Error(`Failed to fetch ${file}`);
         }
         const data = await response.json();
+        
+        // Validate app list data
+        if (!Array.isArray(data)) {
+            throw new Error(`Invalid app list data from ${file}`);
+        }
+        
+        // Handle empty data - still process it for display
+        if (data.length === 0) {
+            console.log(`Empty app list from ${file}`);
+        }
+        
         data.sort((a, b) => a.app_name.localeCompare(b.app_name));
         if (file === "link/app_list.json") {
             appList = data;
+            // Hide loading screen when app list is successfully loaded
+            hideLoadingScreen();
         } else {
             nukeList = data;
         }
@@ -91,8 +183,23 @@ export async function fetchAppList(file, display = false) {
         }
     } catch (error) {
         console.error("Failed to fetch system apps:", error);
+        
+        // Handle missing or invalid files
+        if (file === "link/nuke_list.json" && display) {
+            // For nuke list on restore page, show empty state
+            nukeList = [];
+            displayAppList([]);
+            applyRippleEffect();
+            return;
+        }
+        
+        // Show loading screen if app list fails to load
+        if (file === "link/app_list.json") {
+            showLoadingScreen("App list not ready yet...");
+        }
+        
         await linkFile();
-        window.location.reload();
+        // Don't reload immediately, let the periodic checker handle it
     }
 }
 
@@ -107,6 +214,21 @@ export async function displayAppList(data, reset = true, all = false) {
     if (!categoriesData) await loadCategories();
 
     const appListDiv = document.getElementById("app-list");
+
+    // Check if this is the restore page and nuke list is empty
+    if (window.location.pathname.includes('restore.html') && data && data.length === 0) {
+        appListDiv.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-content">
+                    <div class="empty-state-icon">🚀</div>
+                    <h3>You didn't nuke anything, yet...</h3>
+                    <p>Go nuuuuuke ><</p>
+                    <a href="index.html" class="modal-btn">Start Nuking Apps</a>
+                </div>
+            </div>
+        `;
+        return;
+    }
 
     // Reset or store all apps data
     if (reset) {

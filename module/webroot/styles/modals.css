@@ -83,6 +83,9 @@
     background-color: var(--border-color);
     color: var(--text-primary);
     user-select: none;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
 }
 
 .confirm-btn {

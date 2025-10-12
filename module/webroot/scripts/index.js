@@ -1,7 +1,7 @@
 // This is part of system app nuker
 // Inspired by j-hc's zygisk detach that's licensed under Apache 2.0 and backslashxx's mountify.
 
-import { toast, setupSearch, setupScrollEvent, setupDropdownMenu, checkMMRL, fetchAppList, displayAppList, updateAppList, appList, applyRippleEffect, initialTransition } from "./util.js";
+import { toast, setupSearch, setupScrollEvent, setupDropdownMenu, checkMMRL, fetchAppList, displayAppList, updateAppList, appList, applyRippleEffect, initialTransition, showLoadingScreen } from "./util.js";
 import { initFileSelector, openFileSelector } from "./file_selector.js";
 
 // Triple click handler for developer mode
@@ -162,6 +162,10 @@ if (nukeButton) {
 
     document.addEventListener("DOMContentLoaded", () => {
         initialTransition();
+        // Show loading screen immediately
+        showLoadingScreen("Initializing app list...");
+        
+        // Try to load app lists with a small delay
         setTimeout(() => {
             fetchAppList("link/app_list.json", true);
             fetchAppList("link/nuke_list.json");
