@@ -16,8 +16,60 @@ refresh_applist=true
 # appt binary
 aapt() { "$MODDIR/common/aapt" "$@"; }
 
+# update module description
+update_description() {
+    status="$1"
+    
+    # base description
+    string="description=WebUI-based debloater and whiteout creator"
+    
+    # count nuked apps (fallback to 0 if file missing or grep fails)
+    total=0
+    if [ -f "$REMOVE_LIST" ]; then
+        total=$(grep -c '"package_name":' "$REMOVE_LIST" 2>/dev/null)
+        if [ $? -ne 0 ]; then
+            total=0
+        fi
+    fi
+    
+    # fallback if grep somehow returns blank
+    if [ -z "$total" ]; then
+        total=0
+    fi
+    
+    # pluralize
+    suffix=""
+    if [ "$total" -ne 1 ]; then
+        suffix="s"
+    fi
+    
+    # add nuked app count
+    string="$string | 💥 nuked: $total app$suffix"
+    
+    # detect mount mode
+    if [ "$mounting_mode" = "0" ]; then
+        string="$string | ⚙️ mount mode: default"
+    elif [ "$mounting_mode" = "1" ]; then
+        string="$string | 🧰 mount mode: mountify standalone script"
+    elif [ "$mounting_mode" = "2" ]; then
+        string="$string | 🧰 mount mode: mountify module"
+    fi
+    
+    # add loading status if provided
+    if [ -n "$status" ]; then
+        string="$string | $status"
+    fi
+    
+    # set module description - escape special characters for sed
+    escaped_string=$(echo "$string" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    sed -i "s/^description=.*/$escaped_string/g" "$MODDIR/module.prop"
+}
+
 # create applist cache
 create_applist() {
+    # Update description to show loading status
+    update_description "📱 loading app list..."
+    
     echo "[" > "$APP_LIST_TMP"
 
     # default system app path
@@ -76,43 +128,17 @@ create_applist() {
     echo "]" >> "$APP_LIST_TMP"
 
     mv -f "$APP_LIST_TMP" "$APP_LIST"
+    
+    # Update description to show loaded status
+    update_description "✅ app list loaded"
 }
 
 # === MAIN SCRIPT ===
 
 # -- set module description --
 
-# base description
-string="description=WebUI-based debloater and whiteout creator"
-
-# count nuked apps (fallback to 0 if file missing or grep fails)
-if [ -f "$REMOVE_LIST" ]; then
-    total=$(grep -c '"package_name":' "$REMOVE_LIST")
-else
-    total=0
-fi
-
-# fallback if grep somehow returns blank
-[ -z "$total" ] && total=0
-
-# pluralize
-suffix=""
-[ "$total" -ne 1 ] && suffix="s"
-
-# add nuked app count
-string="$string | 💥 nuked: $total app$suffix"
-
-# detect mount mode
-if [ "$mounting_mode" = "0" ]; then
-    string="$string | ⚙️ mount mode: default"
-elif [ "$mounting_mode" = "1" ]; then
-    string="$string | 🧰 mount mode: mountify standalone script"
-elif [ "$mounting_mode" = "2" ]; then
-    string="$string | 🧰 mount mode: mountify module"
-fi
-
-# set module description
-sed -i "s/^description=.*/$string/g" "$MODDIR/module.prop"
+# set initial description
+update_description
 
 # wait for boot completed
 until [ "$(getprop sys.boot_completed)" = "1" ]; do
@@ -137,6 +163,9 @@ NUKED_PATHS=$(grep -o "\"app_path\":.*" "$REMOVE_LIST" | awk -F"\"" '{print $4}'
 # create or refresh app list
 if [ ! -f "$APP_LIST" ] || [ "$refresh_applist" = true ]; then
     create_applist
+else
+    # Update description to indicate app list won't be reloaded
+    update_description "📋 no reload applist"
 fi
 
 # create symlink for app icon
