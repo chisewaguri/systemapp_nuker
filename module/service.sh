@@ -76,7 +76,7 @@ create_applist() {
     system_app_path="/system/app /system/priv-app /vendor/app /product/app /product/priv-app /system_ext/app /system_ext/priv-app"
 
     # append additional partition on mountify
-    if [ "$mounting_mode" = "1" ]; then
+    if [ "$mounting_mode" = "1" ] || [ "$mounting_mode" = "2" ]; then
         system_app_path="$system_app_path my_bigball mi_ext my_carrier my_company my_engineering my_heytap my_manifest my_preload my_product my_region my_reserve my_stock"
     fi
     for path in $system_app_path; do
