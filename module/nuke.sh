@@ -8,7 +8,12 @@ PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
 MODDIR="/data/adb/modules/system_app_nuker"
 MODULE_UPDATE_DIR="/data/adb/modules_update/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
+APP_LIST="$PERSIST_DIR/app_list.json"
 REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
+
+# import config
+disable_only_mode="false"
+[ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
 
 # special dirs
 # handle this properly so this script can be used standalone
@@ -52,22 +57,34 @@ whiteout_create() {
 nuke_system_apps() {
     total=$(grep -c '"package_name":' "$REMOVE_LIST")
 
-    # first, remove any updates for the apps being nuked
+    # first, remove any updates for the apps being nuked and disable them
     for package_name in $(grep -o "\"package_name\":.*" "$REMOVE_LIST" | awk -F"\"" '{print $4}'); do
         # check if it's a system app and has been updated
         if pm list packages -s | grep -qx "package:$package_name" && pm path "$package_name" | grep -q "/data/app"; then
             # uninstall system updates only if it's a system app that has been updated
             pm uninstall-system-updates "$package_name" >/dev/null 2>&1 || true
         fi
+        pm disable "$package_name" >/dev/null 2>&1 || true
     done
-
-    for apk_path in $(grep -E '"app_path":' "$REMOVE_LIST" | sed 's/.*"app_path": "\(.*\)",/\1/'); do
-        # Create whiteout for apk_path
-        whiteout_create "$(dirname $apk_path)" > /dev/null 2>&1
-        ls "$MODULE_UPDATE_DIR$apk_path" 2>/dev/null
-    done
-
+    
+    # whiteout creation
+    if [ "$disable_only_mode" != "true" ]; then
+        for apk_path in $(grep -E '"app_path":' "$REMOVE_LIST" | sed 's/.*"app_path": "\(.*\)",/\1/'); do
+            # Create whiteout for apk_path
+            whiteout_create "$(dirname $apk_path)" > /dev/null 2>&1
+            ls "$MODULE_UPDATE_DIR$apk_path" 2>/dev/null
+        done
+    fi
+    
     echo "[-] Nuking complete: $total apps processed"
+    
+    # brings back disabled apps
+    local disabled_list=$(pm list packages -d)
+    for package_name in $(grep -o "\"package_name\":.*" "$APP_LIST" | awk -F"\"" '{print $4}'); do
+        if echo "$disabled_list" | grep -qx "package:$package_name"; then
+            pm enable "$package_name" >/dev/null 2>&1 || true
+        fi
+    done
 }
 
 # this function install dummy.zip

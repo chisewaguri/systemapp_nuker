@@ -4,6 +4,10 @@
 # default is false
 uninstall_fallback=false
 
+# disable only mode
+# if this is enabled, whiteouts for apps would not be created
+disable_only_mode=false
+
 # --- mounting mode ---
 # 0 = default; manager will handle this module's mounting
 # 1 = mountify standalone script; this module will be mounted using mountify standalone script thats shipped with this module

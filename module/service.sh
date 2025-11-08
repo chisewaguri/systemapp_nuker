@@ -9,6 +9,7 @@ ICON_DIR="$PERSIST_DIR/icons"
 uninstall_fallback=false
 mounting_mode=0
 refresh_applist=true
+magic_mount=true
 [ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
 
 # === FUNCTIONS ===
@@ -20,42 +21,83 @@ aapt() { "$MODDIR/common/aapt" "$@"; }
 update_description() {
     status="$1"
     
-    # base description
-    string="description=WebUI-based debloater and whiteout creator"
-    
-    # count nuked apps (fallback to 0 if file missing or grep fails)
-    total=0
-    if [ -f "$REMOVE_LIST" ]; then
-        total=$(grep -c '"package_name":' "$REMOVE_LIST" 2>/dev/null)
-        if [ $? -ne 0 ]; then
+    if [ -z "$string" ]; then # if not exist yet
+        # base description
+        string="description=WebUI-based debloater and whiteout creator"
+        
+        # count nuked apps (fallback to 0 if file missing or grep fails)
+        total=0
+        if [ -f "$REMOVE_LIST" ]; then
+            total=$(grep -c '"package_name":' "$REMOVE_LIST" 2>/dev/null)
+            if [ $? -ne 0 ]; then
+                total=0
+            fi
+        fi
+        
+        # fallback if grep somehow returns blank
+        if [ -z "$total" ]; then
             total=0
+        fi
+        
+        # pluralize
+        suffix=""
+        if [ "$total" -ne 1 ]; then
+            suffix="s"
+        fi
+        
+        # add nuked app count
+        string="$string | 💥 nuked: $total app$suffix"
+        
+        # detect and validate mount mode
+        if [ "$mounting_mode" = "0" ]; then
+            if [ "$magic_mount" = "true" ]; then
+                # check if manager mount is disabled
+                if [ -f "/data/adb/ksu/.nomount" ]; then
+                    string="[ERROR] Default mount mode requires manager mounting, but it's disabled (.nomount file exists)"
+                fi
+            fi
+            string="$string | ⚙️ mount mode: default"
+        elif [ "$mounting_mode" = "1" ]; then
+            # check if tmpfs xattrs is available (only required when magic_mount is true)
+            if [ "$magic_mount" = "true" ]; then
+                MNT_FOLDER=""
+                [ -w /mnt ] && MNT_FOLDER=/mnt
+                [ -w /mnt/vendor ] && MNT_FOLDER=/mnt/vendor
+                testfile="$MNT_FOLDER/tmpfs_xattr_testfile"
+                rm $testfile > /dev/null 2>&1
+                busybox mknod "$testfile" c 0 0 > /dev/null 2>&1
+                if busybox setfattr -n trusted.overlay.whiteout -v y "$testfile" > /dev/null 2>&1 ; then
+                    rm $testfile > /dev/null 2>&1
+                    string="$string | 🧰 mount mode: mountify standalone script"
+                else
+                    rm $testfile > /dev/null 2>&1
+                    string="[ERROR] mountify standalone mode requires tmpfs xattr support or overlayfs manager"
+                fi
+            else
+                string="$string | 🧰 mount mode: mountify standalone script (overlayfs)"
+            fi
+        elif [ "$mounting_mode" = "2" ]; then
+            if [ -f "/data/adb/modules/mountify/config.sh" ] && \
+            [ ! -f "/data/adb/modules/mountify/disable" ] && \
+            [ ! -f "/data/adb/modules/mountify/remove" ]; then
+                mountify_mounts=$(grep -o 'mountify_mounts=[0-9]' /data/adb/modules/mountify/config.sh | cut -d= -f2)
+
+                # if mountify module will mount this module
+                if [ "$mountify_mounts" = "2" ] || \
+                { [ "$mountify_mounts" = "1" ] && grep -q "system_app_nuker" /data/adb/modules/mountify/modules.txt; }; then
+                    mountify_mounted=true
+                    echo "[✓] Mounting will be handled by the mountify module."
+                    mounting_mode=2
+                    # set_config mounting_mode 2
+                    string="$string | 🧰 mount mode: mountify module"
+                else
+                    string="[ERROR] mountify module mode is enabled but module won't mount this (check if mountify is enabled and this module is on the modules.txt)"
+                fi
+            fi
         fi
     fi
     
-    # fallback if grep somehow returns blank
-    if [ -z "$total" ]; then
-        total=0
-    fi
-    
-    # pluralize
-    suffix=""
-    if [ "$total" -ne 1 ]; then
-        suffix="s"
-    fi
-    
-    # add nuked app count
-    string="$string | 💥 nuked: $total app$suffix"
-    
-    # detect mount mode
-    if [ "$mounting_mode" = "0" ]; then
-        string="$string | ⚙️ mount mode: default"
-    elif [ "$mounting_mode" = "1" ]; then
-        string="$string | 🧰 mount mode: mountify standalone script"
-    elif [ "$mounting_mode" = "2" ]; then
-        string="$string | 🧰 mount mode: mountify module"
-    fi
-    
-    # add loading status if provided
+    # add status if provided
     if [ -n "$status" ]; then
         string="$string | $status"
     fi
@@ -175,6 +217,10 @@ fi
 for pkg in $(grep -o "\"package_name\":.*" "$APP_LIST" | awk -F"\"" '{print $4}'); do
     if ! pm path "$pkg" >/dev/null 2>&1; then
         pm install-existing "$pkg" >/dev/null 2>&1
+    fi
+    disabled_list=$(pm list packages -d)
+    if echo "$disabled_list" | grep -qx "package:$pkg"; then
+        pm enable "$pkg" >/dev/null 2>&1 || true
     fi
 done
 
