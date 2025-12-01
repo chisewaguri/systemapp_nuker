@@ -144,7 +144,8 @@ export function setupSearch() {
 // Handle link within webui
 async function linkFile() {
     try {
-        await ksuExec(`[ -L "/data/adb/modules/system_app_nuker/webroot/link" ] || ln -s /data/adb/system_app_nuker /data/adb/modules/system_app_nuker/webroot/link`);
+        await ksuExec(`rm -rf "/data/adb/modules/system_app_nuker/webroot/link" && ln -s /data/adb/system_app_nuker /data/adb/modules/system_app_nuker/webroot/link`);
+        if (typeof ksu != 'undefined') window.location.reload();
     } catch (error) {
         console.error("Failed to link file:", error);
     }

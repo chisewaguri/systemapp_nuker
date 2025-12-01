@@ -211,7 +211,7 @@ else
 fi
 
 # create symlink for app icon
-[ ! -L "$MODDIR/webroot/link" ] && ln -s $PERSIST_DIR $MODDIR/webroot/link
+rm -rf "$MODDIR/webroot/link" && ln -s $PERSIST_DIR $MODDIR/webroot/link
 
 # this make sure that restored app is back
 for pkg in $(grep -o "\"package_name\":.*" "$APP_LIST" | awk -F"\"" '{print $4}'); do
