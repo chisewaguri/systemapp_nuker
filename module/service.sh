@@ -23,7 +23,7 @@ update_description() {
     
     if [ -z "$string" ]; then # if not exist yet
         # base description
-        string="description=WebUI-based debloater and whiteout creator"
+        string="WebUI-based debloater and whiteout creator"
         
         # count nuked apps (fallback to 0 if file missing or grep fails)
         total=0
@@ -104,7 +104,7 @@ update_description() {
     fi
     
     # set module description - escape special characters for sed
-    escaped_string=$(echo "$string" | sed 's/[[\.*^$()+?{|]/\\&/g')
+    escaped_string=$(echo "description=$string" | sed 's/[[\.*^$()+?{|]/\\&/g')
     sed -i "s/^description=.*/$escaped_string/g" "$MODDIR/module.prop"
 }
 
