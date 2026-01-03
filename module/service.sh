@@ -50,13 +50,14 @@ update_description() {
         
         # detect and validate mount mode
         if [ "$mounting_mode" = "0" ]; then
+            string="$string | ⚙️ mount mode: default"
             if [ "$magic_mount" = "true" ]; then
                 # check if manager mount is disabled
-                if [ -f "/data/adb/ksu/.nomount" ]; then
-                    string="[ERROR] Default mount mode requires manager mounting, but it's disabled (.nomount file exists)"
+                if { [ "$KSU_NEXT" = "true" ] && [ "$KSU_VER_CODE" -lt 22098 ] && [ -f "/data/adb/ksu/.nomount" ]; } || \
+                    { [ "$APATCH" = "true" ] && [ -f "/data/adb/ap/.litemode_enable" ]; }; then
+                    string="[ERROR] .nomount or .litemode_enable on magic mount"
                 fi
             fi
-            string="$string | ⚙️ mount mode: default"
         elif [ "$mounting_mode" = "1" ]; then
             # check if tmpfs xattrs is available (only required when magic_mount is true)
             if [ "$magic_mount" = "true" ]; then
