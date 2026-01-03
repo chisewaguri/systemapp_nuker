@@ -96,12 +96,12 @@ else
 fi
 
 # check mounting system
-if { [ "$KSU" = true ] && [ ! "$KSU_MAGIC_MOUNT" = true ]; } || { [ "$APATCH" = true ] && [ ! "$APATCH_BIND_MOUNT" = true ]; }; then
+if { [ "$KSU" = true ] && [ ! "$KSU_MAGIC_MOUNT" = true ] &&  [ "$KSU_VER_CODE" -lt 22098 ]; } || { [ "$APATCH" = true ] && [ ! "$APATCH_BIND_MOUNT" = true ]; }; then
     magic_mount=false
     echo "[i] No magic mount detected. Likely using overlayfs root manager."
 else
     magic_mount=true
-    echo "[i] Magic mount detected (e.g. Magisk)."
+    echo "[i] Magic mount (e.g. Magisk) or KSU >22098 detected."
 fi
 
 # --- check mountify ---
