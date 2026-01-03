@@ -111,17 +111,17 @@ mountify_active=false
 mountify_mounted=false
 
 # if mountify module is active
-if [ -f "/data/adb/modules/mountify/config.sh" ] && \
+if [ -f "/data/adb/modules/mountify/module.prop" ] && \
    [ ! -f "/data/adb/modules/mountify/disable" ] && \
    [ ! -f "/data/adb/modules/mountify/remove" ]; then
     mountify_active=true
-    mountify_mounts=$(grep -o 'mountify_mounts=[0-9]' /data/adb/modules/mountify/config.sh | cut -d= -f2)
+    mountify_mounts=$(grep -o 'mountify_mounts=[0-9]' /data/adb/mountify/config.sh | cut -d= -f2)
 
     # if mountify module will mount this module
     if [ "$mountify_mounts" = "2" ] || \
-       { [ "$mountify_mounts" = "1" ] && grep -q "system_app_nuker" /data/adb/modules/mountify/modules.txt; }; then
-        mountify_mounted=true
+       { [ "$mountify_mounts" = "1" ] && grep -q "system_app_nuker" /data/adb/mountify/modules.txt; }; then
         echo "[✓] Mounting will be handled by the mountify module."
+        mountify_mounted=true
         mounting_mode=2
         rm -f "$MODPATH/skip_mountify"
     else

@@ -51,8 +51,9 @@ else # on post-fs-data
 fi
 
 # --- mountify script ---
-
-if [ "$mounting_mode" = "1" ]; then
+if [ "$mounting_mode" = "2" ]; then # on mountify
+    echo "app_nuker_debug: post-fs-data: mountify mounting mode..." >> /dev/kmsg
+elif [ "$mounting_mode" = "1" ]; then # on standalone script
     # skip mount because we mount it ourselves
     touch "$MODPATH/skip_mount"
     touch "$MODPATH/skip_mountify"
@@ -70,7 +71,6 @@ else
     echo "app_nuker_debug: post-fs-data: default mounting mode..." >> /dev/kmsg
     rm -f "$MODPATH/skip_mount"
     rm -f "$MODPATH/skip_mountify"
-
 fi
 
 # EOF
