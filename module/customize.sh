@@ -19,41 +19,6 @@ set_config() {
     sed -i "s/$1=.*/$1=$2/" "$PERSIST_DIR/config.sh"
 }
 
-# check for overlayfs support
-check_overlayfs() {
-    if grep -q "overlay" /proc/filesystems > /dev/null 2>&1; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-# check if tmpfs xattr is supported
-check_tmpfs_xattr() {
-    MNT_FOLDER=""
-    [ -w /mnt ] && MNT_FOLDER=/mnt
-    [ -w /mnt/vendor ] && MNT_FOLDER=/mnt/vendor
-    testfile="$MNT_FOLDER/tmpfs_xattr_testfile"
-    rm $testfile > /dev/null 2>&1
-    busybox mknod "$testfile" c 0 0 > /dev/null 2>&1
-    if busybox setfattr -n trusted.overlay.whiteout -v y "$testfile" > /dev/null 2>&1 ; then
-        rm $testfile > /dev/null 2>&1
-        return 0
-    else
-        rm $testfile > /dev/null 2>&1
-        return 1
-    fi
-}
-
-# check mounting system
-check_magic_mount() {
-    if { [ "$KSU" = true ] && [ ! "$KSU_MAGIC_MOUNT" = true ]; } || { [ "$APATCH" = true ] && [ ! "$APATCH_BIND_MOUNT" = true ]; }; then
-        return 1 # overlayfs manager detected
-    else
-        return 0 # magic mount manager detected
-    fi
-}
-
 # === MAIN SCRIPT ===
 
 # exit when MODPATH is undefined
@@ -109,27 +74,35 @@ fi
 # --- check for mountify requirements ---
 
 # check for overlayfs
-if check_overlayfs; then
+if grep -q "overlay" /proc/filesystems > /dev/null 2>&1; then
     overlay_supported=true
 else
     overlay_supported=false
 fi
 
 # check if tmpfs xattr is supported
-if check_tmpfs_xattr; then
+MNT_FOLDER=""
+[ -w /mnt ] && MNT_FOLDER=/mnt
+[ -w /mnt/vendor ] && MNT_FOLDER=/mnt/vendor
+testfile="$MNT_FOLDER/tmpfs_xattr_testfile"
+rm $testfile > /dev/null 2>&1
+busybox mknod "$testfile" c 0 0 > /dev/null 2>&1
+if busybox setfattr -n trusted.overlay.whiteout -v y "$testfile" > /dev/null 2>&1 ; then
+    rm $testfile > /dev/null 2>&1
     tmpfs_xattr_supported=true
 else
+    rm $testfile > /dev/null 2>&1
     tmpfs_xattr_supported=false
 fi
 
-if check_magic_mount; then
-    magic_mount=true
-    echo "[i] Magic mount detected (e.g. Magisk)."
-else
+# check mounting system
+if { [ "$KSU" = true ] && [ ! "$KSU_MAGIC_MOUNT" = true ]; } || { [ "$APATCH" = true ] && [ ! "$APATCH_BIND_MOUNT" = true ]; }; then
     magic_mount=false
     echo "[i] No magic mount detected. Likely using overlayfs root manager."
+else
+    magic_mount=true
+    echo "[i] Magic mount detected (e.g. Magisk)."
 fi
-# set_config magic_mount $magic_mount
 
 # --- check mountify ---
 mounting_mode=0
@@ -150,7 +123,6 @@ if [ -f "/data/adb/modules/mountify/config.sh" ] && \
         mountify_mounted=true
         echo "[✓] Mounting will be handled by the mountify module."
         mounting_mode=2
-        # set_config mounting_mode 2
         rm -f "$MODPATH/skip_mountify"
     else
         echo "[x] mountify module won't mount this module."
@@ -169,7 +141,6 @@ if { [ "$mountify_active" = false ] || [ "$mountify_mounted" = false ]; } && \
     touch "$MODPATH/skip_mountify"
     # config
     mounting_mode=1
-    # set_config mounting_mode $mounting_mode
 fi
 # set mounting mode config
 set_config mounting_mode $mounting_mode
@@ -207,7 +178,7 @@ echo ""
 # warn KSU or APatch user if module would not be mounted globally
 if { [ -n "$KSU" ] || [ -n "$APATCH" ]; } && \
    [ "$mounting_mode" = "0" ] && [ "$mountify_mounted" != true ]; then
-    echo "[!] KSU/APatch detected. Module won’t mount globally."
+    echo "[!] KSU/APatch detected. Module won't mount globally."
     echo "[i] Hint: Turn off 'unmount by default' to fix that."
 fi
 
