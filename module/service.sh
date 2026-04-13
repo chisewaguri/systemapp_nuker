@@ -122,17 +122,15 @@ create_applist() {
     if [ "$mounting_mode" = "1" ] || [ "$mounting_mode" = "2" ]; then
         system_app_path="$system_app_path my_bigball mi_ext my_carrier my_company my_engineering my_heytap my_manifest my_preload my_product my_region my_reserve my_stock"
     fi
+
+    APK_TMP="$PERSIST_DIR/.apk_scan_tmp"
+    first=true
+
     for path in $system_app_path; do
-        find "$path" -maxdepth 2 -type f -name "*.apk" | while read APK_PATH; do
-            # skip if already on app list
-            if grep -q "$APK_PATH" "$APP_LIST_TMP"; then
-                continue
-            fi
-            
-            # skip if path is in nuke list
-            if echo "$NUKED_PATHS" | grep -q "$APK_PATH"; then
-                continue
-            fi
+        find "$path" -maxdepth 2 -type f -name "*.apk" 2>/dev/null > "$APK_TMP"
+        while IFS= read -r APK_PATH; do
+            grep -qF "$APK_PATH" "$APP_LIST_TMP" && continue
+            echo "$NUKED_PATHS" | grep -qF "$APK_PATH" && continue
 
             [ -z "$PKG_LIST" ] && PKG_LIST=$(pm list packages -f)
             PACKAGE_NAME=$(echo "$PKG_LIST" | grep "$APK_PATH" | awk -F= '{print $2}')
@@ -142,34 +140,42 @@ create_applist() {
             APP_NAME=$(aapt dump badging "$APK_PATH" 2>/dev/null | grep "application-label:" | sed "s/application-label://g; s/'//g")
             [ -z "$APP_NAME" ] && APP_NAME="$PACKAGE_NAME"
 
-            echo "  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$PACKAGE_NAME\", \"app_path\": \"$APK_PATH\"}," >> "$APP_LIST_TMP"
-            
+            if [ "$first" = "true" ]; then
+                first=false
+                echo "  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$PACKAGE_NAME\", \"app_path\": \"$APK_PATH\"}" >> "$APP_LIST_TMP"
+            else
+                echo ",\n  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$PACKAGE_NAME\", \"app_path\": \"$APK_PATH\"}" >> "$APP_LIST_TMP"
+            fi
+
             ICON_PATH=$(aapt dump badging "$APK_PATH" 2>/dev/null | grep "application:" | awk -F "icon=" '{print $2}' | sed "s/'//g")
-            # Extract the icon if it exists
             ICON_FILE="$ICON_DIR/$PACKAGE_NAME.png"
 
             if [ -n "$ICON_PATH" ]; then
                 [ ! -f "$ICON_FILE" ] && unzip -p "$APK_PATH" "$ICON_PATH" > "$ICON_FILE"
             fi
-        done
+        done < "$APK_TMP"
     done
 
-    # Fallback for no package name found
+    rm -f "$APK_TMP"
+
     for package_name in $(pm list packages -s | sed 's/package://g'); do
-        if grep -q "\"$package_name\"" "$APP_LIST_TMP"; then
-            continue
-        fi
-        APP_NAME=$(aapt dump badging "$package_name" 2>/dev/null | grep "application-label:" | sed "s/application-label://g; s/'//g")
+        grep -q "\"$package_name\"" "$APP_LIST_TMP" && continue
+
+        APK_PATH=$(pm path "$package_name" | sed 's/package://g')
+        echo "$APK_PATH" | grep -qE "/system/app|/system/priv-app|/vendor/app|/product/app|/product/priv-app|/system_ext/app|/system_ext/priv-app" || continue
+
+        APP_NAME=$(aapt dump badging "$APK_PATH" 2>/dev/null | grep "application-label:" | sed "s/application-label://g; s/'//g")
         [ -z "$APP_NAME" ] && APP_NAME="$package_name"
 
-        APK_PATH=$(pm path $package_name | sed 's/package://g')
-        echo "$APK_PATH" | grep -qE "/system/app|/system/priv-app|/vendor/app|/product/app|/product/priv-app|/system_ext/app|/system_ext/priv-app" || continue
-        echo "  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$package_name\", \"app_path\": \"$APK_PATH\"}, " >> "$APP_LIST_TMP"
+        if [ "$first" = "true" ]; then
+            first=false
+            echo "  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$package_name\", \"app_path\": \"$APK_PATH\"}" >> "$APP_LIST_TMP"
+        else
+            echo ",\n  {\"app_name\": \"$APP_NAME\", \"package_name\": \"$package_name\", \"app_path\": \"$APK_PATH\"}" >> "$APP_LIST_TMP"
+        fi
     done
 
-    sed -i '$ s/,$//' "$APP_LIST_TMP"
-    echo "]" >> "$APP_LIST_TMP"
-
+    echo "\n]" >> "$APP_LIST_TMP"
     mv -f "$APP_LIST_TMP" "$APP_LIST"
     
     # Update description to show loaded status
