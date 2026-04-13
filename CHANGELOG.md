@@ -3,6 +3,21 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v1.2.0
+
+#### Scripts
+- sync mountify to 019a216
+- search additional partition if mounted by mountify
+- make whiteouts optional and validate mounting
+- treat KSU >22098 the same as magic mount (should fix meta module mounting)
+- fix mountify
+- better default mode check
+- fix error description
+
+#### WebUI
+- force redo link (fix #49, thanks @kowx712)
+
+
 ### v1.1.9
 
 - minor module metadata fix
