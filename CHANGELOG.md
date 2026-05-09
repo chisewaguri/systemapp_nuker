@@ -3,6 +3,11 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v1.2.1
+
+#### Scripts
+- create_applist: prevent trailing comma bug in JSON output (fix #55)
+
 ### v1.2.0
 
 #### Scripts
