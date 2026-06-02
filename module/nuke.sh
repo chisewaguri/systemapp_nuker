@@ -64,7 +64,7 @@ nuke_system_apps() {
             # uninstall system updates only if it's a system app that has been updated
             pm uninstall-system-updates "$package_name" >/dev/null 2>&1 || true
         fi
-        pm disable "$package_name" >/dev/null 2>&1 || true
+        pm uninstall --user 0 "$package_name" >/dev/null 2>&1 || true
     done
     
     # whiteout creation
