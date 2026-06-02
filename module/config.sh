@@ -9,12 +9,14 @@ uninstall_fallback=false
 disable_only_mode=false
 
 # --- mounting mode ---
-# 0 = default; manager will handle this module's mounting
-# 1 = mountify standalone script; this module will be mounted using mountify standalone script thats shipped with this module
-# 2 = mountify module; the mountify module will handle this module's mounting
-# mountify standalone script needs either **TMPFS_XATTR** support or the OverlayFS manager
+# 0 = default/legacy; manager will handle this module's mounting
+#     ⚠️  on KSU >22098 manager mounting is no longer supported by default by the KSU manager
+# 1 = mountify standalone script; this module mounts itself using the bundled mountify script
+#     requires either **TMPFS_XATTR** support or an OverlayFS manager
+# 2 = metamodule/mountify module; mounting handled by KSU metamodule system or the mountify module
+#     (these are treated identically)
+# priority (auto-detected, highest to lowest): metamodule/mountify module (2) → mountify standalone (1) → legacy/default (0)
 # DO NOT flip this manually unless you're sure the env supports it
-# prefered mounting mode is 2, 1, 0
 mounting_mode=0
 
 # refresh (regenerate) the app list cache every boot
@@ -27,7 +29,7 @@ refresh_applist=true
 # these are auto-set and might break stuff if changed manually
 # ----
 
-# mounting system
+# legacy mounting system
 # (true = manager is magic mount)
 # (false = manager is overlayfs)
 magic_mount=true

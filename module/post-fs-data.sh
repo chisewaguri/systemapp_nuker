@@ -50,13 +50,16 @@ else # on post-fs-data
     chmod 755 "$PERSIST_DIR/count.sh"
 fi
 
-# --- mountify script ---
-if [ "$mounting_mode" = "2" ]; then # on mountify
-    echo "app_nuker_debug: post-fs-data: mountify mounting mode..." >> /dev/kmsg
-elif [ "$mounting_mode" = "1" ]; then # on standalone script
-    # skip mount because we mount it ourselves
-    touch "$MODPATH/skip_mount"
-    touch "$MODPATH/skip_mountify"
+# --- mount thing ---
+# mode 2: metamodule or mountify module handles mounting — nothing to do here
+# mode 1: standalone mountify script handles mounting
+# mode 0: legacy/default — manager mounts (or falls through for old KSU; warn in log)
+if [ "$mounting_mode" = "2" ]; then
+    echo "app_nuker_debug: post-fs-data: metamodule/mountify module mounting mode..." >> /dev/kmsg
+elif [ "$mounting_mode" = "1" ]; then
+    # ensure manager/mountify module won't also try to mount us
+    touch "$MODDIR/skip_mount"
+    touch "$MODDIR/skip_mountify"
 
     # mount
     echo "app_nuker_debug: post-fs-data: mounting with mountify standalone script..." >> /dev/kmsg
@@ -68,9 +71,9 @@ elif [ "$mounting_mode" = "1" ]; then # on standalone script
         . $MODDIR/mountify-symlink.sh
     fi
 else
-    echo "app_nuker_debug: post-fs-data: default mounting mode..." >> /dev/kmsg
-    rm -f "$MODPATH/skip_mount"
-    rm -f "$MODPATH/skip_mountify"
+    echo "app_nuker_debug: post-fs-data: default/legacy mounting mode..." >> /dev/kmsg
+    rm -f "$MODDIR/skip_mount"
+    rm -f "$MODDIR/skip_mountify"
 fi
 
 # EOF

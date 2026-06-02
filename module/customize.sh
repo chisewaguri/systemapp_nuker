@@ -96,28 +96,55 @@ else
 fi
 
 # check mounting system
-if { [ "$KSU" = true ] && [ ! "$KSU_MAGIC_MOUNT" = true ] &&  [ "$KSU_VER_CODE" -lt 22098 ]; } || { [ "$APATCH" = true ] && [ ! "$APATCH_BIND_MOUNT" = true ]; }; then
+# KSU >22098: manager no longer handles mounting.
+ksu_is_metamodule=false
+if [ "$KSU" = true ] && [ "$KSU_VER_CODE" -ge 22098 ]; then
+    ksu_is_metamodule=true
+    magic_mount=false
+    echo "[i] KSU >22098 detected: using metamodule mounting mode."
+elif { [ "$KSU" = true ] && [ ! "$KSU_MAGIC_MOUNT" = true ] && [ "$KSU_VER_CODE" -lt 22098 ]; } || \
+     { [ "$APATCH" = true ] && [ ! "$APATCH_BIND_MOUNT" = true ]; }; then
     magic_mount=false
     echo "[i] No magic mount detected. Likely using overlayfs root manager."
 else
     magic_mount=true
-    echo "[i] Magic mount (e.g. Magisk) or KSU >22098 detected."
+    echo "[i] Magic mount (e.g. Magisk) detected."
 fi
 
-# --- check mountify ---
+# KSU old version warning
+if [ "$KSU" = true ] && [ "$KSU_VER_CODE" -lt 22098 ]; then
+    echo "[!] WARNING: Your KSU version is outdated (ver $KSU_VER_CODE < 22098)."
+    echo "[!]          Manager-side mounting is legacy and may not work correctly."
+    echo "[!]          Please update KernelSU for metamodule support."
+fi
+
+# --- check mountify / metamodule ---
+# mode 2 now covers both: KSU metamodule AND the mountify module.
+# they kinda behave identically, mountify as of now (in supported environments) is also works as a metamodule. 
 mounting_mode=0
 
 mountify_active=false
 mountify_mounted=false
 
-# if mountify module is active
-if [ -f "/data/adb/modules/mountify/module.prop" ] && \
-   [ ! -f "/data/adb/modules/mountify/disable" ] && \
-   [ ! -f "/data/adb/modules/mountify/remove" ]; then
+# mountify running as a metamodule is detected the same way as the standalone mountify module.
+if [ "$ksu_is_metamodule" = true ] && \
+     [ -f "/data/adb/metamodule/module.prop" ] && \
+     [ ! -f "/data/adb/metamodule/disable" ] && \
+     [ ! -f "/data/adb/metamodule/remove" ]; then
+    rm -f "$MODPATH/skip_mount"
+    rm -f "$MODPATH/skip_mountify"
+    echo "[✓] Mounting will be handled by the KSU metamodule system."
+    echo "[i] YOU MUST HAVE A METAMODULE INSTALLED FOR THIS TO WORK (e.g. mountify)."
+    mountify_active=true
+    mounting_mode=2
+    mountify_mounted=true
+# priority 2: mountify standalone module (non-metamodule KSU / Magisk / APatch)
+elif [ -f "/data/adb/modules/mountify/module.prop" ] && \
+     [ ! -f "/data/adb/modules/mountify/disable" ] && \
+     [ ! -f "/data/adb/modules/mountify/remove" ]; then
     mountify_active=true
     mountify_mounts=$(grep -o 'mountify_mounts=[0-9]' /data/adb/mountify/config.sh | cut -d= -f2)
 
-    # if mountify module will mount this module
     if [ "$mountify_mounts" = "2" ] || \
        { [ "$mountify_mounts" = "1" ] && grep -q "system_app_nuker" /data/adb/mountify/modules.txt; }; then
         echo "[✓] Mounting will be handled by the mountify module."
@@ -129,17 +156,16 @@ if [ -f "/data/adb/modules/mountify/module.prop" ] && \
     fi
 fi
 
-# fallback path
-# if mountify will not mount us but standalone script is supported
+# priority 3: mountify standalone script (bundled)
+# (since the manager and metamodule won't mount us anymore, we must self-mount if possible).
 if { [ "$mountify_active" = false ] || [ "$mountify_mounted" = false ]; } && \
    { { [ "$overlay_supported" = true ] && [ "$tmpfs_xattr_supported" = true ]; } || [ "$magic_mount" = false ]; }; then
     echo "[+] Standalone mountify script enabled (requirements met)."
 
-    # skip mount (cuz standalone script will mount us)
+    # skip mount (manager won't / shouldn't mount us)
     touch "$MODPATH/skip_mount"
-    # skip mountify (just in case)
+    # skip mountify module re-mount
     touch "$MODPATH/skip_mountify"
-    # config
     mounting_mode=1
 fi
 # set mounting mode config
@@ -180,6 +206,13 @@ if { [ -n "$KSU" ] || [ -n "$APATCH" ]; } && \
    [ "$mounting_mode" = "0" ] && [ "$mountify_mounted" != true ]; then
     echo "[!] KSU/APatch detected. Module won't mount globally."
     echo "[i] Hint: Turn off 'unmount by default' to fix that."
+fi
+
+# extra warning: KSU >22098 landed in mode 0 manager mounting is gone and standalone wasn't eligible
+if [ "$ksu_is_metamodule" = true ] && [ "$mounting_mode" = "0" ]; then
+    echo "[!] KSU >22098: manager mounting is no longer available and standalone script"
+    echo "[!]             requirements were not met (needs overlayfs + tmpfs xattr)."
+    echo "[!]             Module WILL NOT be mounted. Please install a metamodule"
 fi
 
 # success message

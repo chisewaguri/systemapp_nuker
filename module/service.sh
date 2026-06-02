@@ -78,23 +78,8 @@ update_description() {
                 string="$string | 🧰 mount mode: mountify standalone script (overlayfs)"
             fi
         elif [ "$mounting_mode" = "2" ]; then
-            if [ -f "/data/adb/modules/mountify/config.sh" ] && \
-            [ ! -f "/data/adb/modules/mountify/disable" ] && \
-            [ ! -f "/data/adb/modules/mountify/remove" ]; then
-                mountify_mounts=$(grep -o 'mountify_mounts=[0-9]' /data/adb/modules/mountify/config.sh | cut -d= -f2)
-
-                # if mountify module will mount this module
-                if [ "$mountify_mounts" = "2" ] || \
-                { [ "$mountify_mounts" = "1" ] && grep -q "system_app_nuker" /data/adb/modules/mountify/modules.txt; }; then
-                    mountify_mounted=true
-                    echo "[✓] Mounting will be handled by the mountify module."
-                    mounting_mode=2
-                    # set_config mounting_mode 2
-                    string="$string | 🧰 mount mode: mountify module"
-                else
-                    string="[ERROR] mountify module mode is enabled but module won't mount this (check if mountify is enabled and this module is on the modules.txt)"
-                fi
-            fi
+            # mode 2 covers both: KSU metamodule and the mountify module — treated identically
+            string="$string | 🧰 mount mode: metamodule or mountify module"
         fi
     fi
     
