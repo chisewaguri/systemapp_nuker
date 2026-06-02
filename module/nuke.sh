@@ -12,7 +12,7 @@ APP_LIST="$PERSIST_DIR/app_list.json"
 REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
 
 # import config
-disable_only_mode="false"
+uninstall_only_mode="false"
 [ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
 
 # special dirs
@@ -78,11 +78,16 @@ nuke_system_apps() {
     
     echo "[-] Nuking complete: $total apps processed"
     
-    # brings back disabled apps
-    local disabled_list=$(pm list packages -d)
-    for package_name in $(grep -o "\"package_name\":.*" "$APP_LIST" | awk -F"\"" '{print $4}'); do
-        if echo "$disabled_list" | grep -qx "package:$package_name"; then
-            pm enable "$package_name" >/dev/null 2>&1 || true
+    # bring back apps wooohooooo
+    for pkg in $(grep -o "\"package_name\":.*" "$APP_LIST" | awk -F"\"" '{print $4}'); do
+        if ! pm path "$pkg" >/dev/null 2>&1; then
+            # install uninstalled apk
+            pm install-existing "$pkg" >/dev/null 2>&1
+        fi
+        # for compatibility with the old routine with disable fallback
+        disabled_list=$(pm list packages -d)
+        if echo "$disabled_list" | grep -qx "package:$pkg"; then
+            pm enable "$pkg" >/dev/null 2>&1 || true
         fi
     done
 }

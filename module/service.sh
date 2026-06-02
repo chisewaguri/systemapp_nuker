@@ -6,7 +6,6 @@ REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
 ICON_DIR="$PERSIST_DIR/icons"
 
 # import config
-uninstall_fallback=false
 mounting_mode=0
 refresh_applist=true
 magic_mount=true
@@ -216,15 +215,5 @@ for pkg in $(grep -o "\"package_name\":.*" "$APP_LIST" | awk -F"\"" '{print $4}'
     fi
 done
 
-# uninstall fallback if apps aint nuked at late service
-# enable this on config.sh
-$uninstall_fallback && {
-    # remove system apps if they still exist
-    for package_name in $(grep -o "\"package_name\":.*" "$REMOVE_LIST" | awk -F"\"" '{print $4}'); do
-        if pm list packages | grep -qx "package:$package_name"; then
-            pm uninstall -k --user 0 "$package_name" 2>/dev/null
-        fi
-    done
-}
 
 # EOF

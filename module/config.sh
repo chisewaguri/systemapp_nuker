@@ -1,12 +1,7 @@
-# uninstall fallback if app ain't nuked on late service
-# this runs: pm uninstall -k --user 0
-# only triggers if the app still exists after late-service
-# default is false
-uninstall_fallback=false
-
-# disable only mode
+# uninstall only mode
 # if this is enabled, whiteouts for apps would not be created
-disable_only_mode=false
+# do pm uninstall --user 0 only without creating whiteouts
+uninstall_only_mode=false
 
 # --- mounting mode ---
 # 0 = default/legacy; manager will handle this module's mounting
