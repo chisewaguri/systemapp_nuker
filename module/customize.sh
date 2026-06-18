@@ -53,13 +53,6 @@ else
     sleep 1.5 # sleep a bit to make it look like something is happening!!
 fi
 
-# set up aapt binary
-mkdir -p "$MODPATH/common"
-CPU_ABI=$(getprop ro.product.cpu.abi)
-AAPT_PATH="$MODPATH/bin/$CPU_ABI/aapt"
-mv "$AAPT_PATH" "$MODPATH/common/aapt"
-set_perm "$MODPATH/common/aapt" 0 2000 0755
-
 # set permissions for nuke script
 set_perm "$MODPATH/nuke.sh" 0 2000 0755
 

@@ -13,9 +13,6 @@ magic_mount=true
 
 # === FUNCTIONS ===
 
-# appt binary
-aapt() { "$MODDIR/common/aapt" "$@"; }
-
 # update module description
 update_description() {
     status="$1"
