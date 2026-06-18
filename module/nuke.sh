@@ -8,8 +8,7 @@ PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
 MODDIR="/data/adb/modules/system_app_nuker"
 MODULE_UPDATE_DIR="/data/adb/modules_update/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
-APP_LIST="$PERSIST_DIR/app_list.json"
-REMOVE_LIST="$PERSIST_DIR/nuke_list.json"
+REMOVE_LIST="$PERSIST_DIR/nuke_list.txt"
 
 # import config
 uninstall_only_mode="false"
@@ -55,41 +54,44 @@ whiteout_create() {
 
 # nuke app from REMOVE_LIST
 nuke_system_apps() {
-    total=$(grep -c '"package_name":' "$REMOVE_LIST")
+    total=$(grep -Ev "^$|^#" "$REMOVE_LIST" | wc -l)
 
     # first, remove any updates for the apps being nuked and disable them
-    for package_name in $(grep -o "\"package_name\":.*" "$REMOVE_LIST" | awk -F"\"" '{print $4}'); do
+    for package_name in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
         # check if it's a system app and has been updated
         if pm list packages -s | grep -qx "package:$package_name" && pm path "$package_name" | grep -q "/data/app"; then
             # uninstall system updates only if it's a system app that has been updated
             pm uninstall-system-updates "$package_name" >/dev/null 2>&1 || true
         fi
-        pm uninstall --user 0 "$package_name" >/dev/null 2>&1 || true
+
+        if [ "$uninstall_only_mode" = "true" ]; then
+            pm uninstall --user 0 "$package_name" >/dev/null 2>&1 || true
+        else
+            # whiteout creation
+            apk_path=$(pm path "$package_name" | head -n1 | sed "s/package://")
+            if [ "$apk_path" != "" ]; then
+                whiteout_create "$(dirname $apk_path)" > /dev/null 2>&1
+                ls "$MODULE_UPDATE_DIR$apk_path" 2>/dev/null
+            fi
+        fi
     done
-    
-    # whiteout creation
-    if [ "$disable_only_mode" != "true" ]; then
-        for apk_path in $(grep -E '"app_path":' "$REMOVE_LIST" | sed 's/.*"app_path": "\(.*\)",/\1/'); do
-            # Create whiteout for apk_path
-            whiteout_create "$(dirname $apk_path)" > /dev/null 2>&1
-            ls "$MODULE_UPDATE_DIR$apk_path" 2>/dev/null
+
+    # when uninstall_only_mode=true and restore_success=false means user has enabled uninstall only mode
+    #but the last nuked app doens't exist yet
+    # this means a reboot is required to restore first then only pm install-existing can work immediately
+    # showing "Uninstall only mode detected" to stdout allows webui to skip the reboot button
+    restore_success="true"
+    if [ -f "$REMOVE_LIST.old" ]; then
+        for pkg in $(cat "$REMOVE_LIST.old" | grep -Fvxf "$REMOVE_LIST" | awk '{print $1}'); do
+            pm install-existing "$pkg" >/dev/null 2>&1 || restore_success="false"
         done
     fi
-    
+    if [ "$uninstall_only_mode" = "true" ] && [ "$restore_success" = "true" ]; then
+        echo "[-] Uninstall only mode detected"
+        [ -f "$REMOVE_LIST" ] && cp -f "$REMOVE_LIST" "$REMOVE_LIST".old
+    fi
+
     echo "[-] Nuking complete: $total apps processed"
-    
-    # bring back apps wooohooooo
-    for pkg in $(grep -o "\"package_name\":.*" "$APP_LIST" | awk -F"\"" '{print $4}'); do
-        if ! pm path "$pkg" >/dev/null 2>&1; then
-            # install uninstalled apk
-            pm install-existing "$pkg" >/dev/null 2>&1
-        fi
-        # for compatibility with the old routine with disable fallback
-        disabled_list=$(pm list packages -d)
-        if echo "$disabled_list" | grep -qx "package:$pkg"; then
-            pm enable "$pkg" >/dev/null 2>&1 || true
-        fi
-    done
 }
 
 # this function install dummy.zip
@@ -155,7 +157,7 @@ for item in system system_ext vendor product update; do
 done
 
 # skip app whiteout creation when remove list is empty
-if grep -q '"package_name":' "$REMOVE_LIST"; then
+if [ -s "$REMOVE_LIST" ]; then
     nuke_system_apps
 fi
 

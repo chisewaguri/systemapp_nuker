@@ -27,14 +27,9 @@ if [ $BOOTCOUNT -gt 1 ]; then # on 2nd post-fs-data without reaching service
         rm -rf "$MODDIR/$dir"
     done
 
-    # grab nuke list to download
-    grep -o '"package_name": *"[^"]*"' "$PERSIST_DIR"/nuke_list.json | sed 's/.*: *"//' | sed 's/"$//' > "$PERSIST_DIR"/nuke_list.txt
-
-    # remove nuke list
-    rm -rf "$PERSIST_DIR"/app_list.json
-    rm -rf "$PERSIST_DIR"/nuke_list.json
-    rm -rf "$PERSIST_DIR"/raw_whiteouts.txt
-
+    # backup nuke list
+    [ -f "$PERSIST_DIR"/nuke_list.txt ] && mv -f "$PERSIST_DIR"/nuke_list.txt "$PERSIST_DIR"/nuke_list.txt.bak
+    [ -f "$PERSIST_DIR"/raw_whiteouts.txt ] && mv -f "$PERSIST_DIR"/raw_whiteouts.txt "$PERSIST_DIR"/raw_whiteouts.txt.bak
 
     # tell user to re-enable module
     string="description=bootloop protection triggered. whiteouts deleted. enable module to re-activate."
