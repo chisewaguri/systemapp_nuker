@@ -16,7 +16,7 @@ manual_download() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     sleep 3
     PATH=$ORG_PATH
-    am start -a android.intent.action.VIEW -d "https://github.com/5ec1cff/KsuWebUIStandalone/releases"
+    am start -a android.intent.action.VIEW -d "https://github.com/KOWX712/KsuWebUIStandalone/releases"
     exit 1
 }
 
@@ -41,7 +41,7 @@ get_webui() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📥 Downloading KSU WebUI Standalone..."
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    API="https://api.github.com/repos/5ec1cff/KsuWebUIStandalone/releases/latest"
+    API="https://api.github.com/repos/KOWX712/KsuWebUIStandalone/releases/latest"
     ping -c 1 -w 5 raw.githubusercontent.com &>/dev/null || manual_download "Error: Unable to connect to raw.githubusercontent.com, please download manually."
     URL=$(download "$API" | grep -o '"browser_download_url": "[^"]*"' | cut -d '"' -f 4) || manual_download "Error: Unable to get latest version, please download manually."
     download "$URL" > "$APK_PATH" || manual_download "Error: APK download failed, please download manually."

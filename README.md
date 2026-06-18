@@ -29,7 +29,7 @@ Really, why not? Maybe for the sense of control over evil OEM ^^
 
 ### WebUI Access
 **KernelSU & Apatch:** Built-in WebUI ready to use  
-**Magisk:** Use third-party apps like [WebUI X](https://github.com/MMRLApp/WebUI-X-Portable) or [KSUWebUIStandalone](https://github.com/5ec1cff/KsuWebUIStandalone) (auto-installed if needed). Launch it from the action button
+**Magisk:** [KSUWebUIStandalone](https://github.com/KOWX712/KsuWebUIStandalone) (auto-installed if needed). Launch it from the action button
 
 ### Key Functions
 - **Package Management** – Import lists manually or from files, export for backup
