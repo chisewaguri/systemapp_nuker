@@ -8,7 +8,6 @@ PERSIST_DIR="/data/adb/system_app_nuker"
 
 # import config
 uninstall_fallback=false
-refresh_applist=true
 uninstall_only_mode=false
 [ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
 
@@ -167,10 +166,15 @@ set_config mounting_mode $mounting_mode
 echo ""
 
 # migrate old things
-[ -f "$PERSIST_DIR/nuke_list.json" ] && {
+if [ -f "$PERSIST_DIR/nuke_list.json" ]; then
     echo "[*] nuke_list.json found. Migrating..."
+    sed -n -e 's/.*"package_name": "\([^"]*\)",/\1/p' -e 's/.*"app_name": "\([^"]*\)"/\1/p' "$PERSIST_DIR/nuke_list.json" | sed 'N;s/\n/ /' > "$PERSIST_DIR/nuke_list.txt"
+    rm "$PERSIST_DIR/nuke_list.json"
     sh "$MODPATH/nuke.sh" update
-}
+elif [ -f "$PERSIST_DIR/nuke_list.txt" ]; then
+    echo "[*] nuke_list.txt found. Migrating..."
+    sh "$MODPATH/nuke.sh" update
+fi
 
 # migrate config.sh (in case when it has a new value)
 # variable of the config is defined by sourcing the old config.sh and the script

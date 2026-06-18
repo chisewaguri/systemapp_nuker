@@ -14,10 +14,6 @@ uninstall_only_mode=false
 # DO NOT flip this manually unless you're sure the env supports it
 mounting_mode=0
 
-# refresh (regenerate) the app list cache every boot
-# default is true to make sure app list stays accurate when things change
-refresh_applist=true
-
 # ----
 # ⚠️ DO NOT EDIT BELOW THIS LINE
 # config(s) below are env-specific or not meant to be touched
