@@ -1,65 +1,122 @@
 # Contributing to System App Nuker
 
-## Contributing to app categories
+## Adding App Categories
 
-Thanks for helping keep the app list accurate and up-to-date! This guide explains how to add or update app entries
+Thanks for helping keep the app list accurate and up-to-date!
 
-### Understanding the Format
+Edit [webui/src/data/category.ts](webui/src/data/category.ts) — add the package name to the appropriate array:
 
-Apps are listed as package names mapped to category ids. Example:
+```ts
+export const essential: string[] = [
+  "com.android.settings",   // ← existing entry, example
+  "com.example.newapp",     // ← your addition
+];
+```
 
-"com.android.settings": "essential"
+Pick the right array name: `essential`, `caution`, `safe`, `google`, or `unknown`.
 
-- The key is the app’s package name (unique Android identifier)
-- The value is the category id (template key) defined in the categories section
+### Tips
 
-Make sure the category id you assign an app to already exists.
+- Search the file to avoid duplicates
+- Describe your additions in the PR description
 
-### How to Add or Update Apps
+---
 
-1. Find the correct category for the app (e.g., essential, caution, safe, google, unknown)
-2. Add or update the app’s package name under the appropriate comment section for clarity.
-3. Follow the existing JSON formatting with commas and quotes
-4. Avoid duplicates by searching the file before adding a new entry
-5. Provide relevant and accurate category assignments based on app function
+## WebUI Development
 
-Example Addition:
+The WebUI is a [Vite](https://vite.dev) + [React](https://react.dev) + [TypeScript](https://www.typescriptlang.org/) project in [webui/](webui/).
 
-"com.example.newapp": "safe"
+### Setup
 
-Place this in the appropriate section with a comment if needed.
+```bash
+cd webui
+pnpm install --frozen-lockfile
+```
 
-### General Tips
+### Dev server (local browser)
 
-- Validate your JSON changes with a linter or online validator before submitting
-- Keep entries organized under corresponding comment headers
-- Use meaningful and accurate category mappings to minimize accidental removals or breakage
-- Provide a clear summary of your additions in the pull request description
+```bash
+pnpm dev
+```
 
+Opens a hot-reload dev server — the WebUI runs entirely in the browser. No device needed for UI work.
+
+### Production build
+
+```bash
+pnpm build
+```
+
+Output goes to `module/webroot/`. Always run `pnpm build` before submitting frontend changes.
+
+### Project structure
+
+```
+webui/
+├── src/
+│   ├── components/       # Reusable UI components
+│   │   └── dialog/       # Dialog components
+│   ├── data/
+│   │   ├── category.ts   # App categories
+│   │   ├── config.ts     # Mirrors module/config.sh (see below)
+│   │   └── i18n/         # Translation files
+│   ├── hooks/            # Custom React hooks
+│   ├── lib/              # Core logic (CLI bridge, app list handling, file ops)
+│   ├── pages/            # Route pages (Home, Restore, Settings, Whiteout)
+│   ├── assets/           # Icons
+│   ├── main.tsx          # Entry point
+│   └── theme.css         # Design tokens
+├── index.html
+├── vite.config.ts
+└── package.json
+```
+
+### Config mapping
+
+[webui/src/data/config.ts](webui/src/data/config.ts) mirrors [module/config.sh](module/config.sh). Keys and default values are kept in sync between both files. When adding a new config option:
+1. Add the variable with its default to `module/config.sh`
+2. Add the corresponding entry to `webui/src/data/config.ts`
+
+### Adding a translation
+
+1. Create a new file in [webui/src/data/i18n/](webui/src/data/i18n/), e.g. `zh.ts`
+2. Copy the structure from [webui/src/data/i18n/en.ts](webui/src/data/i18n/en.ts) and translate the values
+3. Register it in [webui/src/lib/i18n.ts](webui/src/lib/i18n.ts):
+
+```ts
+import zh from '../data/i18n/zh'
+
+resources: {
+  en: { translation: en },
+  zh: { translation: zh },  // ← add
+}
+```
+
+---
 
 ## Code Contributions
-We welcome code contributions to improve System App Nuker!
 
-### Guidelines for Code Contributions
 - Use clear variable names
-- Comment your code, especially for complex operations
-- Format your code consistently
-- Follow the existing style patterns
+- Comment complex operations
+
+---
 
 ## How to Submit Changes
 
 1. Fork the repository.
-2. Create a new branch for your app list updates.
-3. Edit webroot/categories.json with your changes.
-4. Check JSON validity.
-5. Submit a pull request describing your additions.
+2. Create a new branch.
+3. Make your changes:
+   - **WebUI frontend** → files under [webui/src/](webui/src/)
+   - **Module scripts** → files under [module/](module/)
+4. Submit a pull request.
+
+---
 
 ## Reporting Issues
-When reporting issues, please include:
-- Your device model
-- Android version
-- Root solution and version
-- Steps to reproduce the issue
-- Any relevant error messages
 
-Thank you for helping improve System App Nuker!
+Include:
+- Device model
+- Android version
+- Root solution and version (Magisk/KernelSU/Apatch)
+- Steps to reproduce
+- Any error messages
