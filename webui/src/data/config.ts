@@ -3,7 +3,7 @@ export interface ConfigItem {
     value: string | boolean | number
     readonly?: boolean
     options?: Array<string | number>
-    label: string
+    label?: string
     description?: string
 }
 
@@ -25,7 +25,10 @@ export const configItem: ConfigItem[] = [
         key: 'magic_mount',
         value: true,
         readonly: true,
-        label: 'config.magic_mount',
-        description: 'config.magic_mount_desc',
+    },
+    {
+        key: 'current_manager',
+        value: 'MAGISK',
+        readonly: true,
     }
 ]

@@ -13,7 +13,7 @@ export default function Config({ items, onSave }: ConfigProps) {
   const visibleItems = items.filter(item => !item.readonly)
 
   const listItems: SegmentedListItem[] = visibleItems.map(item => {
-    const label = t(item.label)
+    const label = item.label ? t(item.label) : item.key
     const description = item.description ? t(item.description) : ''
 
     if (item.options) {

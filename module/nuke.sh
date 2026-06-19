@@ -97,16 +97,21 @@ nuke_system_apps() {
 # this function install dummy.zip
 # dummy.zip would call this script again
 install_dummy() {
-    if command -v apd >/dev/null 2>&1; then
-        apd module install "$MODDIR/dummy.zip" && installed=true
-    elif command -v ksud >/dev/null 2>&1; then
-        ksud module install "$MODDIR/dummy.zip" && installed=true
-    elif command -v magisk >/dev/null 2>&1; then
-        magisk --install-module "$MODDIR/dummy.zip" && installed=true
-    else
-        echo "am I trippin or you are using some unknown root manager?"
-        return 1
-    fi
+    case $current_manager in
+        APATCH)
+            apd module install "$MODDIR/dummy.zip" && installed=true
+            ;;
+        KSU)
+            ksud module install "$MODDIR/dummy.zip" && installed=true
+            ;;
+        MAGISK)
+            magisk --install-module "$MODDIR/dummy.zip" && installed=true
+            ;;
+        *)
+            echo "am I trippin or you are using some unknown root manager?"
+            return 1
+            ;;
+    esac
 
     # verify installation
     if [ "$installed" = true ]; then

@@ -163,6 +163,12 @@ fi
 # set mounting mode config
 set_config mounting_mode $mounting_mode
 
+# Detect current manager
+[ ! "$APATCH" = "true" ] && [ ! "$KSU" = "true" ] && MANAGER="MAGISK"
+[ "$KSU" = "true" ] && MANAGER="KSU"
+[ "$APATCH" = "true" ] && MANAGER="APATCH"
+set_config current_manager $MANAGER
+
 echo ""
 
 # migrate old things
