@@ -92,8 +92,6 @@ const en = {
     mounting_mode_0: "Default/Legacy - Manager",
     mounting_mode_1: "Mountify Standalone - Built-in",
     mounting_mode_2: "Metamodule - External",
-    magic_mount: "Magic Mount",
-    magic_mount_desc: "Whether the manager uses magic mount (true) or overlayfs (false). Auto-set, do not edit.",
   },
   nuke: {
     success: "Reboot to take effect",

@@ -25,4 +25,7 @@ mounting_mode=0
 # (false = manager is overlayfs)
 magic_mount=true
 
+# Current active root manager
+current_manager=MAGISK
+
 # EOF

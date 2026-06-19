@@ -11,6 +11,11 @@ magic_mount=true
 BOOTCOUNT=0
 [ -f "$PERSIST_DIR/count.sh" ] && . "$PERSIST_DIR/count.sh"
 
+# set config.sh value
+set_config() {
+    sed -i "s/$1=.*/$1=$2/" "$PERSIST_DIR/config.sh"
+}
+
 # after bootloop
 # code is no longer used but still here for testing purposes
 if [ $BOOTCOUNT -lt 0 ]; then
@@ -70,5 +75,11 @@ else
     rm -f "$MODDIR/skip_mount"
     rm -f "$MODDIR/skip_mountify"
 fi
+
+# Detect current manager
+[ ! "$APATCH" = "true" ] && [ ! "$KSU" = "true" ] && MANAGER="MAGISK"
+[ "$KSU" = "true" ] && MANAGER="KSU"
+[ "$APATCH" = "true" ] && MANAGER="APATCH"
+set_config current_manager $MANAGER
 
 # EOF
