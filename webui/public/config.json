@@ -1,0 +1,8 @@
+{
+    "title": "SystemApp Nuker",
+    "windowResize": false,
+    "exitConfirm": false,
+    "contentSecurityPolicy": "*",
+    "backHandler": true,
+    "backInterceptor": "native"
+}
