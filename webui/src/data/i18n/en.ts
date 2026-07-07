@@ -17,6 +17,7 @@ const en = {
   },
   home: {
     title: "System App Nuker",
+    empty_help: "Select apps below to remove on next reboot. Apps marked Safe can be removed without issues.",
   },
   restore: {
     title: "Restore",
@@ -40,6 +41,7 @@ const en = {
     source_code_desc: "View source code on GitHub",
     telegram: "Telegram support",
     telegram_desc: "Join Telegram group for support and discussion",
+    version: "Version",
   },
   /** Category display names — used for filter chips */
   category: {
@@ -95,10 +97,17 @@ const en = {
   },
   nuke: {
     success: "Reboot to take effect",
+    success_count: "{{count}} app(s) staged, reboot to apply",
     success_no_reboot: "Done",
     reboot: "Reboot",
     error: "Nuke failed: {{stderr}}",
     reboot_error: "Failed to reboot: {{stderr}}",
+  },
+  update: {
+    available: "v{{version}} available, tap to download",
+    installed: "Updated to v{{version}}",
+    check_error: "Failed to check for updates",
+    download: "Download",
   },
 } as const
 
