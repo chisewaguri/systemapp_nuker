@@ -3,6 +3,28 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v2.0.0
+
+#### WebUI
+- rewrite with vite + react (@KOWX712)
+- use KSU API for app list (@KOWX712)
+
+
+#### Scripts
+- reflect new webui changes (@KOWX712)
+- add current manager for reliable module installation (@KOWX712)
+- improve uninstall logic
+- improve metamodule support
+- uninstall for user 0 instead of disable
+
+#### Workflows
+- build webui (@KOWX712)
+
+#### Docs
+- update guide for new codebase (@KOWX712)
+
+---
+
 ### v1.2.1
 
 #### Scripts
