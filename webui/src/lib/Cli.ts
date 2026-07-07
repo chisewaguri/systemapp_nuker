@@ -5,7 +5,7 @@ import { MOD_DIR, PERSIST_DIR } from '../constant'
 import type { useSnackBar } from '../components/SnackBar'
 
 export class Cli {
-  static nuke(show: ReturnType<typeof useSnackBar>['show']): Promise<void> {
+  static nuke(show: ReturnType<typeof useSnackBar>['show'], count?: number): Promise<void> {
     return new Promise(resolve => {
       let out: string = '', err: string[] = []
       const ps = spawn('busybox', ['nsenter', '-t1', '-m', `${MOD_DIR}/nuke.sh`], {
@@ -21,7 +21,8 @@ export class Cli {
         if (out.includes('Uninstall only mode')) {
           show(t('nuke.success_no_reboot'))
         } else {
-          show(t('nuke.success'), true, 5000, {
+          const msg = count ? t('nuke.success_count', { count }) : t('nuke.success')
+          show(msg, true, 5000, {
             text: t('nuke.reboot'),
             callback: () => Cli.reboot(show),
           })

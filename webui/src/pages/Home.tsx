@@ -71,7 +71,8 @@ export default function Home() {
       if (!ok) {
         snackBar.show(t('global.write_error'), false)
       } else {
-        await Cli.nuke(snackBar.show)
+        const pendingCount = appListManager.nukingAppList.length
+        await Cli.nuke(snackBar.show, pendingCount)
         await appListManager.refresh()
         setApps(appListManager.systemAppList)
       }
@@ -111,6 +112,11 @@ export default function Home() {
           </>
         }
       />
+      {appListManager.nukedAppList.length === 0 && appListManager.nukingAppList.length === 0 && (
+        <div className="mx-4 p-3 bg-surface-container-high rounded-lg text-sm text-on-surface-variant">
+          {t('home.empty_help')}
+        </div>
+      )}
       <AppList
         ref={appListRef}
         apps={apps}

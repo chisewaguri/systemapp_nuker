@@ -62,7 +62,8 @@ export default function Restore() {
       if (!ok) {
         snackBar.show(t('global.write_error'), false)
       } else {
-        await Cli.nuke(snackBar.show)
+        const pendingCount = appListManager.nukingAppList.length
+        await Cli.nuke(snackBar.show, pendingCount)
         await appListManager.refresh()
         setApps(appListManager.nukedAppList)
       }
