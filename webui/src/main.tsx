@@ -12,6 +12,8 @@ import Settings from './pages/Settings'
 import BackupRestoreDialog from './components/dialog/BackupRestoreDialog'
 import SnackBar, { useSnackBar } from './components/SnackBar'
 import { Cli } from './lib/Cli'
+import { getModuleInfo, checkForUpdate } from './lib/ModuleInfo'
+import { LOCAL_STORAGE_KEY, REPO } from './constant'
 import { AppListProvider } from './lib/AppListContext'
 
 const pages: Record<string, React.FC> = {
@@ -29,6 +31,27 @@ function App() {
   useEffect(() => {
     Cli.needRestore().then(needRestore => {
       if (needRestore) setShowBackupRestoreDialog(true)
+    })
+  }, [])
+
+  useEffect(() => {
+    getModuleInfo().then(info => {
+      if (!info) return
+      const lastSeen = localStorage.getItem(LOCAL_STORAGE_KEY + 'last-seen-version')
+      const lastSeenCode = lastSeen ? parseInt(lastSeen, 10) : 0
+      if (info.versionCode > lastSeenCode) {
+        snackBar.show(t('update.installed', { version: info.version }))
+      }
+      localStorage.setItem(LOCAL_STORAGE_KEY + 'last-seen-version', String(info.versionCode))
+
+      checkForUpdate(info.versionCode).then(update => {
+        if (update) {
+          snackBar.show(t('update.available', { version: update.version }), true, 8000, {
+            text: t('update.download'),
+            callback: () => Cli.openLink(`https://github.com/${REPO}/releases/latest`),
+          })
+        }
+      })
     })
   }, [])
 

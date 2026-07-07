@@ -10,6 +10,7 @@ import SnackBar, { useSnackBar } from '../components/SnackBar'
 import FileSelector from '../lib/FileSelector'
 import { Cli } from '../lib/Cli'
 import { REPO, TELEGRAM, LOCAL_STORAGE_KEY } from '../constant'
+import { getModuleInfo } from '../lib/ModuleInfo'
 import TelegramIcon from '../assets/telegram.svg?react'
 import WhiteoutIcon from '../assets/folder_off.svg?react'
 
@@ -23,6 +24,13 @@ export default function Settings() {
   const [whiteoutEnabled, setWhiteoutEnabled] = useState(() => {
     return localStorage.getItem(LOCAL_STORAGE_KEY + 'use-whiteout') === 'true'
   })
+  const [version, setVersion] = useState('')
+
+  useEffect(() => {
+    getModuleInfo().then(info => {
+      if (info) setVersion(info.version)
+    })
+  }, [])
 
   const handleWhiteoutToggle = () => {
     const newValue = !whiteoutEnabled
@@ -95,6 +103,17 @@ export default function Settings() {
   ]
 
   const aboutItems: SegmentedListItem[] = [
+    {
+      key: 'version',
+      className: '!p-4',
+      leadingContent: <md-icon class="text-on-surface-variant">info</md-icon>,
+      content: (
+        <>
+          <span className="text-on-surface">{t('settings.version')}</span>
+          <span className="text-outline text-xs">{version || '...'}</span>
+        </>
+      ),
+    },
     {
       key: 'github_issues',
       className: '!p-4',
