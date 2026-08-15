@@ -63,7 +63,8 @@ jobs:
       if: github.ref_type == 'tag'
       run: |
         # Extract changelog for the specific version from CHANGELOG.md
-        CHANGELOG=$(awk -v version="v${{ env.VERSION }}" '
+        # VERSION already has the v prefix (update.json: "v2.1.0")
+        CHANGELOG=$(awk -v version="${{ env.VERSION }}" '
         BEGIN { found=0; content="" }
         /^### v[0-9]+\.[0-9]+\.[0-9]+/ {
           if (found) exit
