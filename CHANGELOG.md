@@ -3,6 +3,13 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v2.1.0
+
+#### Scripts
+- keep apk path in nuke_list.txt so update whiteouts without pm (fix #58)
+
+---
+
 ### v2.0.0
 
 #### WebUI
