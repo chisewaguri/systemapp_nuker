@@ -96,9 +96,11 @@ export default class AppList {
     const nukedApps = nukeList.split('\n').filter(line => line.trim() && !line.startsWith('#') && !line.startsWith('$'))
 
     for (const line of nukedApps) {
-      const spaceIdx = line.indexOf(' ')
-      const pkg = spaceIdx === -1 ? line : line.slice(0, spaceIdx)
-      const label = spaceIdx === -1 ? line : line.slice(spaceIdx + 1)
+      // "<pkg> <path> <label>" (path might be empty on old 2-field lines)
+      const first = line.indexOf(' ')
+      const second = first === -1 ? -1 : line.indexOf(' ', first + 1)
+      const pkg = first === -1 ? line : line.slice(0, first)
+      const label = second === -1 ? (first === -1 ? line : line.slice(first + 1)) : line.slice(second + 1)
 
       const existing = this.#apps.find(app => app.packageName === pkg)
       if (existing) {
@@ -135,9 +137,11 @@ export default class AppList {
     const nukeList = await File.read(`${this.#nukeListPath}`).catch(() => '')
     const nukedApps = nukeList.split('\n').filter(line => line.trim() && !line.startsWith('#') && !line.startsWith('$'))
     this.#nuking = nukedApps.map((line: string) => {
-      const spaceIdx = line.indexOf(' ')
-      const pkg = spaceIdx === -1 ? line : line.slice(0, spaceIdx)
-      const label = spaceIdx === -1 ? line : line.slice(spaceIdx + 1)
+      // "<pkg> <path> <label>" (path might be empty on old 2-field lines)
+      const first = line.indexOf(' ')
+      const second = first === -1 ? -1 : line.indexOf(' ', first + 1)
+      const pkg = first === -1 ? line : line.slice(0, first)
+      const label = second === -1 ? (first === -1 ? line : line.slice(first + 1)) : line.slice(second + 1)
       return {
         packageName: pkg,
         appLabel: label,
@@ -229,7 +233,18 @@ export default class AppList {
   /** Writes the current nuking list to persistent storage. */
   async write() {
     try {
-      const lines = this.#nuking.map(n => `${n.packageName} ${n.appLabel.replace(/\n/g, ' ')}`)
+      // keep the saved path for apps already nuked (pm cant see them once
+      // hidden, so keep it or it gets lost on rewrite)
+      const current = await File.read(`${this.#nukeListPath}`).catch(() => '')
+      const pathOf = new Map<string, string>()
+      for (const l of current.split('\n')) {
+        const first = l.indexOf(' ')
+        const second = first === -1 ? -1 : l.indexOf(' ', first + 1)
+        if (first === -1) continue
+        pathOf.set(l.slice(0, first), second === -1 ? '' : l.slice(first + 1, second))
+      }
+
+      const lines = this.#nuking.map(n => `${n.packageName} ${pathOf.get(n.packageName) ?? ''} ${n.appLabel.replace(/\n/g, ' ')}`)
       await File.write(`${this.#nukeListPath}`, lines.join('\n'))
       await this.#refresh()
       return true

@@ -174,7 +174,9 @@ echo ""
 # migrate old things
 if [ -f "$PERSIST_DIR/nuke_list.json" ]; then
     echo "[*] nuke_list.json found. Migrating..."
-    sed -n -e 's/.*"package_name": "\([^"]*\)",/\1/p' -e 's/.*"app_name": "\([^"]*\)"/\1/p' "$PERSIST_DIR/nuke_list.json" | sed 'N;s/\n/ /' > "$PERSIST_DIR/nuke_list.txt"
+    # "<pkg> <path> <label>". json has the app_path, update needs it since
+    # apps are still hidden by the old module's whiteouts
+    sed -n -e 's/.*"package_name": "\([^"]*\)",/\1/p' -e 's/.*"app_path": "\([^"]*\)",/\1/p' -e 's/.*"app_name": "\([^"]*\)"/\1/p' "$PERSIST_DIR/nuke_list.json" | sed 'N;N;s/\n/ /g' > "$PERSIST_DIR/nuke_list.txt"
     rm "$PERSIST_DIR/nuke_list.json"
     sh "$MODPATH/nuke.sh" update
 elif [ -f "$PERSIST_DIR/nuke_list.txt" ]; then

@@ -8,6 +8,8 @@ PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
 MODDIR="/data/adb/modules/system_app_nuker"
 MODULE_UPDATE_DIR="/data/adb/modules_update/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
+# nuke_list.txt is "<pkg> <path> <label>". pm path cant see nuked apps
+# (theyre hidden by whiteouts), so the saved path is reused when pm fails
 REMOVE_LIST="$PERSIST_DIR/nuke_list.txt"
 
 # import config
@@ -56,25 +58,46 @@ whiteout_create() {
 nuke_system_apps() {
     total=$(grep -Ev "^$|^#" "$REMOVE_LIST" | wc -l)
 
-    # first, remove any updates for the apps being nuked and disable them
+    # remove any updates for the apps being nuked
     for package_name in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
-        # check if it's a system app and has been updated
+        # check if it's a system app that has been updated
         if pm list packages -s | grep -qx "package:$package_name" && pm path "$package_name" | grep -q "/data/app"; then
-            # uninstall system updates only if it's a system app that has been updated
             pm uninstall-system-updates "$package_name" >/dev/null 2>&1 || true
         fi
+    done
 
-        if [ "$uninstall_only_mode" = "true" ]; then
+    if [ "$uninstall_only_mode" = "true" ]; then
+        for package_name in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
             pm uninstall --user 0 "$package_name" >/dev/null 2>&1 || true
-        else
-            # whiteout creation
+        done
+    else
+        # whiteout creation. the list is "<pkg> <path> <label>" — rewrite it
+        # with fresh paths when pm can see the app, keep the saved path
+        # otherwise (nuked apps are hidden by whiteouts so pm fails)
+        while IFS= read -r line; do
+            case "$line" in
+                ""|\#*) echo "$line"; continue ;;
+            esac
+            package_name=$(echo "$line" | awk '{print $1}')
+            saved_path=$(echo "$line" | awk '{print $2}')
+            if echo "$saved_path" | grep -q "^/"; then
+                # drop pkg and path, the rest is label
+                label=$(echo "$line" | sed 's/^[^ ]* [^ ]* *//')
+            else
+                # no path column yet, everything after pkg is label
+                label=$(echo "$line" | sed 's/^[^ ]* *//')
+                saved_path=""
+            fi
             apk_path=$(pm path "$package_name" | head -n1 | sed "s/package://")
+            [ "$apk_path" = "" ] && apk_path="$saved_path"
             if [ "$apk_path" != "" ]; then
                 whiteout_create "$(dirname $apk_path)" > /dev/null 2>&1
                 ls "$MODULE_UPDATE_DIR$apk_path" 2>/dev/null
             fi
-        fi
-    done
+            echo "$package_name $apk_path $label"
+        done < "$REMOVE_LIST" > "$REMOVE_LIST.tmp"
+        mv -f "$REMOVE_LIST.tmp" "$REMOVE_LIST"
+    fi
 
     # when uninstall_only_mode=true and restore_success=false means user has enabled uninstall only mode
     #but the last nuked app doens't exist yet
