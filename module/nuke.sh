@@ -74,7 +74,13 @@ nuke_system_apps() {
         # whiteout creation. the list is "<pkg> <path> <label>" — rewrite it
         # with fresh paths when pm can see the app, keep the saved path
         # otherwise (nuked apps are hidden by whiteouts so pm fails)
-        while IFS= read -r line; do
+        # old (<2.1.0) lists have no path column, recover it from the whiteouts
+        # already in the module tree when pm also cant see the app
+        old_paths=$(find "$MODDIR/system" -type c 2>/dev/null | sed "s|^$MODDIR/system|/system|")
+        i=1
+        # webui writes the list without a trailing newline, append one or the
+        # last app never gets processed
+        { cat "$REMOVE_LIST"; echo; } | while IFS= read -r line; do
             case "$line" in
                 ""|\#*) echo "$line"; continue ;;
             esac
@@ -90,12 +96,18 @@ nuke_system_apps() {
             fi
             apk_path=$(pm path "$package_name" | head -n1 | sed "s/package://")
             [ "$apk_path" = "" ] && apk_path="$saved_path"
+            if [ "$apk_path" = "" ] && [ -n "$old_paths" ]; then
+                # hidden app without a saved path, pull one from the module tree
+                apk_path=$(echo "$old_paths" | sed -n "${i}p")
+                [ "$apk_path" != "" ] && apk_path="$apk_path/$(basename "$apk_path")"
+                i=$((i+1))
+            fi
             if [ "$apk_path" != "" ]; then
-                whiteout_create "$(dirname $apk_path)" > /dev/null 2>&1
+                whiteout_create "$(dirname "$apk_path")" > /dev/null 2>&1
                 ls "$MODULE_UPDATE_DIR$apk_path" 2>/dev/null
             fi
             echo "$package_name $apk_path $label"
-        done < "$REMOVE_LIST" > "$REMOVE_LIST.tmp"
+        done > "$REMOVE_LIST.tmp"
         mv -f "$REMOVE_LIST.tmp" "$REMOVE_LIST"
     fi
 
