@@ -3,6 +3,14 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v2.1.1
+
+#### Scripts
+- fix last nuked app never being processed (missing trailing newline)
+- migrate pre-2.1.0 nuke lists by recovering paths from module tree (fix #59)
+
+---
+
 ### v2.1.0
 
 #### Scripts
