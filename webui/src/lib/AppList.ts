@@ -1,6 +1,7 @@
 import { listPackages, getPackagesInfo, type PackagesInfo } from 'kernelsu-alt'
 import { PERSIST_DIR } from '../constant'
 import { File } from './File'
+import { isDev } from './utils'
 
 export interface AppInfo extends Omit<PackagesInfo, 'versionName' | 'versionCode' | 'uid'> {
   versionName: string | null
@@ -37,7 +38,7 @@ export default class AppList {
   }
 
   async #getSystemAppList() {
-    if (import.meta.env.DEV) {
+    if (isDev()) {
       this.#apps = [
         { packageName: 'com.android.settings', versionName: '14.0', versionCode: 1, appLabel: 'Settings', isSystem: true, uid: 1000, nuked: false, pending: false },
         { packageName: 'com.android.systemui', versionName: '14.0', versionCode: 1, appLabel: 'System UI', isSystem: true, uid: 1000, nuked: false, pending: false },
@@ -76,7 +77,7 @@ export default class AppList {
   }
 
   async #getNukedAppList() {
-    if (import.meta.env.DEV) {
+    if (isDev()) {
       for (const pkg of ['com.android.chrome', 'com.facebook.katana']) {
         const existing = this.#apps.find(app => app.packageName === pkg)
         if (existing) {
@@ -121,7 +122,7 @@ export default class AppList {
   }
 
   async #getNukePendingList() {
-    if (import.meta.env.DEV) {
+    if (isDev()) {
       const nukingPkgs = ['com.miui.videoplayer', 'com.xiaomi.midrive']
       this.#apps.forEach(app => {
         const inNukingList = nukingPkgs.includes(app.packageName)

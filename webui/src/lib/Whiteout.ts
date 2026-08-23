@@ -1,5 +1,6 @@
 import { File } from './File'
 import { PERSIST_DIR } from '../constant'
+import { isDev } from './utils'
 
 export class Whiteout {
   #whiteouts: string[] = []
@@ -15,7 +16,7 @@ export class Whiteout {
   }
 
   async #getWhiteouts() {
-    if (import.meta.env.DEV) {
+    if (isDev()) {
       this.#whiteouts = [
         "/system/init.rc",
         "/system/etc/permission/cn.google.xml"

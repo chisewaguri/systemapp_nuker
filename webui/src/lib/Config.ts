@@ -1,6 +1,7 @@
 import { PERSIST_DIR } from '../constant'
 import { File } from './File'
 import { configItem, type ConfigItem } from '../data/config'
+import { isDev } from './utils'
 
 export type { ConfigItem }
 
@@ -13,7 +14,7 @@ export default class Config {
     }
 
     async read() {
-        if (import.meta.env.DEV) {
+        if (isDev()) {
             this.#config = configItem.map(item => ({
                 ...item,
                 ...(item.key === 'mounting_mode' ? { value: 2 } : {}),
@@ -45,7 +46,7 @@ export default class Config {
     }
 
     async write() {
-        if (import.meta.env.DEV) return
+        if (isDev()) return
         const lines = this.#config.map(item => `${item.key}=${item.value}`)
         await File.write(this.#configPath, lines.join('\n'))
     }
