@@ -9,10 +9,6 @@ export default class Config {
     readonly #configPath = `${PERSIST_DIR}/config.sh`
     #config: ConfigItem[] = []
 
-    constructor() {
-        this.read()
-    }
-
     async read() {
         if (isDev()) {
             this.#config = configItem.map(item => ({
