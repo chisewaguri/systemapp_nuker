@@ -5,7 +5,7 @@ import type { MdDialog } from '@material/web/dialog/dialog.js'
 import { useDialogAnimation } from '../hooks/useDialogAnimation'
 import { useHistory } from '../hooks/useHistory'
 import type { MdFilledTextField } from '@material/web/all'
-import { shellQuote } from './shell'
+import { shellFileFilter, shellQuote } from './shell'
 
 interface FileItem {
   name: string
@@ -42,7 +42,7 @@ export default function FileSelector({ open, fileType, mode: rawMode = 'path', f
     }
 
     const dirPath = dir(path)
-    const fileFilter = fileType === 'any' ? 'echo "f|$f"' : `[[ "$f" == *.${fileType} ]] && echo "f|$f"`
+    const fileFilter = shellFileFilter(fileType)
     const result = await exec(`
       cd ${shellQuote(path)}
       for f in *; do
