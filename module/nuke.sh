@@ -194,9 +194,12 @@ prepare_nuke_list() {
 
         package_name=$(echo "$line" | awk '{print $1}')
         saved_path=$(echo "$line" | awk '{print $2}')
-        is_apk_path "$saved_path" && { echo "$line"; continue; }
-
-        label=$(echo "$line" | sed 's/^[^ ]* *//')
+        if is_apk_path "$saved_path"; then
+            label=$(echo "$line" | sed 's/^[^ ]* [^ ]* *//')
+        else
+            label=$(echo "$line" | sed 's/^[^ ]* *//')
+            saved_path=""
+        fi
         apk_path=$(pm path "$package_name" | head -n1 | sed 's/package://')
         if echo "$apk_path" | grep -q '^/data/app' && pm list packages -s | grep -qx "package:$package_name"; then
             pm uninstall-system-updates "$package_name" >/dev/null 2>&1 || true
@@ -204,6 +207,10 @@ prepare_nuke_list() {
         fi
 
         if [ -z "$apk_path" ]; then
+            if [ -n "$saved_path" ]; then
+                echo "$package_name $saved_path $label"
+                continue
+            fi
             if [ -f "$REMOVE_LIST.old" ] && awk -v pkg="$package_name" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST.old"; then
                 echo "$package_name  $label"
                 continue
