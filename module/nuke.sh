@@ -46,6 +46,12 @@ my_stock"
 # whiteout creator
 whiteout_create() {
     path="$1"
+    case "/$path/" in
+        */../*|*/./*)
+            echo "invalid whiteout path: $path" >&2
+            return 1
+            ;;
+    esac
     echo "$path" | grep -q "^/system/" || path="/system$1"
     target="$MODULE_UPDATE_DIR$path"
     mkdir -p "${target%/*}" || return 1
