@@ -44,7 +44,7 @@ export default function FileSelector({ open, fileType, mode: rawMode = 'path', f
     const dirPath = dir(path)
     const fileFilter = shellFileFilter(fileType)
     const result = await exec(`
-      cd ${shellQuote(path)}
+      cd ${shellQuote(path)} || exit 1
       for f in *; do
         [ "$f" = "*" ] && [ ! -e "$f" ] && continue
         [ -d "$f" ] && echo "d|$f" || { ${fileFilter}; }
@@ -147,7 +147,7 @@ export default function FileSelector({ open, fileType, mode: rawMode = 'path', f
           items.push({ name, path: value, isDirectory: false })
           setFiles(items)
           setCurrentPath(pDir)
-        } else {
+        } else if (entryType === 'dir') {
           setCurrentPath(dir(value))
           listFiles(value)
         }
