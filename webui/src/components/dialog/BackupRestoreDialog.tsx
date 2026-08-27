@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import type { MdDialog } from '@material/web/dialog/dialog.js'
-import { useDialogAnimation } from '../../hooks/useDialogAnimation'
+import { customizeDialogAnimation } from '../../hooks/useDialogAnimation'
 import { useHistory } from '../../hooks/useHistory'
 
 interface BackupRestoreDialogProps {
@@ -19,7 +19,7 @@ export default function BackupRestoreDialog({ open, onDismiss, onDontRestore, on
 
   useEffect(() => {
     if (!dialogRef.current) return
-    useDialogAnimation(dialogRef.current)
+    customizeDialogAnimation(dialogRef.current)
     dialogRef.current.open = open
     if (open) {
       push('backup-restore', () => {
@@ -27,7 +27,7 @@ export default function BackupRestoreDialog({ open, onDismiss, onDontRestore, on
         onDismiss()
       })
     }
-  }, [open, push])
+  }, [open, push, onDismiss])
 
   useEffect(() => {
     const el = dialogRef.current

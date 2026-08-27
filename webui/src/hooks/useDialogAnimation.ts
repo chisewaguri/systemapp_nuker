@@ -4,7 +4,7 @@ import type { MdDialog } from '@material/web/dialog/dialog.js'
  * Customize MdDialog animation
  * @param dialog MdDialog instance
  */
-export function useDialogAnimation(dialog: MdDialog): void {
+export function customizeDialogAnimation(dialog: MdDialog): void {
   const defaultOpenAnim = dialog.getOpenAnimation
   const defaultCloseAnim = dialog.getCloseAnimation
 

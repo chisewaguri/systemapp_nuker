@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react
 import { createPortal } from 'react-dom'
 import { exec } from 'kernelsu-alt'
 import type { MdDialog } from '@material/web/dialog/dialog.js'
-import { useDialogAnimation } from '../hooks/useDialogAnimation'
+import { customizeDialogAnimation } from '../hooks/useDialogAnimation'
 import { useHistory } from '../hooks/useHistory'
 import type { MdFilledTextField } from '@material/web/all'
 import { shellFileFilter, shellQuote } from './shell'
@@ -77,7 +77,7 @@ export default function FileSelector({ open, fileType, mode: rawMode = 'path', f
 
   useEffect(() => {
     if (!dialogRef.current) return
-    useDialogAnimation(dialogRef.current)
+    customizeDialogAnimation(dialogRef.current)
     if (open) {
       setCurrentPath(root)
       setInputValue(root)

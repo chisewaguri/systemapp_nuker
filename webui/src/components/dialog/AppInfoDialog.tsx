@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import type { MdDialog } from '@material/web/dialog/dialog.js'
 import type { AppInfo } from '../../lib/AppList'
-import { useDialogAnimation } from '../../hooks/useDialogAnimation'
+import { customizeDialogAnimation } from '../../hooks/useDialogAnimation'
 import { useHistory } from '../../hooks/useHistory'
 import { essential, caution, safe, google, categories } from '../../data/category'
 import AndroidSvg from '../../assets/android.svg?react'
@@ -40,11 +40,14 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
   const dialogRef = useRef<MdDialog>(null)
   const { t } = useTranslation()
   const [displayApp, setDisplayApp] = useState<AppInfo | null>(null)
+  const [iconLoaded, setIconLoaded] = useState(false)
+  const [iconError, setIconError] = useState(false)
+  const [imgKey, setImgKey] = useState(0)
   const { push, consume } = useHistory()
 
   useEffect(() => {
     if (!dialogRef.current) return
-    useDialogAnimation(dialogRef.current)
+    customizeDialogAnimation(dialogRef.current)
     dialogRef.current.open = !!app
     if (app) {
       setDisplayApp(app)
@@ -70,10 +73,6 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
       el.removeEventListener('closed', onClosed)
     }
   }, [onClose, consume])
-
-  const [iconLoaded, setIconLoaded] = useState(false)
-  const [iconError, setIconError] = useState(false)
-  const [imgKey, setImgKey] = useState(0)
 
   const version = displayApp?.versionName && displayApp?.versionCode
     ? `${displayApp.versionName} (${displayApp.versionCode})`
