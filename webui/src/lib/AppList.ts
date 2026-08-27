@@ -2,6 +2,7 @@ import { listPackages, getPackagesInfo, type PackagesInfo } from 'kernelsu-alt'
 import { PERSIST_DIR } from '../constant'
 import { File } from './File'
 import { isDev } from './utils'
+import { parseNukeLine } from './nukeList'
 
 export interface AppInfo extends Omit<PackagesInfo, 'versionName' | 'versionCode' | 'uid'> {
   versionName: string | null
@@ -97,11 +98,7 @@ export default class AppList {
     const nukedApps = nukeList.split('\n').filter(line => line.trim() && !line.startsWith('#') && !line.startsWith('$'))
 
     for (const line of nukedApps) {
-      // "<pkg> <path> <label>" (path might be empty on old 2-field lines)
-      const first = line.indexOf(' ')
-      const second = first === -1 ? -1 : line.indexOf(' ', first + 1)
-      const pkg = first === -1 ? line : line.slice(0, first)
-      const label = second === -1 ? (first === -1 ? line : line.slice(first + 1)) : line.slice(second + 1)
+      const { packageName: pkg, appLabel: label } = parseNukeLine(line)
 
       const existing = this.#apps.find(app => app.packageName === pkg)
       if (existing) {
@@ -138,11 +135,7 @@ export default class AppList {
     const nukeList = await File.read(`${this.#nukeListPath}`).catch(() => '')
     const nukedApps = nukeList.split('\n').filter(line => line.trim() && !line.startsWith('#') && !line.startsWith('$'))
     this.#nuking = nukedApps.map((line: string) => {
-      // "<pkg> <path> <label>" (path might be empty on old 2-field lines)
-      const first = line.indexOf(' ')
-      const second = first === -1 ? -1 : line.indexOf(' ', first + 1)
-      const pkg = first === -1 ? line : line.slice(0, first)
-      const label = second === -1 ? (first === -1 ? line : line.slice(first + 1)) : line.slice(second + 1)
+      const { packageName: pkg, appLabel: label } = parseNukeLine(line)
       return {
         packageName: pkg,
         appLabel: label,
@@ -239,10 +232,9 @@ export default class AppList {
       const current = await File.read(`${this.#nukeListPath}`).catch(() => '')
       const pathOf = new Map<string, string>()
       for (const l of current.split('\n')) {
-        const first = l.indexOf(' ')
-        const second = first === -1 ? -1 : l.indexOf(' ', first + 1)
-        if (first === -1) continue
-        pathOf.set(l.slice(0, first), second === -1 ? '' : l.slice(first + 1, second))
+        if (!l.trim() || l.startsWith('#') || l.startsWith('$')) continue
+        const { packageName, apkPath } = parseNukeLine(l)
+        pathOf.set(packageName, apkPath)
       }
 
       const lines = this.#nuking.map(n => `${n.packageName} ${pathOf.get(n.packageName) ?? ''} ${n.appLabel.replace(/\n/g, ' ')}`)
