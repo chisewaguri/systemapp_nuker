@@ -40,6 +40,7 @@ my_stock"
 
 # args handling
 [ "$1" = "update" ] && update=true || update=false
+restore_all_legacy=false
 
 # ----- functions -----
 
@@ -134,6 +135,7 @@ whiteout_was_restored() {
 # keep the whiteouts that are already active during a module update
 preserve_whiteouts() {
     for old_whiteout in $(find "$MODDIR" -type c 2>/dev/null); do
+        [ "$restore_all_legacy" = true ] && continue
         whiteout=$(normalize_whiteout_path "${old_whiteout#"$MODDIR"}")
         whiteout_was_restored "$whiteout" && continue
         whiteout_create "$whiteout" > /dev/null || return 1
@@ -168,6 +170,8 @@ nuke_legacy_whiteouts() {
 
 check_legacy_restores() {
     [ -f "$REMOVE_LIST.old" ] || return 0
+    legacy_kept=false
+    legacy_removed=false
     while IFS= read -r line || [ -n "$line" ]; do
         case "$line" in
             ""|\#*) continue ;;
@@ -175,11 +179,21 @@ check_legacy_restores() {
         package_name=$(echo "$line" | awk '{print $1}')
         saved_path=$(echo "$line" | awk '{print $2}')
         is_apk_path "$saved_path" && continue
-        if ! awk -v pkg="$package_name" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null; then
-            echo "cant restore $package_name because its old path wasnt saved" >&2
-            return 1
+        if awk -v pkg="$package_name" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null; then
+            legacy_kept=true
+        else
+            legacy_removed=true
         fi
     done < "$REMOVE_LIST.old"
+
+    if [ "$legacy_removed" = true ] && [ "$legacy_kept" = false ]; then
+        restore_all_legacy=true
+        return 0
+    fi
+    if [ "$legacy_removed" = true ]; then
+        echo "cant restore old apps one at a time because their paths werent saved" >&2
+        return 1
+    fi
 }
 
 # fill missing paths while newly selected apps are still visible
@@ -224,6 +238,10 @@ prepare_nuke_list() {
                 echo "$package_name  $label"
                 continue
             fi
+            if [ "$update" = true ] && find "$MODDIR" -type c 2>/dev/null | grep -q .; then
+                echo "$package_name  $label"
+                continue
+            fi
             echo "cant find apk path for $package_name" >&2
             rm -f "$REMOVE_LIST.tmp"
             return 1
@@ -237,7 +255,7 @@ prepare_nuke_list() {
         echo "$package_name $apk_path $label"
     done < "$REMOVE_LIST" > "$REMOVE_LIST.tmp" || return 1
 
-    if [ -f "$REMOVE_LIST.old" ]; then
+    if [ "$restore_all_legacy" != true ] && [ -f "$REMOVE_LIST.old" ]; then
         while IFS= read -r metadata || [ -n "$metadata" ]; do
             case "$metadata" in
                 "# legacy-whiteout "*) grep -Fqx "$metadata" "$REMOVE_LIST.tmp" || echo "$metadata" >> "$REMOVE_LIST.tmp" ;;
