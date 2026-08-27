@@ -5,12 +5,12 @@
 # this is modified from mountify's whiteout creator
 # No warranty.
 PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
-MODDIR="/data/adb/modules/system_app_nuker"
-MODULE_UPDATE_DIR="/data/adb/modules_update/system_app_nuker"
-PERSIST_DIR="/data/adb/system_app_nuker"
+MODDIR="${MODDIR:-/data/adb/modules/system_app_nuker}"
+MODULE_UPDATE_DIR="${MODULE_UPDATE_DIR:-/data/adb/modules_update/system_app_nuker}"
+PERSIST_DIR="${PERSIST_DIR:-/data/adb/system_app_nuker}"
 # nuke_list.txt is "<pkg> <path> <label>". pm path cant see nuked apps
 # (theyre hidden by whiteouts), so the saved path is reused when pm fails
-REMOVE_LIST="$PERSIST_DIR/nuke_list.txt"
+REMOVE_LIST="${REMOVE_LIST:-$PERSIST_DIR/nuke_list.txt}"
 
 # import config
 uninstall_only_mode="false"
@@ -54,6 +54,25 @@ whiteout_create() {
     chmod 644 "$MODULE_UPDATE_DIR$path"
 }
 
+# keep the whiteouts that are already active during a module update
+preserve_whiteouts() {
+    find "$MODDIR" -type c 2>/dev/null | while IFS= read -r old_whiteout; do
+        whiteout_create "${old_whiteout#"$MODDIR"}" > /dev/null 2>&1
+    done
+}
+
+# update from saved paths without asking pm about apps it cant see
+nuke_saved_apps() {
+    { cat "$REMOVE_LIST"; echo; } | while IFS= read -r line; do
+        case "$line" in
+            ""|\#*) continue ;;
+        esac
+        saved_path=$(echo "$line" | awk '{print $2}')
+        echo "$saved_path" | grep -q "^/" || continue
+        whiteout_create "$(dirname "$saved_path")" > /dev/null 2>&1
+    done
+}
+
 # nuke app from REMOVE_LIST
 nuke_system_apps() {
     total=$(grep -Ev "^$|^#" "$REMOVE_LIST" | wc -l)
@@ -74,10 +93,6 @@ nuke_system_apps() {
         # whiteout creation. the list is "<pkg> <path> <label>" — rewrite it
         # with fresh paths when pm can see the app, keep the saved path
         # otherwise (nuked apps are hidden by whiteouts so pm fails)
-        # old (<2.1.0) lists have no path column, recover it from the whiteouts
-        # already in the module tree when pm also cant see the app
-        old_paths=$(find "$MODDIR/system" -type c 2>/dev/null | sed "s|^$MODDIR/system|/system|")
-        i=1
         # webui writes the list without a trailing newline, append one or the
         # last app never gets processed
         { cat "$REMOVE_LIST"; echo; } | while IFS= read -r line; do
@@ -96,12 +111,6 @@ nuke_system_apps() {
             fi
             apk_path=$(pm path "$package_name" | head -n1 | sed "s/package://")
             [ "$apk_path" = "" ] && apk_path="$saved_path"
-            if [ "$apk_path" = "" ] && [ -n "$old_paths" ]; then
-                # hidden app without a saved path, pull one from the module tree
-                apk_path=$(echo "$old_paths" | sed -n "${i}p")
-                [ "$apk_path" != "" ] && apk_path="$apk_path/$(basename "$apk_path")"
-                i=$((i+1))
-            fi
             if [ "$apk_path" != "" ]; then
                 whiteout_create "$(dirname "$apk_path")" > /dev/null 2>&1
                 ls "$MODULE_UPDATE_DIR$apk_path" 2>/dev/null
@@ -196,8 +205,12 @@ for item in system system_ext vendor product update; do
     rm -rf "$MODULE_UPDATE_DIR/$item"
 done
 
-# skip app whiteout creation when remove list is empty
-if [ -s "$REMOVE_LIST" ]; then
+# manager updates keep the active whiteouts as-is. package manager cant see
+# the apps anymore and old 2.0 lists dont have their paths
+if [ "$update" = true ] && [ "$uninstall_only_mode" != "true" ]; then
+    preserve_whiteouts
+    [ -s "$REMOVE_LIST" ] && nuke_saved_apps
+elif [ -s "$REMOVE_LIST" ]; then
     nuke_system_apps
 fi
 
