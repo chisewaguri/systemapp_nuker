@@ -7,7 +7,8 @@ import type { useSnackBar } from '../components/SnackBar'
 export class Cli {
   static nuke(show: ReturnType<typeof useSnackBar>['show']): Promise<void> {
     return new Promise(resolve => {
-      let out: string = '', err: string[] = []
+      let out = ''
+      const err: string[] = []
       const ps = spawn('busybox', ['nsenter', '-t1', '-m', `${MOD_DIR}/nuke.sh`], {
         env: { PATH: '/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH' }
       })
