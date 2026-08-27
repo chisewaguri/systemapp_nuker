@@ -327,6 +327,10 @@ if [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
     exit $?
 fi
 
+if [ "$update" = true ]; then
+    prepare_nuke_list || exit 1
+fi
+
 # ----- main script -----
 # revamped routine
 # here we copy over all the module files to modules_update folder.
