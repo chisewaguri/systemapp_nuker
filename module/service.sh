@@ -1,6 +1,7 @@
 MODDIR="/data/adb/modules/system_app_nuker"
 PERSIST_DIR="/data/adb/system_app_nuker"
 REMOVE_LIST="$PERSIST_DIR/nuke_list.txt"
+RAW_LIST="$PERSIST_DIR/raw_whiteouts.txt"
 
 # import config
 mounting_mode=0
@@ -135,5 +136,7 @@ done < "$REMOVE_LIST"
 [ -f "$FAILED_RESTORES" ] && cat "$FAILED_RESTORES" >> "$SNAPSHOT"
 mv -f "$SNAPSHOT" "$REMOVE_LIST.old"
 rm -f "$FAILED_RESTORES"
+[ -f "$RAW_LIST" ] || touch "$RAW_LIST"
+cp -f "$RAW_LIST" "$RAW_LIST.old"
 
 # EOF

@@ -116,6 +116,20 @@ whiteout_is_raw() {
     return 1
 }
 
+raw_whiteout_was_restored() {
+    restore_target="$1"
+    [ -f "$PERSIST_DIR/raw_whiteouts.txt.old" ] || return 1
+    while IFS= read -r old_raw_path || [ -n "$old_raw_path" ]; do
+        case "$old_raw_path" in
+            ""|\#*) continue ;;
+        esac
+        [ "$(normalize_whiteout_path "$old_raw_path")" = "$restore_target" ] || continue
+        whiteout_is_raw "$restore_target" && return 1
+        return 0
+    done < "$PERSIST_DIR/raw_whiteouts.txt.old"
+    return 1
+}
+
 whiteout_was_restored() {
     restore_target="$1"
     [ -f "$REMOVE_LIST.old" ] || return 1
@@ -137,6 +151,7 @@ preserve_whiteouts() {
     for old_whiteout in $(find "$MODDIR" -type c 2>/dev/null); do
         [ "$restore_all_legacy" = true ] && continue
         whiteout=$(normalize_whiteout_path "${old_whiteout#"$MODDIR"}")
+        raw_whiteout_was_restored "$whiteout" && continue
         whiteout_was_restored "$whiteout" && continue
         whiteout_create "$whiteout" > /dev/null || return 1
         if ! whiteout_has_saved_path "$whiteout" && ! whiteout_is_raw "$whiteout" && ! grep -Fqx "# legacy-whiteout $whiteout" "$REMOVE_LIST" 2>/dev/null; then
