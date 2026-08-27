@@ -75,6 +75,13 @@ normalize_whiteout_path() {
     esac
 }
 
+is_apk_path() {
+    case "$1" in
+        /*.apk) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 append_line() {
     file="$1"
     line="$2"
@@ -90,7 +97,7 @@ whiteout_has_saved_path() {
             ""|\#*) continue ;;
         esac
         saved_path=$(echo "$line" | awk '{print $2}')
-        echo "$saved_path" | grep -q '^/' || continue
+        is_apk_path "$saved_path" || continue
         [ "$(normalize_whiteout_path "$(dirname "$saved_path")")" = "$target" ] && return 0
     done < "$REMOVE_LIST"
     return 1
@@ -117,7 +124,7 @@ whiteout_was_restored() {
         esac
         old_package_name=$(echo "$old_line" | awk '{print $1}')
         old_saved_path=$(echo "$old_line" | awk '{print $2}')
-        echo "$old_saved_path" | grep -q '^/' || continue
+        is_apk_path "$old_saved_path" || continue
         [ "$(normalize_whiteout_path "$(dirname "$old_saved_path")")" = "$restore_target" ] || continue
         awk -v pkg="$old_package_name" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null || return 0
     done < "$REMOVE_LIST.old"
@@ -143,7 +150,7 @@ nuke_saved_apps() {
             ""|\#*) continue ;;
         esac
         saved_path=$(echo "$line" | awk '{print $2}')
-        echo "$saved_path" | grep -q "^/" || continue
+        is_apk_path "$saved_path" || continue
         whiteout_create "$(dirname "$saved_path")" > /dev/null || return 1
     done < "$REMOVE_LIST"
 }
@@ -167,7 +174,7 @@ check_legacy_restores() {
         esac
         package_name=$(echo "$line" | awk '{print $1}')
         saved_path=$(echo "$line" | awk '{print $2}')
-        echo "$saved_path" | grep -q '^/' && continue
+        is_apk_path "$saved_path" && continue
         if ! awk -v pkg="$package_name" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null; then
             echo "cant restore $package_name because its old path wasnt saved" >&2
             return 1
@@ -187,7 +194,7 @@ prepare_nuke_list() {
 
         package_name=$(echo "$line" | awk '{print $1}')
         saved_path=$(echo "$line" | awk '{print $2}')
-        echo "$saved_path" | grep -q "^/" && { echo "$line"; continue; }
+        is_apk_path "$saved_path" && { echo "$line"; continue; }
 
         label=$(echo "$line" | sed 's/^[^ ]* *//')
         apk_path=$(pm path "$package_name" | head -n1 | sed 's/package://')
@@ -253,7 +260,7 @@ nuke_system_apps() {
             esac
             package_name=$(echo "$line" | awk '{print $1}')
             saved_path=$(echo "$line" | awk '{print $2}')
-            if echo "$saved_path" | grep -q "^/"; then
+            if is_apk_path "$saved_path"; then
                 # drop pkg and path, the rest is label
                 label=$(echo "$line" | sed 's/^[^ ]* [^ ]* *//')
             else

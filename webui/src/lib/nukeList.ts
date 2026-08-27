@@ -11,9 +11,13 @@ export const parseNukeLine = (line: string) => {
   }
 
   const second = rest.indexOf(' ')
+  const apkPath = second === -1 ? rest : rest.slice(0, second)
+  if (!apkPath.endsWith('.apk')) {
+    return { packageName, apkPath: '', appLabel: rest }
+  }
   return {
     packageName,
-    apkPath: second === -1 ? rest : rest.slice(0, second),
+    apkPath,
     appLabel: second === -1 ? packageName : rest.slice(second + 1),
   }
 }
