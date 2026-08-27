@@ -46,13 +46,18 @@ my_stock"
 whiteout_create() {
     path="$1"
     echo "$path" | grep -q "^/system/" || path="/system$1"
-    mkdir -p "$MODULE_UPDATE_DIR${path%/*}"
-    chmod 755 "$MODULE_UPDATE_DIR${path%/*}"
-    busybox mknod "$MODULE_UPDATE_DIR$path" c 0 0
-    busybox chcon --reference="/system" "$MODULE_UPDATE_DIR$path"
+    target="$MODULE_UPDATE_DIR$path"
+    mkdir -p "${target%/*}" || return 1
+    chmod 755 "${target%/*}" || return 1
+    rm -f "$target"
+    if ! busybox mknod "$target" c 0 0; then
+        echo "failed to create whiteout: $path" >&2
+        return 1
+    fi
+    busybox chcon --reference="/system" "$target" || true
     # not really required, mountify() does NOT even copy the attribute but ok
-    busybox setfattr -n trusted.overlay.whiteout -v y "$MODULE_UPDATE_DIR$path"
-    chmod 644 "$MODULE_UPDATE_DIR$path"
+    busybox setfattr -n trusted.overlay.whiteout -v y "$target" || true
+    chmod 644 "$target" || return 1
 }
 
 normalize_whiteout_path() {
@@ -98,9 +103,9 @@ whiteout_is_raw() {
 
 # keep the whiteouts that are already active during a module update
 preserve_whiteouts() {
-    find "$MODDIR" -type c 2>/dev/null | while IFS= read -r old_whiteout; do
+    for old_whiteout in $(find "$MODDIR" -type c 2>/dev/null); do
         whiteout=$(normalize_whiteout_path "${old_whiteout#"$MODDIR"}")
-        whiteout_create "$whiteout" > /dev/null 2>&1
+        whiteout_create "$whiteout" > /dev/null || return 1
         if ! whiteout_has_saved_path "$whiteout" && ! whiteout_is_raw "$whiteout" && ! grep -Fqx "# legacy-whiteout $whiteout" "$REMOVE_LIST" 2>/dev/null; then
             append_line "$REMOVE_LIST" "# legacy-whiteout $whiteout"
         fi
@@ -109,21 +114,25 @@ preserve_whiteouts() {
 
 # update from saved paths without asking pm about apps it cant see
 nuke_saved_apps() {
-    { cat "$REMOVE_LIST"; echo; } | while IFS= read -r line; do
+    while IFS= read -r line || [ -n "$line" ]; do
         case "$line" in
             ""|\#*) continue ;;
         esac
         saved_path=$(echo "$line" | awk '{print $2}')
         echo "$saved_path" | grep -q "^/" || continue
-        whiteout_create "$(dirname "$saved_path")" > /dev/null 2>&1
-    done
+        whiteout_create "$(dirname "$saved_path")" > /dev/null || return 1
+    done < "$REMOVE_LIST"
 }
 
 nuke_legacy_whiteouts() {
     [ -f "$REMOVE_LIST" ] || return 0
-    sed -n 's/^# legacy-whiteout //p' "$REMOVE_LIST" | while IFS= read -r whiteout; do
-        [ -n "$whiteout" ] && whiteout_create "$whiteout" > /dev/null 2>&1
-    done
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            "# legacy-whiteout "*)
+                whiteout_create "${line#\# legacy-whiteout }" > /dev/null || return 1
+                ;;
+        esac
+    done < "$REMOVE_LIST"
 }
 
 check_legacy_restores() {
@@ -214,7 +223,7 @@ nuke_system_apps() {
         # otherwise (nuked apps are hidden by whiteouts so pm fails)
         # webui writes the list without a trailing newline, append one or the
         # last app never gets processed
-        { cat "$REMOVE_LIST"; echo; } | while IFS= read -r line; do
+        while IFS= read -r line || [ -n "$line" ]; do
             case "$line" in
                 ""|\#*) echo "$line"; continue ;;
             esac
@@ -231,11 +240,14 @@ nuke_system_apps() {
             apk_path=$(pm path "$package_name" | head -n1 | sed "s/package://")
             [ "$apk_path" = "" ] && apk_path="$saved_path"
             if [ "$apk_path" != "" ]; then
-                whiteout_create "$(dirname "$apk_path")" > /dev/null 2>&1
+                if ! whiteout_create "$(dirname "$apk_path")" > /dev/null; then
+                    rm -f "$REMOVE_LIST.tmp"
+                    return 1
+                fi
                 ls "$MODULE_UPDATE_DIR$apk_path" 2>/dev/null
             fi
             echo "$package_name $apk_path $label"
-        done > "$REMOVE_LIST.tmp"
+        done < "$REMOVE_LIST" > "$REMOVE_LIST.tmp"
         mv -f "$REMOVE_LIST.tmp" "$REMOVE_LIST"
     fi
 
@@ -305,8 +317,10 @@ fi
 # this can avoid persistence issues too
 
 # create folder if it doesnt exist and copy selinux context
-[ ! -d "$MODULE_UPDATE_DIR" ] && mkdir -p "$MODULE_UPDATE_DIR"
-busybox chcon --reference="/system" "$MODULE_UPDATE_DIR"
+if [ ! -d "$MODULE_UPDATE_DIR" ]; then
+    mkdir -p "$MODULE_UPDATE_DIR" || exit 1
+fi
+busybox chcon --reference="/system" "$MODULE_UPDATE_DIR" || true
 
 # if not update
 if [ "$update" != true ]; then
@@ -314,7 +328,7 @@ if [ "$update" != true ]; then
     # only copy content if module files was not copied yet
     # this ensure updated files are not overwritten
     if [ ! -f "$MODULE_UPDATE_DIR/nuke.sh" ]; then
-        cp -Lrf "$MODDIR"/* "$MODULE_UPDATE_DIR"
+        cp -Lrf "$MODDIR"/* "$MODULE_UPDATE_DIR" || exit 1
     fi
 
     # flag module for update
@@ -330,25 +344,34 @@ done
 # manager updates keep the active whiteouts as-is. package manager cant see
 # the apps anymore and old 2.0 lists dont have their paths
 if [ "$update" = true ] && [ "$uninstall_only_mode" != "true" ]; then
-    preserve_whiteouts
-    [ -s "$REMOVE_LIST" ] && nuke_saved_apps
+    preserve_whiteouts || exit 1
+    if [ -s "$REMOVE_LIST" ]; then
+        nuke_saved_apps || exit 1
+    fi
 elif [ -s "$REMOVE_LIST" ]; then
-    nuke_system_apps
+    nuke_system_apps || exit 1
 fi
-[ "$uninstall_only_mode" != "true" ] && nuke_legacy_whiteouts
+if [ "$uninstall_only_mode" != "true" ]; then
+    nuke_legacy_whiteouts || exit 1
+fi
 
 # handle raw whiteout
-for line in $( sed '/#/d' "$PERSIST_DIR/raw_whiteouts.txt" ); do
-	whiteout_create "$line" > /dev/null 2>&1 
-	ls "$MODULE_UPDATE_DIR$line" 2>/dev/null
-done
+if [ -f "$PERSIST_DIR/raw_whiteouts.txt" ]; then
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            ""|\#*) continue ;;
+        esac
+        whiteout_create "$line" > /dev/null || exit 1
+        ls "$MODULE_UPDATE_DIR$line" 2>/dev/null
+    done < "$PERSIST_DIR/raw_whiteouts.txt"
+fi
 
 # handle vendor partitions
 for part in $targets; do
     if [ -d "$MODULE_UPDATE_DIR/system/$part" ] && [ ! -L "/$part" ]; then
         echo "[-] Handling partition /$part"
-        mv -f "$MODULE_UPDATE_DIR/system/$part" "$MODULE_UPDATE_DIR/$part"
-        ln -sf "../$part" "$MODULE_UPDATE_DIR/system/$part"
+        mv -f "$MODULE_UPDATE_DIR/system/$part" "$MODULE_UPDATE_DIR/$part" || exit 1
+        ln -sf "../$part" "$MODULE_UPDATE_DIR/system/$part" || exit 1
     fi
 done
 

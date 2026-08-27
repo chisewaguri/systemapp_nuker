@@ -9,6 +9,6 @@ export DUMMYZIP=true
 
 # we have to call nuke.sh from customize.sh of dummy.zip
 # since atleast on ksu, kernelsu creates a new namespace for it it seems
-sh /data/adb/modules/system_app_nuker/nuke.sh
+sh /data/adb/modules/system_app_nuker/nuke.sh || abort "Failed to rebuild module whiteouts"
 
 # EOF
