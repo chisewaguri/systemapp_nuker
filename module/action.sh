@@ -22,13 +22,13 @@ manual_download() {
 
 download() {
     PATH=/data/data/com.termux/files/usr/bin:/data/adb/magisk:/data/adb/magisk:$PATH
-    for attempt in {1..3}; do  # Try up to 3 times
+    for attempt in 1 2 3; do  # Try up to 3 times
         if command -v curl >/dev/null 2>&1; then
             timeout 10 curl -Ls "$1" && return 0
-        elif command -v busybox wget >/dev/null 2>&1; then
+        elif command -v busybox >/dev/null 2>&1; then
             timeout 10 busybox wget --no-check-certificate -qO- "$1" && return 0
         fi
-        echo "⚠️ Download failed, retrying ($attempt/3)..."
+        echo "⚠️ Download failed, retrying ($attempt/3)..." >&2
         sleep 3
     done
     echo "❌ Download failed after 3 attempts. Please check your internet." >&2
