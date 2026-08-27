@@ -4,7 +4,7 @@
 # this is modified from tricky-addon's action
 
 ORG_PATH=$PATH
-MODPATH="${MODPATH:-/data/adb/modules/system_app_nuker}"
+MODPATH="/data/adb/modules/system_app_nuker"
 TMP_DIR="$MODPATH/common/tmp"
 APK_PATH="$TMP_DIR/base.apk"
 

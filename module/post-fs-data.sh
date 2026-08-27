@@ -16,8 +16,7 @@ set_config() {
     sed -i "s/$1=.*/$1=$2/" "$PERSIST_DIR/config.sh"
 }
 
-# after bootloop
-# code is no longer used but still here for testing purposes
+# reset after bootloop protection
 if [ $BOOTCOUNT -lt 0 ]; then
     BOOTCOUNT=0
 fi

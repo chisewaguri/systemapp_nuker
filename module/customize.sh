@@ -3,8 +3,8 @@
 # this is part of system app nuker
 
 SKIPUNZIP=0
-MODDIR="${MODDIR:-/data/adb/modules/system_app_nuker}"
-PERSIST_DIR="${PERSIST_DIR:-/data/adb/system_app_nuker}"
+MODDIR="/data/adb/modules/system_app_nuker"
+PERSIST_DIR="/data/adb/system_app_nuker"
 OLD_CONFIG="$PERSIST_DIR/config.sh"
 NEW_CONFIG="$PERSIST_DIR/config.sh.new"
 
