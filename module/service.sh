@@ -102,12 +102,20 @@ echo "BOOTCOUNT=0" > "$PERSIST_DIR/count.sh"
 chmod 755 "$PERSIST_DIR/count.sh"
 
 # this make sure that restored app is back
+FAILED_RESTORES="$PERSIST_DIR/restore_failed.tmp"
+rm -f "$FAILED_RESTORES"
 if [ -s "$REMOVE_LIST.old" ]; then
-    for pkg in $(grep -Ev "^$|^#" "$REMOVE_LIST.old" | awk '{print $1}'); do
+    while IFS= read -r old_line || [ -n "$old_line" ]; do
+        case "$old_line" in
+            ""|\#*) continue ;;
+        esac
+        pkg=$(echo "$old_line" | awk '{print $1}')
         awk -v pkg="$pkg" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null && continue
-        pm install-existing "$pkg" >/dev/null 2>&1 || true
-        pm enable "$pkg" >/dev/null 2>&1 || true
-    done
+        restore_success=true
+        pm install-existing "$pkg" >/dev/null 2>&1 || restore_success=false
+        pm enable "$pkg" >/dev/null 2>&1 || restore_success=false
+        [ "$restore_success" = true ] || echo "$old_line" >> "$FAILED_RESTORES"
+    done < "$REMOVE_LIST.old"
 fi
 
 # make sure app is uninstalled if user is switching to uninstall only mode
@@ -119,6 +127,13 @@ fi
 
 # ensure the remove list exists and save nuked apps to old list
 [ -f "$REMOVE_LIST" ] || touch "$REMOVE_LIST"
-cp -f "$REMOVE_LIST" "$REMOVE_LIST.old"
+SNAPSHOT="$REMOVE_LIST.old.new"
+: > "$SNAPSHOT"
+while IFS= read -r line || [ -n "$line" ]; do
+    echo "$line" >> "$SNAPSHOT"
+done < "$REMOVE_LIST"
+[ -f "$FAILED_RESTORES" ] && cat "$FAILED_RESTORES" >> "$SNAPSHOT"
+mv -f "$SNAPSHOT" "$REMOVE_LIST.old"
+rm -f "$FAILED_RESTORES"
 
 # EOF
