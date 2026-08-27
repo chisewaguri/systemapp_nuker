@@ -245,8 +245,10 @@ nuke_system_apps() {
     # showing "Uninstall only mode detected" to stdout allows webui to skip the reboot button
     restore_success="true"
     if [ -f "$REMOVE_LIST.old" ]; then
-        for pkg in $(cat "$REMOVE_LIST.old" | grep -Fvxf "$REMOVE_LIST" | awk '{print $1}'); do
+        for pkg in $(grep -Ev "^$|^#" "$REMOVE_LIST.old" | awk '{print $1}'); do
+            awk -v pkg="$pkg" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null && continue
             pm install-existing "$pkg" >/dev/null 2>&1 || restore_success="false"
+            pm enable "$pkg" >/dev/null 2>&1 || restore_success="false"
         done
     fi
     if [ "$uninstall_only_mode" = "true" ] && [ "$restore_success" = "true" ]; then

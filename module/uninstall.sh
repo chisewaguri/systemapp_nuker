@@ -8,6 +8,7 @@ for pkg in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
     if ! pm path "$pkg" >/dev/null 2>&1; then
         pm install-existing "$pkg" >/dev/null 2>&1
     fi
+    pm enable "$pkg" >/dev/null 2>&1 || true
 done
 
 [ -d "$PERSIST_DIR" ] && rm -rf "$PERSIST_DIR"

@@ -103,16 +103,16 @@ chmod 755 "$PERSIST_DIR/count.sh"
 
 # this make sure that restored app is back
 if [ -s "$REMOVE_LIST.old" ]; then
-    grep_cmd="grep -Fvxf $REMOVE_LIST"
-    [ ! -s "$REMOVE_LIST" ] && grep_cmd="cat"
-    for pkg in $($grep_cmd "$REMOVE_LIST.old" | awk '{print $1}'); do
+    for pkg in $(grep -Ev "^$|^#" "$REMOVE_LIST.old" | awk '{print $1}'); do
+        awk -v pkg="$pkg" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null && continue
         pm install-existing "$pkg" >/dev/null 2>&1 || true
+        pm enable "$pkg" >/dev/null 2>&1 || true
     done
 fi
 
 # make sure app is uninstalled if user is switching to uninstall only mode
 if [ -s "$REMOVE_LIST" ] && [ "$uninstall_only_mode" = "true" ]; then
-    for pkg in $(cat "$REMOVE_LIST" | awk '{print $1}'); do
+    for pkg in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
         pm uninstall --user 0 "$pkg" >/dev/null 2>&1 || true
     done
 fi
