@@ -46,6 +46,7 @@ export default function FileSelector({ open, fileType, mode: rawMode = 'path', f
     const result = await exec(`
       cd ${shellQuote(path)}
       for f in *; do
+        [ "$f" = "*" ] && [ ! -e "$f" ] && continue
         [ -d "$f" ] && echo "d|$f" || { ${fileFilter}; }
       done | sort
     `)
