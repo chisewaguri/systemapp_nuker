@@ -146,7 +146,7 @@ whiteout_was_restored() {
     return 1
 }
 
-# keep the whiteouts that are already active during a module update
+# keep the whiteouts that are already active while rebuilding the module
 preserve_whiteouts() {
     for old_whiteout in $(find "$MODDIR" -type c 2>/dev/null); do
         [ "$restore_all_legacy" = true ] && continue
@@ -405,6 +405,8 @@ fi
 
 if [ "$update" = true ]; then
     prepare_nuke_list || exit 1
+elif [ "$DUMMYZIP" = true ]; then
+    check_legacy_restores || exit 1
 fi
 
 # ----- main script -----
@@ -439,8 +441,11 @@ for item in system system_ext vendor product update $targets; do
     rm -rf "$MODULE_UPDATE_DIR/$item"
 done
 
-# manager updates keep the active whiteouts as-is. package manager cant see
-# the apps anymore and old 2.0 lists dont have their paths
+# old whiteouts are still mounted here. keep them because pm cant see the
+# apps anymore and old 2.0 lists dont have their paths
+if [ "$DUMMYZIP" = true ] && [ "$uninstall_only_mode" != "true" ]; then
+    preserve_whiteouts || exit 1
+fi
 if [ "$update" = true ] && [ "$uninstall_only_mode" != "true" ]; then
     preserve_whiteouts || exit 1
     if [ -s "$REMOVE_LIST" ]; then
