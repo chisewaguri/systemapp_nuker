@@ -5,6 +5,7 @@ import type { MdDialog } from '@material/web/dialog/dialog.js'
 import { useDialogAnimation } from '../hooks/useDialogAnimation'
 import { useHistory } from '../hooks/useHistory'
 import type { MdFilledTextField } from '@material/web/all'
+import { shellQuote } from './shell'
 
 interface FileItem {
   name: string
@@ -43,7 +44,7 @@ export default function FileSelector({ open, fileType, mode: rawMode = 'path', f
     const dirPath = dir(path)
     const fileFilter = fileType === 'any' ? 'echo "f|$f"' : `[[ "$f" == *.${fileType} ]] && echo "f|$f"`
     const result = await exec(`
-      cd "${path}"
+      cd ${shellQuote(path)}
       for f in *; do
         [ -d "$f" ] && echo "d|$f" || { ${fileFilter}; }
       done | sort
@@ -131,7 +132,8 @@ export default function FileSelector({ open, fileType, mode: rawMode = 'path', f
         return
       }
       if (value.startsWith(root)) {
-        const result = await exec(`[ -f "${value}" ] && echo file || ([ -d "${value}" ] && echo dir || echo none)`)
+        const quoted = shellQuote(value)
+        const result = await exec(`[ -f ${quoted} ] && echo file || ([ -d ${quoted} ] && echo dir || echo none)`)
         const entryType = result.stdout?.trim()
         if (entryType === 'file') {
           const name = value.split('/').filter(Boolean).pop() || ''
@@ -164,7 +166,7 @@ export default function FileSelector({ open, fileType, mode: rawMode = 'path', f
       }
     } else {
       if (mode === 'content') {
-        const result = await exec(`cat "${item.path}"`)
+        const result = await exec(`cat ${shellQuote(item.path)}`)
         onSelect(result.errno === 0 ? result.stdout : null)
       } else {
         onSelect(item.path)
