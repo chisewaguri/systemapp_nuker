@@ -41,11 +41,13 @@ export default function Settings() {
 
   const handleSave = async (key: string, value: string | boolean | number) => {
     if (!config) return
-    config.config = config.config.map(item =>
+    const updated = new ConfigLib()
+    updated.config = config.config.map(item =>
       item.key === key ? { ...item, value } : item
     )
-    setItems(config.config)
-    await config.write().catch(() => {
+    setConfig(updated)
+    setItems(updated.config)
+    await updated.write().catch(() => {
       snackBar.show(t('global.write_error'), false)
     })
   }
