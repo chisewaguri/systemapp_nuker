@@ -102,10 +102,27 @@ whiteout_is_raw() {
     return 1
 }
 
+whiteout_was_restored() {
+    restore_target="$1"
+    [ -f "$REMOVE_LIST.old" ] || return 1
+    while IFS= read -r old_line || [ -n "$old_line" ]; do
+        case "$old_line" in
+            ""|\#*) continue ;;
+        esac
+        old_package_name=$(echo "$old_line" | awk '{print $1}')
+        old_saved_path=$(echo "$old_line" | awk '{print $2}')
+        echo "$old_saved_path" | grep -q '^/' || continue
+        [ "$(normalize_whiteout_path "$(dirname "$old_saved_path")")" = "$restore_target" ] || continue
+        awk -v pkg="$old_package_name" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null || return 0
+    done < "$REMOVE_LIST.old"
+    return 1
+}
+
 # keep the whiteouts that are already active during a module update
 preserve_whiteouts() {
     for old_whiteout in $(find "$MODDIR" -type c 2>/dev/null); do
         whiteout=$(normalize_whiteout_path "${old_whiteout#"$MODDIR"}")
+        whiteout_was_restored "$whiteout" && continue
         whiteout_create "$whiteout" > /dev/null || return 1
         if ! whiteout_has_saved_path "$whiteout" && ! whiteout_is_raw "$whiteout" && ! grep -Fqx "# legacy-whiteout $whiteout" "$REMOVE_LIST" 2>/dev/null; then
             append_line "$REMOVE_LIST" "# legacy-whiteout $whiteout"
