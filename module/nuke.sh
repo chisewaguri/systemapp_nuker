@@ -14,7 +14,8 @@ REMOVE_LIST="${REMOVE_LIST:-$PERSIST_DIR/nuke_list.txt}"
 
 # import config
 uninstall_only_mode="false"
-[ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
+CONFIG_FILE="${CONFIG_FILE:-$PERSIST_DIR/config.sh}"
+[ -f "$CONFIG_FILE" ] && . "$CONFIG_FILE"
 
 # special dirs
 # handle this properly so this script can be used standalone

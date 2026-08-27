@@ -3,19 +3,23 @@
 # this is part of system app nuker
 
 SKIPUNZIP=0
-MODDIR="/data/adb/modules/system_app_nuker"
-PERSIST_DIR="/data/adb/system_app_nuker"
+MODDIR="${MODDIR:-/data/adb/modules/system_app_nuker}"
+PERSIST_DIR="${PERSIST_DIR:-/data/adb/system_app_nuker}"
+OLD_CONFIG="$PERSIST_DIR/config.sh"
+NEW_CONFIG="$PERSIST_DIR/config.sh.new"
 
 # import config
 uninstall_fallback=false
 uninstall_only_mode=false
-[ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
+disable_only_mode=false
+[ -f "$OLD_CONFIG" ] && . "$OLD_CONFIG"
+[ "$disable_only_mode" = "true" ] && uninstall_only_mode=true
 
 # === FUNCTIONS ===
 
 # set config.sh value
 set_config() {
-    sed -i "s/$1=.*/$1=$2/" "$PERSIST_DIR/config.sh"
+    sed -i "s/$1=.*/$1=$2/" "$NEW_CONFIG"
 }
 
 # === MAIN SCRIPT ===
@@ -26,11 +30,11 @@ set_config() {
 # create persistent directory if it doesn't exist
 mkdir -p "$PERSIST_DIR"
 
-# move config to persist dir
-mv "$MODPATH/config.sh" "$PERSIST_DIR/"
+# keep the old config until setup finishes
+mv "$MODPATH/config.sh" "$NEW_CONFIG"
 
 # set permissions for config
-set_perm "$PERSIST_DIR/config.sh" 0 2000 0755
+set_perm "$NEW_CONFIG" 0 2000 0755
 
 # display loading animation for compatible environments
 if [ "$MMRL" = "true" ] || { [ "$KSU" = "true" ] && [ "$KSU_VER_CODE" -ge 11998 ]; } ||
@@ -162,6 +166,8 @@ if { [ "$mountify_active" = false ] || [ "$mountify_mounted" = false ]; } && \
 fi
 # set mounting mode config
 set_config mounting_mode $mounting_mode
+set_config magic_mount $magic_mount
+set_config uninstall_only_mode $uninstall_only_mode
 
 # Detect current manager
 [ ! "$APATCH" = "true" ] && [ ! "$KSU" = "true" ] && MANAGER="MAGISK"
@@ -172,37 +178,42 @@ set_config current_manager $MANAGER
 echo ""
 
 # migrate old things
+migrated_list=""
 if [ -f "$PERSIST_DIR/nuke_list.json" ]; then
     echo "[*] nuke_list.json found. Migrating..."
     # "<pkg> <path> <label>". json has the app_path, update needs it since
     # apps are still hidden by the old module's whiteouts
-    sed -n -e 's/.*"package_name": "\([^"]*\)",/\1/p' -e 's/.*"app_path": "\([^"]*\)",/\1/p' -e 's/.*"app_name": "\([^"]*\)"/\1/p' "$PERSIST_DIR/nuke_list.json" | sed 'N;N;s/\n/ /g' > "$PERSIST_DIR/nuke_list.txt"
-    rm "$PERSIST_DIR/nuke_list.json"
-    sh "$MODPATH/nuke.sh" update
-elif [ -f "$PERSIST_DIR/nuke_list.txt" ]; then
-    echo "[*] nuke_list.txt found. Migrating..."
-    sh "$MODPATH/nuke.sh" update
+    migrated_list="$PERSIST_DIR/nuke_list.txt.new"
+    sed -n -e 's/.*"package_name": "\([^"]*\)",/\1/p' -e 's/.*"app_path": "\([^"]*\)",/\1/p' -e 's/.*"app_name": "\([^"]*\)"/\1/p' "$PERSIST_DIR/nuke_list.json" | sed 'N;N;s/\n/ /g' > "$migrated_list"
+
+    package_count=$(grep -c '"package_name":' "$PERSIST_DIR/nuke_list.json" 2>/dev/null || true)
+    path_count=$(grep -c '"app_path":' "$PERSIST_DIR/nuke_list.json" 2>/dev/null || true)
+    migrated_count=$(grep -cEv '^$|^#' "$migrated_list" 2>/dev/null || true)
+    if [ "$package_count" != "$path_count" ] || [ "$package_count" != "$migrated_count" ]; then
+        rm -f "$migrated_list" "$NEW_CONFIG"
+        abort "Failed to migrate nuke_list.json"
+    fi
 fi
 
-# migrate config.sh (in case when it has a new value)
-# variable of the config is defined by sourcing the old config.sh and the script
-# value like uninstall_fallback would be persist, but mounting stuff would not.
-while IFS='=' read key _; do
-    # skip empty, commented, or lines with spaces
-    [ -z "$key" ] && continue
-    echo "$key" | grep -q '^[[:space:]]*#' && continue
-    echo "$key" | grep -Eq '^[a-zA-Z_][a-zA-Z0-9_]*$' || continue
+# rebuild with the new config, but dont replace old state unless it works
+update_list="$PERSIST_DIR/nuke_list.txt"
+[ -n "$migrated_list" ] && update_list="$migrated_list"
+if ! CONFIG_FILE="$NEW_CONFIG" REMOVE_LIST="$update_list" sh "$MODPATH/nuke.sh" update; then
+    rm -f "$migrated_list" "$NEW_CONFIG"
+    abort "Failed to rebuild module whiteouts"
+fi
 
-    # trim whitespace
-    key=$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+if [ -n "$migrated_list" ]; then
+    mv -f "$migrated_list" "$PERSIST_DIR/nuke_list.txt"
+    rm -f "$PERSIST_DIR/nuke_list.json"
+fi
+mv -f "$NEW_CONFIG" "$PERSIST_DIR/config.sh"
+set_perm "$PERSIST_DIR/config.sh" 0 2000 0755
 
-    # get current value of the variable
-    eval val="\$$key"
-
-    # call set_config with the key and its current value
-    set_config "$key" "$val"
-    echo "[~] config: $key=$val"
-done < "$PERSIST_DIR/config.sh"
+echo "[~] config: uninstall_only_mode=$uninstall_only_mode"
+echo "[~] config: mounting_mode=$mounting_mode"
+echo "[~] config: magic_mount=$magic_mount"
+echo "[~] config: current_manager=$MANAGER"
 echo "[i] Edit config at: $PERSIST_DIR/config.sh"
 echo ""
 
