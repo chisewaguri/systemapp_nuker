@@ -4,7 +4,7 @@
 # this is modified from tricky-addon's action
 
 ORG_PATH=$PATH
-MODPATH="/data/adb/modules/system_app_nuker"
+MODPATH="${MODPATH:-/data/adb/modules/system_app_nuker}"
 TMP_DIR="$MODPATH/common/tmp"
 APK_PATH="$TMP_DIR/base.apk"
 
@@ -41,6 +41,7 @@ get_webui() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "📥 Downloading KSU WebUI Standalone..."
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    mkdir -p "$TMP_DIR" || manual_download "Error: Unable to create temporary directory."
     API="https://api.github.com/repos/KOWX712/KsuWebUIStandalone/releases/latest"
     ping -c 1 -w 5 raw.githubusercontent.com &>/dev/null || manual_download "Error: Unable to connect to raw.githubusercontent.com, please download manually."
     URL=$(download "$API" | grep -o '"browser_download_url": "[^"]*"' | cut -d '"' -f 4) || manual_download "Error: Unable to get latest version, please download manually."
