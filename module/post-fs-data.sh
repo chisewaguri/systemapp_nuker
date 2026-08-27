@@ -28,7 +28,9 @@ if [ $BOOTCOUNT -gt 1 ]; then # on 2nd post-fs-data without reaching service
     touch $MODDIR/disable
 
     # remove whiteouts
-    for dir in system system_ext vendor product; do
+    for dir in system system_ext vendor product odm mi_ext \
+        my_bigball my_carrier my_company my_engineering my_heytap \
+        my_manifest my_preload my_product my_region my_reserve my_stock; do
         rm -rf "$MODDIR/$dir"
     done
 

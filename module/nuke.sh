@@ -24,6 +24,7 @@ IFS="
 "
 # vendor partitions
 targets="
+odm
 mi_ext
 my_bigball
 my_carrier
@@ -337,7 +338,7 @@ if [ "$update" != true ]; then
 fi
 
 # cleanup all old setup
-for item in system system_ext vendor product update; do
+for item in system system_ext vendor product update $targets; do
     rm -rf "$MODULE_UPDATE_DIR/$item"
 done
 
