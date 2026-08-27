@@ -55,10 +55,55 @@ whiteout_create() {
     chmod 644 "$MODULE_UPDATE_DIR$path"
 }
 
+normalize_whiteout_path() {
+    case "$1" in
+        /system/*) echo "$1" ;;
+        /*) echo "/system$1" ;;
+        *) echo "/system/$1" ;;
+    esac
+}
+
+append_line() {
+    file="$1"
+    line="$2"
+    [ -s "$file" ] && [ "$(tail -c 1 "$file" | wc -l)" -eq 0 ] && echo >> "$file"
+    echo "$line" >> "$file"
+}
+
+whiteout_has_saved_path() {
+    target="$1"
+    [ -f "$REMOVE_LIST" ] || return 1
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            ""|\#*) continue ;;
+        esac
+        saved_path=$(echo "$line" | awk '{print $2}')
+        echo "$saved_path" | grep -q '^/' || continue
+        [ "$(normalize_whiteout_path "$(dirname "$saved_path")")" = "$target" ] && return 0
+    done < "$REMOVE_LIST"
+    return 1
+}
+
+whiteout_is_raw() {
+    target="$1"
+    [ -f "$PERSIST_DIR/raw_whiteouts.txt" ] || return 1
+    while IFS= read -r raw_path || [ -n "$raw_path" ]; do
+        case "$raw_path" in
+            ""|\#*) continue ;;
+        esac
+        [ "$(normalize_whiteout_path "$raw_path")" = "$target" ] && return 0
+    done < "$PERSIST_DIR/raw_whiteouts.txt"
+    return 1
+}
+
 # keep the whiteouts that are already active during a module update
 preserve_whiteouts() {
     find "$MODDIR" -type c 2>/dev/null | while IFS= read -r old_whiteout; do
-        whiteout_create "${old_whiteout#"$MODDIR"}" > /dev/null 2>&1
+        whiteout=$(normalize_whiteout_path "${old_whiteout#"$MODDIR"}")
+        whiteout_create "$whiteout" > /dev/null 2>&1
+        if ! whiteout_has_saved_path "$whiteout" && ! whiteout_is_raw "$whiteout" && ! grep -Fqx "# legacy-whiteout $whiteout" "$REMOVE_LIST" 2>/dev/null; then
+            append_line "$REMOVE_LIST" "# legacy-whiteout $whiteout"
+        fi
     done
 }
 
@@ -72,6 +117,79 @@ nuke_saved_apps() {
         echo "$saved_path" | grep -q "^/" || continue
         whiteout_create "$(dirname "$saved_path")" > /dev/null 2>&1
     done
+}
+
+nuke_legacy_whiteouts() {
+    [ -f "$REMOVE_LIST" ] || return 0
+    sed -n 's/^# legacy-whiteout //p' "$REMOVE_LIST" | while IFS= read -r whiteout; do
+        [ -n "$whiteout" ] && whiteout_create "$whiteout" > /dev/null 2>&1
+    done
+}
+
+check_legacy_restores() {
+    [ -f "$REMOVE_LIST.old" ] || return 0
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            ""|\#*) continue ;;
+        esac
+        package_name=$(echo "$line" | awk '{print $1}')
+        saved_path=$(echo "$line" | awk '{print $2}')
+        echo "$saved_path" | grep -q '^/' && continue
+        if ! awk -v pkg="$package_name" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null; then
+            echo "cant restore $package_name because its old path wasnt saved" >&2
+            return 1
+        fi
+    done < "$REMOVE_LIST.old"
+}
+
+# fill missing paths while newly selected apps are still visible
+prepare_nuke_list() {
+    check_legacy_restores || return 1
+    [ -s "$REMOVE_LIST" ] || return 0
+
+    while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+            ""|\#*) echo "$line"; continue ;;
+        esac
+
+        package_name=$(echo "$line" | awk '{print $1}')
+        saved_path=$(echo "$line" | awk '{print $2}')
+        echo "$saved_path" | grep -q "^/" && { echo "$line"; continue; }
+
+        label=$(echo "$line" | sed 's/^[^ ]* *//')
+        apk_path=$(pm path "$package_name" | head -n1 | sed 's/package://')
+        if echo "$apk_path" | grep -q '^/data/app' && pm list packages -s | grep -qx "package:$package_name"; then
+            pm uninstall-system-updates "$package_name" >/dev/null 2>&1 || true
+            apk_path=$(pm path "$package_name" | head -n1 | sed 's/package://')
+        fi
+
+        if [ -z "$apk_path" ]; then
+            if [ -f "$REMOVE_LIST.old" ] && awk -v pkg="$package_name" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST.old"; then
+                echo "$package_name  $label"
+                continue
+            fi
+            echo "cant find apk path for $package_name" >&2
+            rm -f "$REMOVE_LIST.tmp"
+            return 1
+        fi
+        if echo "$apk_path" | grep -q '^/data/app'; then
+            echo "cant find system apk for $package_name" >&2
+            rm -f "$REMOVE_LIST.tmp"
+            return 1
+        fi
+
+        echo "$package_name $apk_path $label"
+    done < "$REMOVE_LIST" > "$REMOVE_LIST.tmp" || return 1
+
+    if [ -f "$REMOVE_LIST.old" ]; then
+        while IFS= read -r metadata || [ -n "$metadata" ]; do
+            case "$metadata" in
+                "# legacy-whiteout "*) grep -Fqx "$metadata" "$REMOVE_LIST.tmp" || echo "$metadata" >> "$REMOVE_LIST.tmp" ;;
+            esac
+        done < "$REMOVE_LIST.old"
+    fi
+
+    mv -f "$REMOVE_LIST.tmp" "$REMOVE_LIST"
 }
 
 # nuke app from REMOVE_LIST
@@ -171,6 +289,7 @@ install_dummy() {
 
 # lets have customize.sh of dummy.zip call us.
 if [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
+    prepare_nuke_list || exit 1
     # install dummy.zip
     install_dummy
     exit $?
@@ -214,6 +333,7 @@ if [ "$update" = true ] && [ "$uninstall_only_mode" != "true" ]; then
 elif [ -s "$REMOVE_LIST" ]; then
     nuke_system_apps
 fi
+[ "$uninstall_only_mode" != "true" ] && nuke_legacy_whiteouts
 
 # handle raw whiteout
 for line in $( sed '/#/d' "$PERSIST_DIR/raw_whiteouts.txt" ); do
