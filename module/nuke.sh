@@ -387,10 +387,20 @@ install_dummy() {
 
 # lets have customize.sh of dummy.zip call us.
 if [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
-    prepare_nuke_list || exit 1
-    # install dummy.zip
-    install_dummy
-    exit $?
+    if prepare_nuke_list && install_dummy; then
+        exit 0
+    fi
+    if [ -f "$REMOVE_LIST.old" ]; then
+        cp -f "$REMOVE_LIST.old" "$REMOVE_LIST"
+    else
+        : > "$REMOVE_LIST"
+    fi
+    if [ -f "$PERSIST_DIR/raw_whiteouts.txt.old" ]; then
+        cp -f "$PERSIST_DIR/raw_whiteouts.txt.old" "$PERSIST_DIR/raw_whiteouts.txt"
+    else
+        : > "$PERSIST_DIR/raw_whiteouts.txt"
+    fi
+    exit 1
 fi
 
 if [ "$update" = true ]; then
