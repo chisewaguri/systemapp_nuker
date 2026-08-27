@@ -15,7 +15,7 @@ import { categories } from '../data/category'
 
 export default function Home() {
   const { t } = useTranslation()
-  const snackBar = useSnackBar()
+  const { state: snackBarState, show: showSnackBar, hide: hideSnackBar } = useSnackBar()
   const appListManager = useAppList()
   const [apps, setApps] = useState<AppInfo[]>([])
   const [loading, setLoading] = useState(true)
@@ -31,11 +31,11 @@ export default function Home() {
       setApps(appListManager.systemAppList)
       setLoading(false)
     })
-  }, [])
+  }, [appListManager])
 
   const handleImport = async (content: string | null) => {
     setFileSelectorOpen(false)
-    await NukeConfig.handleImport(content, appListManager, snackBar.show)
+    await NukeConfig.handleImport(content, appListManager, showSnackBar)
     setApps(appListManager.systemAppList)
   }
 
@@ -65,20 +65,20 @@ export default function Home() {
       }
 
       if (count === 0) return
-      snackBar.show(t('global.processing'), true, 60000)
+      showSnackBar(t('global.processing'), true, 60000)
 
       const ok = await appListManager.write()
       if (!ok) {
-        snackBar.show(t('global.write_error'), false)
+        showSnackBar(t('global.write_error'), false)
       } else {
-        await Cli.nuke(snackBar.show)
+        await Cli.nuke(showSnackBar)
         await appListManager.refresh()
         setApps(appListManager.systemAppList)
       }
     } finally {
       processingRef.current = false
     }
-  }, [])
+  }, [appListManager, showSnackBar, t])
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories(prev =>
@@ -124,7 +124,7 @@ export default function Home() {
         onVisibilityChange={handleFabVisibilityChange}
       />
       <FileSelector open={fileSelectorOpen} fileType="json" mode="content" onSelect={handleImport} />
-      <SnackBar state={snackBar.state} onHide={snackBar.hide} fabVisible={fabVisible} />
+      <SnackBar state={snackBarState} onHide={hideSnackBar} fabVisible={fabVisible} />
     </>
   )
 }

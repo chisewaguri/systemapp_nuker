@@ -13,7 +13,7 @@ import { categories } from '../data/category'
 
 export default function Restore() {
   const { t } = useTranslation()
-  const snackBar = useSnackBar()
+  const { state: snackBarState, show: showSnackBar, hide: hideSnackBar } = useSnackBar()
   const appListManager = useAppList()
   const [apps, setApps] = useState<AppInfo[]>([])
   const [loading, setLoading] = useState(true)
@@ -28,7 +28,7 @@ export default function Restore() {
       setApps(appListManager.nukedAppList)
       setLoading(false)
     })
-  }, [])
+  }, [appListManager])
 
   const handleFabVisibilityChange = useCallback((visible: boolean) => {
     setFabVisible(visible)
@@ -56,20 +56,20 @@ export default function Restore() {
       }
 
       if (count === 0) return
-      snackBar.show(t('global.processing'), true, 60000)
+      showSnackBar(t('global.processing'), true, 60000)
 
       const ok = await appListManager.write()
       if (!ok) {
-        snackBar.show(t('global.write_error'), false)
+        showSnackBar(t('global.write_error'), false)
       } else {
-        await Cli.nuke(snackBar.show)
+        await Cli.nuke(showSnackBar)
         await appListManager.refresh()
         setApps(appListManager.nukedAppList)
       }
     } finally {
       processingRef.current = false
     }
-  }, [])
+  }, [appListManager, showSnackBar, t])
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories(prev =>
@@ -99,7 +99,7 @@ export default function Restore() {
             <span className="text-on-surface-variant text-sm">{t('restore.empty')}</span>
           </div>
         </div>
-        <SnackBar state={snackBar.state} onHide={snackBar.hide} fabVisible={fabVisible} />
+        <SnackBar state={snackBarState} onHide={hideSnackBar} fabVisible={fabVisible} />
       </div>
     )
   }
@@ -131,7 +131,7 @@ export default function Restore() {
         variant="primary"
         onVisibilityChange={handleFabVisibilityChange}
       />
-      <SnackBar state={snackBar.state} onHide={snackBar.hide} fabVisible={fabVisible} />
+      <SnackBar state={snackBarState} onHide={hideSnackBar} fabVisible={fabVisible} />
     </>
   )
 }

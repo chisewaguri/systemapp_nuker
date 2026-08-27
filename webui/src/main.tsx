@@ -24,7 +24,7 @@ const pages: Record<string, React.FC> = {
 function App() {
   const [activeTab, setActiveTab] = useState('/')
   const [showBackupRestoreDialog, setShowBackupRestoreDialog] = useState(false)
-  const snackBar = useSnackBar()
+  const { state: snackBarState, show: showSnackBar, hide: hideSnackBar } = useSnackBar()
 
   useEffect(() => {
     Cli.needRestore().then(needRestore => {
@@ -42,19 +42,19 @@ function App() {
     if (ok) {
       location.reload()
     } else {
-      snackBar.show(t('backup.error'), false)
+      showSnackBar(t('backup.error'), false)
     }
-  }, [snackBar.show])
+  }, [showSnackBar])
 
   const handleRestore = useCallback(async () => {
     setShowBackupRestoreDialog(false)
     const ok = await Cli.restore(true)
     if (ok) {
-      Cli.nuke(snackBar.show)
+      Cli.nuke(showSnackBar)
     } else {
-      snackBar.show(t('backup.error'), false)
+      showSnackBar(t('backup.error'), false)
     }
-  }, [snackBar.show])
+  }, [showSnackBar])
 
   const Page = pages[activeTab] ?? Home
 
@@ -69,7 +69,7 @@ function App() {
         onDontRestore={handleDontRestore}
         onRestore={handleRestore}
       />
-      <SnackBar state={snackBar.state} onHide={snackBar.hide} />
+      <SnackBar state={snackBarState} onHide={hideSnackBar} />
     </>
   )
 }

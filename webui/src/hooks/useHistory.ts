@@ -48,11 +48,12 @@ export function useHistory() {
   }, [])
 
   useEffect(() => {
+    const entries = entriesRef.current
     window.addEventListener('popstate', onPopState)
     return () => {
       window.removeEventListener('popstate', onPopState)
       activeKeysRef.current = []
-      entriesRef.current.clear()
+      entries.clear()
     }
   }, [onPopState])
 
