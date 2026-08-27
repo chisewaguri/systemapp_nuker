@@ -202,8 +202,17 @@ prepare_nuke_list() {
         fi
         apk_path=$(pm path "$package_name" | head -n1 | sed 's/package://')
         if echo "$apk_path" | grep -q '^/data/app' && pm list packages -s | grep -qx "package:$package_name"; then
-            pm uninstall-system-updates "$package_name" >/dev/null 2>&1 || true
-            apk_path=$(pm path "$package_name" | head -n1 | sed 's/package://')
+            if [ "$update" = true ]; then
+                pm uninstall-system-updates "$package_name" >/dev/null 2>&1 || true
+                apk_path=$(pm path "$package_name" | head -n1 | sed 's/package://')
+            else
+                if [ -n "$saved_path" ]; then
+                    echo "$package_name $saved_path $label"
+                else
+                    echo "$package_name  $label"
+                fi
+                continue
+            fi
         fi
 
         if [ -z "$apk_path" ]; then
