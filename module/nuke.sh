@@ -225,6 +225,10 @@ prepare_nuke_list() {
         saved_path=$(echo "$line" | awk '{print $2}')
         if is_apk_path "$saved_path"; then
             label=$(echo "$line" | sed 's/^[^ ]* [^ ]* *//')
+        elif echo "$saved_path" | grep -q '^/system/'; then
+            # 2.1.1 guessed this path from whiteout order, dont trust it
+            label=$(echo "$line" | sed 's/^[^ ]* [^ ]* *//')
+            saved_path=""
         else
             label=$(echo "$line" | sed 's/^[^ ]* *//')
             saved_path=""
