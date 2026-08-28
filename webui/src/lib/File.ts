@@ -26,7 +26,20 @@ export class File {
   }
 
   static async write(path: string, data: string): Promise<void> {
-    const result = await exec(`printf '%s\\n' ${shellQuote(data.trim())} > ${shellQuote(path)}`)
+    const result = await exec(`
+      target=${shellQuote(path)}
+      tmp=$(busybox mktemp "$target.tmp.XXXXXX") || exit 1
+      trap 'rm -f "$tmp"' EXIT HUP INT TERM
+      printf '%s\\n' ${shellQuote(data.trim())} > "$tmp" || exit 1
+      if [ -e "$target" ]; then
+        mode=$(busybox stat -c %a "$target") || exit 1
+        owner=$(busybox stat -c %u:%g "$target") || exit 1
+        busybox chmod "$mode" "$tmp" || exit 1
+        busybox chown "$owner" "$tmp" || exit 1
+        busybox chcon --reference="$target" "$tmp" >/dev/null 2>&1 || true
+      fi
+      busybox mv -f "$tmp" "$target"
+    `)
     if (result.errno !== 0) throw new Error(`File.write failed (${result.errno}): ${result.stderr}`)
   }
 
