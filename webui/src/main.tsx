@@ -13,6 +13,7 @@ import BackupRestoreDialog from './components/dialog/BackupRestoreDialog'
 import SnackBar, { useSnackBar } from './components/SnackBar'
 import { Cli } from './lib/Cli'
 import { AppListProvider } from './lib/AppListContext'
+import { runMutation } from './lib/mutationLock'
 
 const pages: Record<string, React.FC> = {
   '/': Home,
@@ -38,21 +39,35 @@ function App() {
 
   const handleDontRestore = useCallback(async () => {
     setShowBackupRestoreDialog(false)
-    const ok = await Cli.restore(false)
-    if (ok) {
-      location.reload()
-    } else {
-      showSnackBar(t('backup.error'), false)
+    const started = await runMutation(async () => {
+      const ok = await Cli.restore(false)
+      if (ok) {
+        location.reload()
+      } else {
+        showSnackBar(t('backup.error'), false)
+      }
+    })
+    if (!started) {
+      setShowBackupRestoreDialog(true)
+      showSnackBar(t('global.processing'), true, 3000)
     }
   }, [showSnackBar])
 
   const handleRestore = useCallback(async () => {
     setShowBackupRestoreDialog(false)
-    const ok = await Cli.restore(true)
-    if (ok) {
-      Cli.nuke(showSnackBar)
-    } else {
-      showSnackBar(t('backup.error'), false)
+    const started = await runMutation(async () => {
+      const ok = await Cli.restore(true)
+      if (!ok) {
+        showSnackBar(t('backup.error'), false)
+        return
+      }
+      if (await Cli.nuke(showSnackBar) && !await Cli.restore(false)) {
+        showSnackBar(t('backup.error'), false)
+      }
+    })
+    if (!started) {
+      setShowBackupRestoreDialog(true)
+      showSnackBar(t('global.processing'), true, 3000)
     }
   }, [showSnackBar])
 
