@@ -3,6 +3,26 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v2.2.0
+
+#### Scripts
+- keep nuked apps hidden when updating from v1 or any v2 release
+- cache and validate apk paths before whiteouts hide the apps
+- keep current whiteouts and restore lists when an update fails
+- retry failed restores and handle updated system apps safely
+- write state, config, migrations, and backups atomically
+- reject unsafe whiteout paths and clean custom partition leftovers
+
+#### WebUI
+- stop overlapping nuke, restore, settings, whiteout, and backup changes
+- keep loaded state when device reads or writes fail
+- apply imported configs and show unknown apps in filters
+
+#### Workflows
+- check release tag, version, version code, and zip name before release
+
+---
+
 ### v2.1.1
 
 #### Scripts
