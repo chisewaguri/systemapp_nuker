@@ -9,9 +9,17 @@ export class Cli {
     return new Promise(resolve => {
       let out = ''
       const err: string[] = []
-      const ps = spawn('busybox', ['nsenter', '-t1', '-m', `${MOD_DIR}/nuke.sh`], {
-        env: { PATH: '/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH' }
-      })
+      let ps: ReturnType<typeof spawn>
+      try {
+        ps = spawn('busybox', ['nsenter', '-t1', '-m', `${MOD_DIR}/nuke.sh`], {
+          env: { PATH: '/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH' }
+        })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        show(t('nuke.error', { stderr: message }), false)
+        resolve(false)
+        return
+      }
       ps.stdout.on('data', data => out += data)
       ps.stderr.on('data', data => err.push(data))
       ps.on('exit', code => {
