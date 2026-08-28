@@ -5,7 +5,7 @@ import { MOD_DIR, PERSIST_DIR } from '../constant'
 import type { useSnackBar } from '../components/SnackBar'
 
 export class Cli {
-  static nuke(show: ReturnType<typeof useSnackBar>['show']): Promise<void> {
+  static nuke(show: ReturnType<typeof useSnackBar>['show']): Promise<boolean> {
     return new Promise(resolve => {
       let out = ''
       const err: string[] = []
@@ -17,7 +17,7 @@ export class Cli {
       ps.on('exit', code => {
         if (code !== 0) {
           show(t('nuke.error', { stderr: err.join('\n') }), false)
-          return resolve()
+          return resolve(false)
         }
         if (out.includes('Uninstall only mode')) {
           show(t('nuke.success_no_reboot'))
@@ -27,11 +27,11 @@ export class Cli {
             callback: () => Cli.reboot(show),
           })
         }
-        resolve()
+        resolve(true)
       })
       ps.on('error', error => {
         show(t('nuke.error', { stderr: error.message }), false)
-        resolve()
+        resolve(false)
       })
     })
   }
