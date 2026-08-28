@@ -70,7 +70,10 @@ export default function Restore() {
         await Cli.nuke(showSnackBar)
         await appListManager.refresh()
           .then(() => setApps(appListManager.nukedAppList))
-          .catch(() => showSnackBar(t('global.read_error'), false))
+          .catch(() => {
+            setLoadFailed(true)
+            showSnackBar(t('global.read_error'), false)
+          })
       }
     } finally {
       processingRef.current = false

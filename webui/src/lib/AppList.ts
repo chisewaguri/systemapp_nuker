@@ -31,6 +31,7 @@ export default class AppList {
   #apps: AppInfo[] = []
   #nuking: NukeInfo[] = []
   #savedNuking: NukeInfo[] = []
+  #writable = false
   #ready: Promise<void>
 
   readonly #nukeListPath = `${PERSIST_DIR}/nuke_list.txt`
@@ -44,9 +45,20 @@ export default class AppList {
   }
 
   async #refresh() {
-    await this.#getSystemAppList()
-    await this.#getNukedAppList()
-    await this.#getNukePendingList()
+    const previousApps = this.#apps
+    const previousNuking = this.#nuking.map(app => ({ ...app }))
+    this.#writable = false
+    try {
+      await this.#getSystemAppList()
+      await this.#getNukedAppList()
+      await this.#getNukePendingList()
+      this.#writable = true
+    } catch (error) {
+      this.#apps = previousApps
+      this.#nuking = previousNuking
+      this.#updatePending()
+      throw error
+    }
   }
 
   async #getSystemAppList() {
@@ -227,12 +239,26 @@ export default class AppList {
 
   /** Writes the current nuking list to persistent storage. */
   async write() {
+    if (!this.#writable) {
+      this.#nuking = this.#savedNuking.map(app => ({ ...app }))
+      this.#updatePending()
+      return false
+    }
     let previous = this.#savedNuking.map(app => ({ ...app }))
+    let current: string
     try {
       // keep the saved path for apps already nuked (pm cant see them once
       // hidden, so keep it or it gets lost on rewrite)
-      const current = await File.readIfExists(`${this.#nukeListPath}`)
+      current = await File.readIfExists(`${this.#nukeListPath}`)
       previous = parseNuking(current)
+    } catch {
+      this.#nuking = previous
+      this.#updatePending()
+      this.#writable = false
+      return false
+    }
+
+    try {
       const pathOf = new Map<string, string>()
       for (const l of current.split('\n')) {
         if (!l.trim() || l.startsWith('#') || l.startsWith('$')) continue

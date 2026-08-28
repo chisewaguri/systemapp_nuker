@@ -82,7 +82,10 @@ export default function WhiteoutPage() {
         snackBar.show(t('global.write_error'), false)
       } else {
         await Cli.nuke(snackBar.show)
-        await whiteoutManager.refresh().catch(() => snackBar.show(t('global.read_error'), false))
+        await whiteoutManager.refresh().catch(() => {
+          setLoadFailed(true)
+          snackBar.show(t('global.read_error'), false)
+        })
       }
       setWhiteouts([...whiteoutManager.whiteouts])
     } finally {

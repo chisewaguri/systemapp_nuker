@@ -79,7 +79,10 @@ export default function Home() {
         await Cli.nuke(showSnackBar)
         await appListManager.refresh()
           .then(() => setApps(appListManager.systemAppList))
-          .catch(() => showSnackBar(t('global.read_error'), false))
+          .catch(() => {
+            setLoadFailed(true)
+            showSnackBar(t('global.read_error'), false)
+          })
       }
     } finally {
       processingRef.current = false
