@@ -4,6 +4,7 @@ import { isDev } from './utils'
 
 export class Whiteout {
   #whiteouts: string[] = []
+  #savedWhiteouts: string[] = []
   #whiteoutPath = `${PERSIST_DIR}/raw_whiteouts.txt`
   #ready: Promise<void>
 
@@ -21,18 +22,16 @@ export class Whiteout {
         "/system/init.rc",
         "/system/etc/permission/cn.google.xml"
       ]
+      this.#savedWhiteouts = [...this.#whiteouts]
       return
     }
-    const content = await File.read(this.#whiteoutPath).catch(() => {})
-    if (!content) {
-      this.#whiteouts = []
-      return
-    }
+    const content = await File.readIfExists(this.#whiteoutPath)
 
     this.#whiteouts = content
       .split('\n')
       .map(line => line.trim())
       .filter(line => line.length > 0 && !line.startsWith('#') && !line.startsWith('$'))
+    this.#savedWhiteouts = [...this.#whiteouts]
   }
 
   get whiteouts() {
@@ -43,12 +42,17 @@ export class Whiteout {
     this.#whiteouts = whiteouts
   }
 
+  async refresh() {
+    await this.#getWhiteouts()
+  }
+
   async write() {
     try {
       await File.write(this.#whiteoutPath, this.#whiteouts.join('\n'))
-      await this.#getWhiteouts()
+      this.#savedWhiteouts = [...this.#whiteouts]
       return true
     } catch {
+      this.#whiteouts = [...this.#savedWhiteouts]
       return false
     }
   }

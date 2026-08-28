@@ -18,6 +18,13 @@ export class File {
     return result.stdout
   }
 
+  static async readIfExists(path: string): Promise<string> {
+    const quoted = shellQuote(path)
+    const result = await exec(`[ ! -e ${quoted} ] || cat ${quoted}`)
+    if (result.errno !== 0) throw new Error(`File.readIfExists failed (${result.errno}): ${result.stderr}`)
+    return result.stdout
+  }
+
   static async write(path: string, data: string): Promise<void> {
     const result = await exec(`printf '%s\\n' ${shellQuote(data.trim())} > ${shellQuote(path)}`)
     if (result.errno !== 0) throw new Error(`File.write failed (${result.errno}): ${result.stderr}`)
