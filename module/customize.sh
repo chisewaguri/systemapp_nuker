@@ -19,7 +19,7 @@ disable_only_mode=false
 
 # set config.sh value
 set_config() {
-    sed -i "s/$1=.*/$1=$2/" "$NEW_CONFIG"
+    sed -i "s/$1=.*/$1=$2/" "$NEW_CONFIG" || abort "Failed to update config"
 }
 
 # === MAIN SCRIPT ===
@@ -28,13 +28,13 @@ set_config() {
 [ -z "$MODPATH" ] && { echo "[ERROR] MODPATH is undefined. Exiting setup."; exit 1; }
 
 # create persistent directory if it doesn't exist
-mkdir -p "$PERSIST_DIR"
+mkdir -p "$PERSIST_DIR" || abort "Failed to create data folder"
 
 # keep the old config until setup finishes
-mv "$MODPATH/config.sh" "$NEW_CONFIG"
+mv -f "$MODPATH/config.sh" "$NEW_CONFIG" || abort "Failed to stage config"
 
 # set permissions for config
-set_perm "$NEW_CONFIG" 0 2000 0755
+set_perm "$NEW_CONFIG" 0 2000 0755 || abort "Failed to set config permissions"
 
 # display loading animation for compatible environments
 if [ "$MMRL" = "true" ] || { [ "$KSU" = "true" ] && [ "$KSU_VER_CODE" -ge 11998 ]; } ||
@@ -184,11 +184,17 @@ if [ -f "$PERSIST_DIR/nuke_list.json" ]; then
     # "<pkg> <path> <label>". json has the app_path, update needs it since
     # apps are still hidden by the old module's whiteouts
     migrated_list="$PERSIST_DIR/nuke_list.txt.new"
-    sed -n -e 's/.*"package_name": "\([^"]*\)",/\1/p' -e 's/.*"app_path": "\([^"]*\)",/\1/p' -e 's/.*"app_name": "\([^"]*\)"/\1/p' "$PERSIST_DIR/nuke_list.json" | sed 'N;N;s/\n/ /g' > "$migrated_list"
+    migration_fields="$migrated_list.fields.$$"
+    if ! sed -n -e 's/.*"package_name": "\([^"]*\)",/\1/p' -e 's/.*"app_path": "\([^"]*\)",/\1/p' -e 's/.*"app_name": "\([^"]*\)"/\1/p' "$PERSIST_DIR/nuke_list.json" > "$migration_fields" ||
+        ! sed 'N;N;s/\n/ /g' "$migration_fields" > "$migrated_list"; then
+        rm -f "$migration_fields" "$migrated_list" "$NEW_CONFIG"
+        abort "Failed to migrate nuke_list.json"
+    fi
+    rm -f "$migration_fields"
 
-    package_count=$(grep -c '"package_name":' "$PERSIST_DIR/nuke_list.json" 2>/dev/null || true)
-    path_count=$(grep -c '"app_path":' "$PERSIST_DIR/nuke_list.json" 2>/dev/null || true)
-    migrated_count=$(grep -cEv '^$|^#' "$migrated_list" 2>/dev/null || true)
+    package_count=$(awk '/"package_name":/{count++} END{print count+0}' "$PERSIST_DIR/nuke_list.json") || abort "Failed to read nuke_list.json"
+    path_count=$(awk '/"app_path":/{count++} END{print count+0}' "$PERSIST_DIR/nuke_list.json") || abort "Failed to read nuke_list.json"
+    migrated_count=$(awk '!/^$/ && !/^#/{count++} END{print count+0}' "$migrated_list") || abort "Failed to read migrated list"
     if [ "$package_count" != "$path_count" ] || [ "$package_count" != "$migrated_count" ]; then
         rm -f "$migrated_list" "$NEW_CONFIG"
         abort "Failed to migrate nuke_list.json"
@@ -204,11 +210,11 @@ if ! CONFIG_FILE="$NEW_CONFIG" REMOVE_LIST="$update_list" sh "$MODPATH/nuke.sh" 
 fi
 
 if [ -n "$migrated_list" ]; then
-    mv -f "$migrated_list" "$PERSIST_DIR/nuke_list.txt"
-    rm -f "$PERSIST_DIR/nuke_list.json"
+    mv -f "$migrated_list" "$PERSIST_DIR/nuke_list.txt" || abort "Failed to save migrated list"
 fi
-mv -f "$NEW_CONFIG" "$PERSIST_DIR/config.sh"
-set_perm "$PERSIST_DIR/config.sh" 0 2000 0755
+mv -f "$NEW_CONFIG" "$PERSIST_DIR/config.sh" || abort "Failed to save config"
+[ -z "$migrated_list" ] || rm -f "$PERSIST_DIR/nuke_list.json" || abort "Failed to remove old nuke list"
+set_perm "$PERSIST_DIR/config.sh" 0 2000 0755 || abort "Failed to set config permissions"
 
 echo "[~] config: uninstall_only_mode=$uninstall_only_mode"
 echo "[~] config: mounting_mode=$mounting_mode"
