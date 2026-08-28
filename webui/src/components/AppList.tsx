@@ -109,9 +109,10 @@ const AppList = forwardRef<AppListHandle, AppListProps>(function AppList({ apps,
       app.appLabel.toLowerCase().includes(searchQuery.toLowerCase()) ||
       app.packageName.toLowerCase().includes(searchQuery.toLowerCase())
 
-    const appCategories = Object.entries(categoryMap)
+    const listedCategories = Object.entries(categoryMap)
       .filter(([, pkgs]) => pkgs.includes(app.packageName))
       .map(([id]) => id)
+    const appCategories = listedCategories.length > 0 ? listedCategories : ['unknown']
 
     const matchesCategory =
       selectedCategories.length === 0 ||
