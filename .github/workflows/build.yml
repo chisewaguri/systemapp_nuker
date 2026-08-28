@@ -34,6 +34,16 @@ jobs:
         COMMIT_NUM=$(git rev-list --count HEAD)
         COMMIT_HASH=$(git rev-parse --short HEAD)
         VERSION=$(jq -r .version update.json)
+        VERSION_CODE=$(jq -r .versionCode update.json)
+        ZIP_URL=$(jq -r .zipUrl update.json)
+        MODULE_VERSION=$(sed -n 's/^version=//p' module/module.prop)
+        MODULE_VERSION_CODE=$(sed -n 's/^versionCode=//p' module/module.prop)
+        if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+          [ "$GITHUB_REF_NAME" = "$VERSION" ] || { echo "tag does not match update.json" >&2; exit 1; }
+          [ "$MODULE_VERSION" = "$VERSION" ] || { echo "module.prop version does not match update.json" >&2; exit 1; }
+          [ "$MODULE_VERSION_CODE" = "$VERSION_CODE" ] || { echo "module.prop versionCode does not match update.json" >&2; exit 1; }
+          [ "${ZIP_URL##*/}" = "SAN_$VERSION.zip" ] || { echo "zipUrl does not match update.json version" >&2; exit 1; }
+        fi
         ZIP_NAME=SAN_$VERSION-$COMMIT_NUM-$COMMIT_HASH
         RELEASE_ZIP_NAME=SAN_$VERSION
         
