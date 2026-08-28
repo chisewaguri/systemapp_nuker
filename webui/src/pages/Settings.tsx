@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import Header from '../components/Header'
 import Config from '../components/Config'
@@ -21,6 +21,8 @@ export default function Settings() {
   const [loadFailed, setLoadFailed] = useState(false)
   const [items, setItems] = useState<ConfigLib['config']>([])
   const [fileSelectorOpen, setFileSelectorOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false)
   const [whiteoutEnabled, setWhiteoutEnabled] = useState(() => {
     return localStorage.getItem(LOCAL_STORAGE_KEY + 'use-whiteout') === 'true'
   })
@@ -41,16 +43,25 @@ export default function Settings() {
   }, [])
 
   const handleSave = async (key: string, value: string | boolean | number) => {
-    if (!config) return
+    if (!config || savingRef.current) return
+    savingRef.current = true
+    setSaving(true)
     const updated = new ConfigLib()
     updated.config = config.config.map(item =>
       item.key === key ? { ...item, value } : item
     )
-    setConfig(updated)
-    setItems(updated.config)
-    await updated.write().catch(() => {
+
+    try {
+      await updated.write()
+      setConfig(updated)
+      setItems(updated.config)
+    } catch {
+      setItems([...config.config])
       snackBar.show(t('global.write_error'), false)
-    })
+    } finally {
+      savingRef.current = false
+      setSaving(false)
+    }
   }
 
   const handleImport = async (content: string | null) => {
@@ -144,7 +155,7 @@ export default function Settings() {
       <div className="text-sm text-primary ps-8 pb-2">
         {t('settings.config')}
       </div>
-      <Config items={items} onSave={handleSave} />
+      <Config items={items} onSave={handleSave} disabled={saving} />
       <div className="text-sm text-primary ps-8 pb-2">
         Advanced
       </div>

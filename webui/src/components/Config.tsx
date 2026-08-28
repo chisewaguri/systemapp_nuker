@@ -6,9 +6,10 @@ import type { MdOutlinedSelect, MdOutlinedTextField } from '@material/web/all'
 interface ConfigProps {
   items: ConfigItem[]
   onSave: (key: string, value: string | boolean | number) => void
+  disabled?: boolean
 }
 
-export default function Config({ items, onSave }: ConfigProps) {
+export default function Config({ items, onSave, disabled = false }: ConfigProps) {
   const { t } = useTranslation()
   const visibleItems = items.filter(item => !item.readonly)
 
@@ -26,6 +27,7 @@ export default function Config({ items, onSave }: ConfigProps) {
             label={label}
             supporting-text={description}
             value={String(item.value)}
+            disabled={disabled}
             style={{ '--md-outlined-field-supporting-text-color': 'var(--md-sys-color-outline)' } as React.CSSProperties}
             onChange={(e: React.ChangeEvent<MdOutlinedSelect>) => {
               const target = e.target
@@ -59,6 +61,7 @@ export default function Config({ items, onSave }: ConfigProps) {
           <md-switch
             icons
             selected={item.value}
+            disabled={disabled}
             onChange={() => onSave(item.key, !item.value)}
           />
         ),
@@ -75,6 +78,7 @@ export default function Config({ items, onSave }: ConfigProps) {
           supporting-text={description}
           value={String(item.value)}
           type={typeof item.value === 'number' ? 'number' : 'text'}
+          disabled={disabled}
           style={{ '--md-outlined-field-supporting-text-color': 'var(--md-sys-color-outline)' } as React.CSSProperties}
           onBlur={(e: React.FocusEvent<MdOutlinedTextField>) => {
             const target = e.target
