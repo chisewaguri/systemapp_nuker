@@ -154,6 +154,19 @@ export default class AppList {
 
     const nukeList = await File.readIfExists(`${this.#nukeListPath}`)
     this.#nuking = parseNuking(nukeList)
+    for (const app of this.#nuking) {
+      if (this.#apps.some(item => item.packageName === app.packageName)) continue
+      this.#apps.push({
+        packageName: app.packageName,
+        versionName: null,
+        versionCode: null,
+        appLabel: app.appLabel,
+        isSystem: true,
+        uid: null,
+        nuked: false,
+        pending: false,
+      })
+    }
     this.#savedNuking = this.#nuking.map(app => ({ ...app }))
     this.#updatePending()
   }
@@ -176,17 +189,19 @@ export default class AppList {
     await this.#refresh()
   }
 
-  /** Returns all installed system apps, sorted with pending=true first. */
+  /** Returns apps not in the current nuke list. */
   get systemAppList(): AppInfo[] {
+    const nukingPkgs = new Set(this.#nuking.map(app => app.packageName))
     return this.#apps
-      .filter(app => !app.nuked)
+      .filter(app => !nukingPkgs.has(app.packageName))
       .sort((a, b) => (a.pending === b.pending ? 0 : a.pending ? -1 : 1))
   }
 
-  /** Returns all system apps that are currently nuked, sorted with pending=true first. */
+  /** Returns apps in the current nuke list. */
   get nukedAppList(): AppInfo[] {
+    const nukingPkgs = new Set(this.#nuking.map(app => app.packageName))
     return this.#apps
-      .filter(app => app.nuked)
+      .filter(app => nukingPkgs.has(app.packageName))
       .sort((a, b) => (a.pending === b.pending ? 0 : a.pending ? -1 : 1))
   }
 
