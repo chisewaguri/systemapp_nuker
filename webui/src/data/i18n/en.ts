@@ -12,6 +12,7 @@ const en = {
   global: {
     close: "Close",
     search: "Search",
+    read_error: "Failed to load configuration",
     write_error: "Failed to save changes",
     processing: "Processing...",
   },

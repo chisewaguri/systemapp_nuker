@@ -18,6 +18,7 @@ export default function Settings() {
   const snackBar = useSnackBar()
   const appListManager = useAppList()
   const [config, setConfig] = useState<ConfigLib | null>(null)
+  const [loadFailed, setLoadFailed] = useState(false)
   const [items, setItems] = useState<ConfigLib['config']>([])
   const [fileSelectorOpen, setFileSelectorOpen] = useState(false)
   const [whiteoutEnabled, setWhiteoutEnabled] = useState(() => {
@@ -36,7 +37,7 @@ export default function Settings() {
     cfg.read().then(() => {
       setConfig(cfg)
       setItems(cfg.config)
-    })
+    }).catch(() => setLoadFailed(true))
   }, [])
 
   const handleSave = async (key: string, value: string | boolean | number) => {
@@ -64,7 +65,9 @@ export default function Settings() {
   if (!config) {
     return (
       <div className="flex items-center justify-center h-full">
-        <md-circular-progress indeterminate />
+        {loadFailed
+          ? <span className="text-error">{t('global.read_error')}</span>
+          : <md-circular-progress indeterminate />}
       </div>
     )
   }
