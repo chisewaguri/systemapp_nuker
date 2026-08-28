@@ -78,6 +78,7 @@ normalize_whiteout_path() {
 
 is_apk_path() {
     case "$1" in
+        /data/app/*) return 1 ;;
         /*.apk) return 0 ;;
         *) return 1 ;;
     esac
@@ -87,6 +88,23 @@ get_apk_path() {
     pm path "$1" 2>/dev/null |
         sed -n 's|^package:\(/.*\.apk\)$|\1|p' |
         head -n1
+}
+
+get_factory_apk_path() {
+    pm list packages -f -s -u --factory-only "$1" 2>/dev/null |
+        awk -F= -v pkg="$1" '$NF == pkg {
+            sub(/^package:/, "", $1)
+            if ($1 ~ /^\/.*\.apk$/) {
+                print $1
+                exit
+            }
+        }'
+}
+
+uninstall_for_user() {
+    package_name="$1"
+    pm list packages "$package_name" 2>/dev/null | grep -qx "package:$package_name" || return 0
+    pm uninstall --user 0 "$package_name" >/dev/null 2>&1
 }
 
 append_line() {
@@ -193,9 +211,13 @@ nuke_saved_apps() {
         case "$line" in
             ""|\#*) continue ;;
         esac
+        package_name=$(echo "$line" | awk '{print $1}')
         saved_path=$(echo "$line" | awk '{print $2}')
-        is_apk_path "$saved_path" || continue
-        whiteout_create "$(dirname "$saved_path")" > /dev/null || return 1
+        if is_apk_path "$saved_path"; then
+            whiteout_create "$(dirname "$saved_path")" > /dev/null || return 1
+        else
+            uninstall_for_user "$package_name" || return 1
+        fi
     done < "$REMOVE_LIST"
 }
 
@@ -253,8 +275,8 @@ prepare_nuke_list() {
         saved_path=$(echo "$line" | awk '{print $2}')
         if is_apk_path "$saved_path"; then
             label=$(echo "$line" | sed 's/^[^ ]* [^ ]* *//')
-        elif echo "$saved_path" | grep -q '^/system/'; then
-            # 2.1.1 guessed this path from whiteout order, dont trust it
+        elif echo "$saved_path" | grep -q '^/'; then
+            # old versions could save a bad path, keep it out of the label
             label=$(echo "$line" | sed 's/^[^ ]* [^ ]* *//')
             saved_path=""
         else
@@ -262,10 +284,20 @@ prepare_nuke_list() {
             saved_path=""
         fi
         apk_path=$(get_apk_path "$package_name")
+        factory_path=""
+        if echo "$apk_path" | grep -q '^/data/app' || [ -z "$saved_path" ]; then
+            factory_path=$(get_factory_apk_path "$package_name")
+            is_apk_path "$factory_path" && saved_path="$factory_path"
+        fi
         if echo "$apk_path" | grep -q '^/data/app' && pm list packages -s | grep -qx "package:$package_name"; then
             if [ "$update" = true ]; then
                 pm uninstall-system-updates "$package_name" >/dev/null 2>&1 || true
                 apk_path=$(get_apk_path "$package_name")
+                if echo "$apk_path" | grep -q '^/data/app'; then
+                    uninstall_for_user "$package_name" || { rm -f "$list_tmp"; return 1; }
+                    apk_path=""
+                fi
+                [ -n "$apk_path" ] || apk_path="$saved_path"
             else
                 if [ -n "$saved_path" ]; then
                     echo "$package_name $saved_path $label" || { rm -f "$list_tmp"; return 1; }
@@ -289,9 +321,8 @@ prepare_nuke_list() {
                 echo "$package_name  $label" || { rm -f "$list_tmp"; return 1; }
                 continue
             fi
-            echo "cant find apk path for $package_name" >&2
-            rm -f "$list_tmp"
-            return 1
+            echo "$package_name  $label" || { rm -f "$list_tmp"; return 1; }
+            continue
         fi
         if echo "$apk_path" | grep -q '^/data/app'; then
             echo "cant find system apk for $package_name" >&2
@@ -351,12 +382,21 @@ nuke_system_apps() {
             if is_apk_path "$saved_path"; then
                 # drop pkg and path, the rest is label
                 label=$(echo "$line" | sed 's/^[^ ]* [^ ]* *//')
+            elif echo "$saved_path" | grep -q '^/'; then
+                label=$(echo "$line" | sed 's/^[^ ]* [^ ]* *//')
+                saved_path=""
             else
                 # no path column yet, everything after pkg is label
                 label=$(echo "$line" | sed 's/^[^ ]* *//')
                 saved_path=""
             fi
             apk_path=$(get_apk_path "$package_name")
+            if echo "$apk_path" | grep -q '^/data/app'; then
+                factory_path=$(get_factory_apk_path "$package_name")
+                is_apk_path "$factory_path" && saved_path="$factory_path"
+                uninstall_for_user "$package_name" || { rm -f "$list_tmp"; return 1; }
+                apk_path=""
+            fi
             [ -n "$apk_path" ] || apk_path="$saved_path"
             if echo "$apk_path" | grep -q '^/data/app'; then
                 echo "cant remove system update for $package_name" >&2
@@ -369,6 +409,10 @@ nuke_system_apps() {
                     return 1
                 fi
                 ls "$MODULE_UPDATE_DIR$apk_path" 2>/dev/null
+            elif ! uninstall_for_user "$package_name"; then
+                echo "cant uninstall $package_name" >&2
+                rm -f "$list_tmp"
+                return 1
             fi
             echo "$package_name $apk_path $label" || { rm -f "$list_tmp"; return 1; }
         done < "$REMOVE_LIST" > "$list_tmp" || { rm -f "$list_tmp"; return 1; }
