@@ -323,6 +323,11 @@ nuke_system_apps() {
             fi
             apk_path=$(pm path "$package_name" | head -n1 | sed "s/package://")
             [ "$apk_path" = "" ] && apk_path="$saved_path"
+            if echo "$apk_path" | grep -q '^/data/app'; then
+                echo "cant remove system update for $package_name" >&2
+                rm -f "$REMOVE_LIST.tmp"
+                return 1
+            fi
             if [ "$apk_path" != "" ]; then
                 if ! whiteout_create "$(dirname "$apk_path")" > /dev/null; then
                     rm -f "$REMOVE_LIST.tmp"
