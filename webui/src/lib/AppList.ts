@@ -17,9 +17,20 @@ interface NukeInfo {
   appLabel: string
 }
 
+function parseNuking(content: string): NukeInfo[] {
+  return content
+    .split('\n')
+    .filter(line => line.trim() && !line.startsWith('#') && !line.startsWith('$'))
+    .map(line => {
+      const { packageName, appLabel } = parseNukeLine(line)
+      return { packageName, appLabel }
+    })
+}
+
 export default class AppList {
   #apps: AppInfo[] = []
   #nuking: NukeInfo[] = []
+  #savedNuking: NukeInfo[] = []
   #ready: Promise<void>
 
   readonly #nukeListPath = `${PERSIST_DIR}/nuke_list.txt`
@@ -54,7 +65,7 @@ export default class AppList {
       return
     }
 
-    const pkgs = await listPackages('system').catch(() => [])
+    const pkgs = await listPackages('system')
 
     let infos: PackagesInfo[]
     try {
@@ -94,7 +105,7 @@ export default class AppList {
       return
     }
 
-    const nukeList = await File.read(`${this.#nukeListPath}.old`).catch(() => '')
+    const nukeList = await File.readIfExists(`${this.#nukeListPath}.old`)
     const nukedApps = nukeList.split('\n').filter(line => line.trim() && !line.startsWith('#') && !line.startsWith('$'))
 
     for (const line of nukedApps) {
@@ -121,35 +132,25 @@ export default class AppList {
   async #getNukePendingList() {
     if (isDev()) {
       const nukingPkgs = ['com.miui.videoplayer', 'com.xiaomi.midrive']
-      this.#apps.forEach(app => {
-        const inNukingList = nukingPkgs.includes(app.packageName)
-        if (app.nuked && !inNukingList) {
-          app.pending = true
-        } else if (!app.nuked && inNukingList) {
-          app.pending = true
-        }
-      })
+      this.#nuking = this.#apps
+        .filter(app => nukingPkgs.includes(app.packageName))
+        .map(app => ({ packageName: app.packageName, appLabel: app.appLabel }))
+      this.#savedNuking = this.#nuking.map(app => ({ ...app }))
+      this.#updatePending()
       return
     }
 
-    const nukeList = await File.read(`${this.#nukeListPath}`).catch(() => '')
-    const nukedApps = nukeList.split('\n').filter(line => line.trim() && !line.startsWith('#') && !line.startsWith('$'))
-    this.#nuking = nukedApps.map((line: string) => {
-      const { packageName: pkg, appLabel: label } = parseNukeLine(line)
-      return {
-        packageName: pkg,
-        appLabel: label,
-      }
-    })
+    const nukeList = await File.readIfExists(`${this.#nukeListPath}`)
+    this.#nuking = parseNuking(nukeList)
+    this.#savedNuking = this.#nuking.map(app => ({ ...app }))
+    this.#updatePending()
+  }
 
+  #updatePending() {
     const nukingPkgs = new Set(this.#nuking.map(n => n.packageName))
     this.#apps.forEach(app => {
       const inNukingList = nukingPkgs.has(app.packageName)
-      if (app.nuked && !inNukingList) {
-        app.pending = true
-      } else if (!app.nuked && inNukingList) {
-        app.pending = true
-      }
+      app.pending = app.nuked ? !inNukingList : inNukingList
     })
   }
 
@@ -226,10 +227,12 @@ export default class AppList {
 
   /** Writes the current nuking list to persistent storage. */
   async write() {
+    let previous = this.#savedNuking.map(app => ({ ...app }))
     try {
       // keep the saved path for apps already nuked (pm cant see them once
       // hidden, so keep it or it gets lost on rewrite)
-      const current = await File.read(`${this.#nukeListPath}`).catch(() => '')
+      const current = await File.readIfExists(`${this.#nukeListPath}`)
+      previous = parseNuking(current)
       const pathOf = new Map<string, string>()
       for (const l of current.split('\n')) {
         if (!l.trim() || l.startsWith('#') || l.startsWith('$')) continue
@@ -239,9 +242,11 @@ export default class AppList {
 
       const lines = this.#nuking.map(n => `${n.packageName} ${pathOf.get(n.packageName) ?? ''} ${n.appLabel.replace(/\n/g, ' ')}`)
       await File.write(`${this.#nukeListPath}`, lines.join('\n'))
-      await this.#refresh()
+      this.#savedNuking = this.#nuking.map(app => ({ ...app }))
       return true
     } catch {
+      this.#nuking = previous
+      this.#updatePending()
       return false
     }
   }

@@ -19,6 +19,7 @@ export default function Home() {
   const appListManager = useAppList()
   const [apps, setApps] = useState<AppInfo[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadFailed, setLoadFailed] = useState(false)
   const [fileSelectorOpen, setFileSelectorOpen] = useState(false)
   const [fabVisible, setFabVisible] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -29,6 +30,9 @@ export default function Home() {
   useEffect(() => {
     appListManager.waitForReady().then(() => {
       setApps(appListManager.systemAppList)
+      setLoading(false)
+    }).catch(() => {
+      setLoadFailed(true)
       setLoading(false)
     })
   }, [appListManager])
@@ -70,10 +74,12 @@ export default function Home() {
       const ok = await appListManager.write()
       if (!ok) {
         showSnackBar(t('global.write_error'), false)
+        setApps(appListManager.systemAppList)
       } else {
         await Cli.nuke(showSnackBar)
         await appListManager.refresh()
-        setApps(appListManager.systemAppList)
+          .then(() => setApps(appListManager.systemAppList))
+          .catch(() => showSnackBar(t('global.read_error'), false))
       }
     } finally {
       processingRef.current = false
@@ -92,6 +98,14 @@ export default function Home() {
     return (
       <div className="flex items-center justify-center h-full">
         <md-circular-progress indeterminate />
+      </div>
+    )
+  }
+
+  if (loadFailed) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <span className="text-error">{t('global.read_error')}</span>
       </div>
     )
   }

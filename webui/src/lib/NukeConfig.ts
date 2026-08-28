@@ -83,7 +83,10 @@ export class NukeConfig {
         }
       }
 
-      await appList.write()
+      if (!await appList.write()) {
+        snackBar(t('global.write_error'), false)
+        return
+      }
 
       if (importedCount === 0) {
         snackBar(t('nuke_config.import_empty'), false)

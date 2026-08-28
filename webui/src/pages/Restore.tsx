@@ -17,6 +17,7 @@ export default function Restore() {
   const appListManager = useAppList()
   const [apps, setApps] = useState<AppInfo[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadFailed, setLoadFailed] = useState(false)
   const [fabVisible, setFabVisible] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
@@ -26,6 +27,9 @@ export default function Restore() {
   useEffect(() => {
     appListManager.waitForReady().then(() => {
       setApps(appListManager.nukedAppList)
+      setLoading(false)
+    }).catch(() => {
+      setLoadFailed(true)
       setLoading(false)
     })
   }, [appListManager])
@@ -61,10 +65,12 @@ export default function Restore() {
       const ok = await appListManager.write()
       if (!ok) {
         showSnackBar(t('global.write_error'), false)
+        setApps(appListManager.nukedAppList)
       } else {
         await Cli.nuke(showSnackBar)
         await appListManager.refresh()
-        setApps(appListManager.nukedAppList)
+          .then(() => setApps(appListManager.nukedAppList))
+          .catch(() => showSnackBar(t('global.read_error'), false))
       }
     } finally {
       processingRef.current = false
@@ -83,6 +89,14 @@ export default function Restore() {
     return (
       <div className="flex items-center justify-center h-full">
         <md-circular-progress indeterminate />
+      </div>
+    )
+  }
+
+  if (loadFailed) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <span className="text-error">{t('global.read_error')}</span>
       </div>
     )
   }
