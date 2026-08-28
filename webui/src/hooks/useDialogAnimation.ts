@@ -1,10 +1,15 @@
 import type { MdDialog } from '@material/web/dialog/dialog.js'
 
+const customizedDialogs = new WeakSet<MdDialog>()
+
 /**
  * Customize MdDialog animation
  * @param dialog MdDialog instance
  */
 export function customizeDialogAnimation(dialog: MdDialog): void {
+  if (customizedDialogs.has(dialog)) return
+  customizedDialogs.add(dialog)
+
   const defaultOpenAnim = dialog.getOpenAnimation
   const defaultCloseAnim = dialog.getCloseAnimation
 
