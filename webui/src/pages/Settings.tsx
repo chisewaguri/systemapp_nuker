@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import Header from '../components/Header'
 import Config from '../components/Config'
@@ -12,6 +12,7 @@ import { Cli } from '../lib/Cli'
 import { REPO, TELEGRAM, LOCAL_STORAGE_KEY } from '../constant'
 import TelegramIcon from '../assets/telegram.svg?react'
 import WhiteoutIcon from '../assets/folder_off.svg?react'
+import { runMutation } from '../lib/mutationLock'
 
 export default function Settings() {
   const { t } = useTranslation()
@@ -22,7 +23,6 @@ export default function Settings() {
   const [items, setItems] = useState<ConfigLib['config']>([])
   const [fileSelectorOpen, setFileSelectorOpen] = useState(false)
   const [saving, setSaving] = useState(false)
-  const savingRef = useRef(false)
   const [whiteoutEnabled, setWhiteoutEnabled] = useState(() => {
     return localStorage.getItem(LOCAL_STORAGE_KEY + 'use-whiteout') === 'true'
   })
@@ -43,24 +43,28 @@ export default function Settings() {
   }, [])
 
   const handleSave = async (key: string, value: string | boolean | number) => {
-    if (!config || savingRef.current) return
-    savingRef.current = true
-    setSaving(true)
-    const updated = new ConfigLib()
-    updated.config = config.config.map(item =>
-      item.key === key ? { ...item, value } : item
-    )
+    if (!config) return
+    const started = await runMutation(async () => {
+      setSaving(true)
+      const updated = new ConfigLib()
+      updated.config = config.config.map(item =>
+        item.key === key ? { ...item, value } : item
+      )
 
-    try {
-      await updated.write()
-      setConfig(updated)
-      setItems(updated.config)
-    } catch {
+      try {
+        await updated.write()
+        setConfig(updated)
+        setItems(updated.config)
+      } catch {
+        setItems([...config.config])
+        snackBar.show(t('global.write_error'), false)
+      } finally {
+        setSaving(false)
+      }
+    })
+    if (!started) {
       setItems([...config.config])
-      snackBar.show(t('global.write_error'), false)
-    } finally {
-      savingRef.current = false
-      setSaving(false)
+      snackBar.show(t('global.processing'), true, 3000)
     }
   }
 

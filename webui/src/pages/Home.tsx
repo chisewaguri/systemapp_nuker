@@ -12,6 +12,7 @@ import SnackBar, { useSnackBar } from '../components/SnackBar'
 import FileSelector from '../lib/FileSelector'
 import Fab from '../components/Fab'
 import { categories } from '../data/category'
+import { runMutation } from '../lib/mutationLock'
 
 export default function Home() {
   const { t } = useTranslation()
@@ -25,7 +26,6 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const appListRef = useRef<AppListHandle>(null)
-  const processingRef = useRef(false)
 
   useEffect(() => {
     appListManager.waitForReady().then(() => {
@@ -48,10 +48,7 @@ export default function Home() {
   }, [])
 
   const handleFabClick = useCallback(async () => {
-    if (processingRef.current) return
-    processingRef.current = true
-
-    try {
+    const started = await runMutation(async () => {
       const selected = appListRef.current?.getSelectedPackages() ?? []
       const currentApps = appListManager.systemAppList
       let count = 0
@@ -84,9 +81,8 @@ export default function Home() {
             showSnackBar(t('global.read_error'), false)
           })
       }
-    } finally {
-      processingRef.current = false
-    }
+    })
+    if (!started) showSnackBar(t('global.processing'), true, 3000)
   }, [appListManager, showSnackBar, t])
 
   const toggleCategory = (categoryId: string) => {

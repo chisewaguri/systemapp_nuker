@@ -3,6 +3,7 @@ import { MOD_ID, NUKE_CONFIG_VERSION } from '../constant'
 import { File } from './File'
 import AppList from './AppList'
 import { Cli } from './Cli'
+import { runMutation } from './mutationLock'
 import type { useSnackBar } from '../components/SnackBar'
 
 interface NukeConfigData {
@@ -89,27 +90,30 @@ export class NukeConfig {
       return
     }
 
-    let importedCount = 0
-    for (const pkg of packages) {
-      const app = appList.systemAppList.find(a => a.packageName === pkg)
-      if (app && !app.nuked) {
-        appList.setNuke(pkg, true)
-        importedCount++
+    const started = await runMutation(async () => {
+      let importedCount = 0
+      for (const pkg of packages) {
+        const app = appList.systemAppList.find(a => a.packageName === pkg)
+        if (app && !app.nuked) {
+          appList.setNuke(pkg, true)
+          importedCount++
+        }
       }
-    }
 
-    if (importedCount === 0) {
-      snackBar(t('nuke_config.import_empty'), false)
-      return
-    }
+      if (importedCount === 0) {
+        snackBar(t('nuke_config.import_empty'), false)
+        return
+      }
 
-    if (!await appList.write()) {
-      snackBar(t('global.write_error'), false)
-      return
-    }
+      if (!await appList.write()) {
+        snackBar(t('global.write_error'), false)
+        return
+      }
 
-    snackBar(t('nuke_config.import_success', { count: importedCount }))
-    await Cli.nuke(snackBar)
-    await appList.refresh().catch(() => snackBar(t('global.read_error'), false))
+      snackBar(t('nuke_config.import_success', { count: importedCount }))
+      await Cli.nuke(snackBar)
+      await appList.refresh().catch(() => snackBar(t('global.read_error'), false))
+    })
+    if (!started) snackBar(t('global.processing'), true, 3000)
   }
 }

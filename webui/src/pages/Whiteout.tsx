@@ -9,6 +9,7 @@ import FileSelector from '../lib/FileSelector'
 import { Whiteout as WhiteoutManager } from '../lib/Whiteout'
 import { Cli } from '../lib/Cli'
 import { useHistory } from '../hooks/useHistory'
+import { runMutation } from '../lib/mutationLock'
 
 const whiteoutManager = new WhiteoutManager()
 
@@ -23,7 +24,6 @@ export default function WhiteoutPage() {
   const [allSelected, setAllSelected] = useState(false)
   const [fileSelectorOpen, setFileSelectorOpen] = useState(false)
   const whiteoutListRef = useRef<WhiteoutListHandle>(null)
-  const processingRef = useRef(false)
   const { push, consume } = useHistory()
 
   useEffect(() => {
@@ -72,10 +72,7 @@ export default function WhiteoutPage() {
   }
 
   const saveWhiteouts = async (next: string[]) => {
-    if (processingRef.current) return
-    processingRef.current = true
-
-    try {
+    const started = await runMutation(async () => {
       whiteoutManager.whiteouts = next
       const ok = await whiteoutManager.write()
       if (!ok) {
@@ -88,9 +85,8 @@ export default function WhiteoutPage() {
         })
       }
       setWhiteouts([...whiteoutManager.whiteouts])
-    } finally {
-      processingRef.current = false
-    }
+    })
+    if (!started) snackBar.show(t('global.processing'), true, 3000)
   }
 
   const handleDelete = async () => {
