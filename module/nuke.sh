@@ -83,6 +83,12 @@ is_apk_path() {
     esac
 }
 
+get_apk_path() {
+    pm path "$1" 2>/dev/null |
+        sed -n 's|^package:\(/.*\.apk\)$|\1|p' |
+        head -n1
+}
+
 append_line() {
     file="$1"
     line="$2"
@@ -255,11 +261,11 @@ prepare_nuke_list() {
             label=$(echo "$line" | sed 's/^[^ ]* *//')
             saved_path=""
         fi
-        apk_path=$(pm path "$package_name" | head -n1 | sed 's/package://')
+        apk_path=$(get_apk_path "$package_name")
         if echo "$apk_path" | grep -q '^/data/app' && pm list packages -s | grep -qx "package:$package_name"; then
             if [ "$update" = true ]; then
                 pm uninstall-system-updates "$package_name" >/dev/null 2>&1 || true
-                apk_path=$(pm path "$package_name" | head -n1 | sed 's/package://')
+                apk_path=$(get_apk_path "$package_name")
             else
                 if [ -n "$saved_path" ]; then
                     echo "$package_name $saved_path $label" || { rm -f "$list_tmp"; return 1; }
@@ -321,7 +327,7 @@ nuke_system_apps() {
     # remove any updates for the apps being nuked
     for package_name in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
         # check if it's a system app that has been updated
-        if pm list packages -s | grep -qx "package:$package_name" && pm path "$package_name" | grep -q "/data/app"; then
+        if pm list packages -s | grep -qx "package:$package_name" && get_apk_path "$package_name" | grep -q "/data/app"; then
             pm uninstall-system-updates "$package_name" >/dev/null 2>&1 || true
         fi
     done
@@ -350,8 +356,8 @@ nuke_system_apps() {
                 label=$(echo "$line" | sed 's/^[^ ]* *//')
                 saved_path=""
             fi
-            apk_path=$(pm path "$package_name" | head -n1 | sed "s/package://")
-            [ "$apk_path" = "" ] && apk_path="$saved_path"
+            apk_path=$(get_apk_path "$package_name")
+            [ -n "$apk_path" ] || apk_path="$saved_path"
             if echo "$apk_path" | grep -q '^/data/app'; then
                 echo "cant remove system update for $package_name" >&2
                 rm -f "$list_tmp"
