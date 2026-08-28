@@ -1,7 +1,7 @@
 id=system_app_nuker
 name=App Nuker
-version=v2.2.0
-versionCode=220
+version=v2.2.1
+versionCode=221
 author=ChiseWaguri & Contributors
 description=WebUI-based debloater and whiteout creator
 updateJson=https://raw.githubusercontent.com/ChiseWaguri/systemapp_nuker/master/update.json

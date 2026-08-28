@@ -3,6 +3,20 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v2.2.1
+
+> v2.2.0 users must update. v2.2.0 can fail to nuke apps with package-manager errors or installed system updates.
+
+#### Scripts
+- filter pm path errors before creating whiteouts
+- cache factory apk paths before removing system updates
+- fall back to uninstall for user 0 when no system apk path is available
+
+#### WebUI
+- move pending nukes to Restore and pending restores to Home before reboot
+
+---
+
 ### v2.2.0
 
 #### Scripts
