@@ -86,8 +86,29 @@ is_apk_path() {
 append_line() {
     file="$1"
     line="$2"
-    [ -s "$file" ] && [ "$(tail -c 1 "$file" | wc -l)" -eq 0 ] && echo >> "$file"
-    echo "$line" >> "$file"
+    temp_file="$file.append.$$"
+    if [ -f "$file" ]; then
+        cp -f "$file" "$temp_file" || { rm -f "$temp_file"; return 1; }
+    else
+        : > "$temp_file" || return 1
+    fi
+    if [ -s "$temp_file" ] && [ "$(tail -c 1 "$temp_file" | wc -l)" -eq 0 ]; then
+        echo >> "$temp_file" || { rm -f "$temp_file"; return 1; }
+    fi
+    echo "$line" >> "$temp_file" || { rm -f "$temp_file"; return 1; }
+    mv -f "$temp_file" "$file" || { rm -f "$temp_file"; return 1; }
+}
+
+replace_file() {
+    source_file="$1"
+    target_file="$2"
+    temp_file="$target_file.tmp.$$"
+    if [ -f "$source_file" ]; then
+        cp -f "$source_file" "$temp_file" || { rm -f "$temp_file"; return 1; }
+    else
+        : > "$temp_file" || return 1
+    fi
+    mv -f "$temp_file" "$target_file" || { rm -f "$temp_file"; return 1; }
 }
 
 whiteout_has_saved_path() {
@@ -155,7 +176,7 @@ preserve_whiteouts() {
         whiteout_was_restored "$whiteout" && continue
         whiteout_create "$whiteout" > /dev/null || return 1
         if ! whiteout_has_saved_path "$whiteout" && ! whiteout_is_raw "$whiteout" && ! grep -Fqx "# legacy-whiteout $whiteout" "$REMOVE_LIST" 2>/dev/null; then
-            append_line "$REMOVE_LIST" "# legacy-whiteout $whiteout"
+            append_line "$REMOVE_LIST" "# legacy-whiteout $whiteout" || return 1
         fi
     done
 }
@@ -215,10 +236,11 @@ check_legacy_restores() {
 prepare_nuke_list() {
     check_legacy_restores || return 1
     [ -s "$REMOVE_LIST" ] || return 0
+    list_tmp="$REMOVE_LIST.tmp.$$"
 
     while IFS= read -r line || [ -n "$line" ]; do
         case "$line" in
-            ""|\#*) echo "$line"; continue ;;
+            ""|\#*) echo "$line" || { rm -f "$list_tmp"; return 1; }; continue ;;
         esac
 
         package_name=$(echo "$line" | awk '{print $1}')
@@ -240,9 +262,9 @@ prepare_nuke_list() {
                 apk_path=$(pm path "$package_name" | head -n1 | sed 's/package://')
             else
                 if [ -n "$saved_path" ]; then
-                    echo "$package_name $saved_path $label"
+                    echo "$package_name $saved_path $label" || { rm -f "$list_tmp"; return 1; }
                 else
-                    echo "$package_name  $label"
+                    echo "$package_name  $label" || { rm -f "$list_tmp"; return 1; }
                 fi
                 continue
             fi
@@ -250,44 +272,51 @@ prepare_nuke_list() {
 
         if [ -z "$apk_path" ]; then
             if [ -n "$saved_path" ]; then
-                echo "$package_name $saved_path $label"
+                echo "$package_name $saved_path $label" || { rm -f "$list_tmp"; return 1; }
                 continue
             fi
             if [ -f "$REMOVE_LIST.old" ] && awk -v pkg="$package_name" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST.old"; then
-                echo "$package_name  $label"
+                echo "$package_name  $label" || { rm -f "$list_tmp"; return 1; }
                 continue
             fi
             if [ "$update" = true ] && find "$MODDIR" -type c 2>/dev/null | grep -q .; then
-                echo "$package_name  $label"
+                echo "$package_name  $label" || { rm -f "$list_tmp"; return 1; }
                 continue
             fi
             echo "cant find apk path for $package_name" >&2
-            rm -f "$REMOVE_LIST.tmp"
+            rm -f "$list_tmp"
             return 1
         fi
         if echo "$apk_path" | grep -q '^/data/app'; then
             echo "cant find system apk for $package_name" >&2
-            rm -f "$REMOVE_LIST.tmp"
+            rm -f "$list_tmp"
             return 1
         fi
 
-        echo "$package_name $apk_path $label"
-    done < "$REMOVE_LIST" > "$REMOVE_LIST.tmp" || return 1
+        echo "$package_name $apk_path $label" || { rm -f "$list_tmp"; return 1; }
+    done < "$REMOVE_LIST" > "$list_tmp" || { rm -f "$list_tmp"; return 1; }
 
     if [ "$restore_all_legacy" != true ] && [ -f "$REMOVE_LIST.old" ]; then
         while IFS= read -r metadata || [ -n "$metadata" ]; do
             case "$metadata" in
-                "# legacy-whiteout "*) grep -Fqx "$metadata" "$REMOVE_LIST.tmp" || echo "$metadata" >> "$REMOVE_LIST.tmp" ;;
+                "# legacy-whiteout "*)
+                    grep -Fqx "$metadata" "$list_tmp"
+                    grep_status=$?
+                    [ "$grep_status" -eq 0 ] && continue
+                    [ "$grep_status" -eq 1 ] || { rm -f "$list_tmp"; return 1; }
+                    echo "$metadata" >> "$list_tmp" || { rm -f "$list_tmp"; return 1; }
+                    ;;
             esac
         done < "$REMOVE_LIST.old"
     fi
 
-    mv -f "$REMOVE_LIST.tmp" "$REMOVE_LIST"
+    mv -f "$list_tmp" "$REMOVE_LIST" || { rm -f "$list_tmp"; return 1; }
 }
 
 # nuke app from REMOVE_LIST
 nuke_system_apps() {
     total=$(grep -Ev "^$|^#" "$REMOVE_LIST" | wc -l)
+    list_tmp="$REMOVE_LIST.tmp.$$"
 
     # remove any updates for the apps being nuked
     for package_name in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
@@ -309,7 +338,7 @@ nuke_system_apps() {
         # last app never gets processed
         while IFS= read -r line || [ -n "$line" ]; do
             case "$line" in
-                ""|\#*) echo "$line"; continue ;;
+                ""|\#*) echo "$line" || { rm -f "$list_tmp"; return 1; }; continue ;;
             esac
             package_name=$(echo "$line" | awk '{print $1}')
             saved_path=$(echo "$line" | awk '{print $2}')
@@ -325,19 +354,19 @@ nuke_system_apps() {
             [ "$apk_path" = "" ] && apk_path="$saved_path"
             if echo "$apk_path" | grep -q '^/data/app'; then
                 echo "cant remove system update for $package_name" >&2
-                rm -f "$REMOVE_LIST.tmp"
+                rm -f "$list_tmp"
                 return 1
             fi
             if [ "$apk_path" != "" ]; then
                 if ! whiteout_create "$(dirname "$apk_path")" > /dev/null; then
-                    rm -f "$REMOVE_LIST.tmp"
+                    rm -f "$list_tmp"
                     return 1
                 fi
                 ls "$MODULE_UPDATE_DIR$apk_path" 2>/dev/null
             fi
-            echo "$package_name $apk_path $label"
-        done < "$REMOVE_LIST" > "$REMOVE_LIST.tmp"
-        mv -f "$REMOVE_LIST.tmp" "$REMOVE_LIST"
+            echo "$package_name $apk_path $label" || { rm -f "$list_tmp"; return 1; }
+        done < "$REMOVE_LIST" > "$list_tmp" || { rm -f "$list_tmp"; return 1; }
+        mv -f "$list_tmp" "$REMOVE_LIST" || { rm -f "$list_tmp"; return 1; }
     fi
 
     # when uninstall_only_mode=true and restore_success=false means user has enabled uninstall only mode
@@ -354,7 +383,7 @@ nuke_system_apps() {
     fi
     if [ "$uninstall_only_mode" = "true" ] && [ "$restore_success" = "true" ]; then
         echo "[-] Uninstall only mode detected"
-        [ -f "$REMOVE_LIST" ] && cp -f "$REMOVE_LIST" "$REMOVE_LIST".old
+        [ ! -f "$REMOVE_LIST" ] || replace_file "$REMOVE_LIST" "$REMOVE_LIST.old" || return 1
     fi
 
     echo "[-] Nuking complete: $total apps processed"
@@ -395,16 +424,8 @@ if [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
     if prepare_nuke_list && install_dummy; then
         exit 0
     fi
-    if [ -f "$REMOVE_LIST.old" ]; then
-        cp -f "$REMOVE_LIST.old" "$REMOVE_LIST"
-    else
-        : > "$REMOVE_LIST"
-    fi
-    if [ -f "$PERSIST_DIR/raw_whiteouts.txt.old" ]; then
-        cp -f "$PERSIST_DIR/raw_whiteouts.txt.old" "$PERSIST_DIR/raw_whiteouts.txt"
-    else
-        : > "$PERSIST_DIR/raw_whiteouts.txt"
-    fi
+    replace_file "$REMOVE_LIST.old" "$REMOVE_LIST" || exit 1
+    replace_file "$PERSIST_DIR/raw_whiteouts.txt.old" "$PERSIST_DIR/raw_whiteouts.txt" || exit 1
     exit 1
 fi
 

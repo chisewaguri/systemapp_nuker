@@ -115,7 +115,7 @@ if [ -s "$REMOVE_LIST.old" ]; then
         restore_success=true
         pm install-existing "$pkg" >/dev/null 2>&1 || restore_success=false
         pm enable "$pkg" >/dev/null 2>&1 || restore_success=false
-        [ "$restore_success" = true ] || echo "$old_line" >> "$FAILED_RESTORES"
+        [ "$restore_success" = true ] || echo "$old_line" >> "$FAILED_RESTORES" || exit 1
     done < "$REMOVE_LIST.old"
 fi
 
@@ -127,16 +127,18 @@ if [ -s "$REMOVE_LIST" ] && [ "$uninstall_only_mode" = "true" ]; then
 fi
 
 # ensure the remove list exists and save nuked apps to old list
-[ -f "$REMOVE_LIST" ] || touch "$REMOVE_LIST"
-SNAPSHOT="$REMOVE_LIST.old.new"
-: > "$SNAPSHOT"
-while IFS= read -r line || [ -n "$line" ]; do
-    echo "$line" >> "$SNAPSHOT"
-done < "$REMOVE_LIST"
-[ -f "$FAILED_RESTORES" ] && cat "$FAILED_RESTORES" >> "$SNAPSHOT"
-mv -f "$SNAPSHOT" "$REMOVE_LIST.old"
+[ -f "$REMOVE_LIST" ] || touch "$REMOVE_LIST" || exit 1
+SNAPSHOT="$REMOVE_LIST.old.new.$$"
+cp -f "$REMOVE_LIST" "$SNAPSHOT" || { rm -f "$SNAPSHOT"; exit 1; }
+if [ -s "$SNAPSHOT" ] && [ "$(tail -c 1 "$SNAPSHOT" | wc -l)" -eq 0 ]; then
+    echo >> "$SNAPSHOT" || { rm -f "$SNAPSHOT"; exit 1; }
+fi
+[ ! -f "$FAILED_RESTORES" ] || cat "$FAILED_RESTORES" >> "$SNAPSHOT" || { rm -f "$SNAPSHOT"; exit 1; }
+mv -f "$SNAPSHOT" "$REMOVE_LIST.old" || { rm -f "$SNAPSHOT"; exit 1; }
 rm -f "$FAILED_RESTORES"
-[ -f "$RAW_LIST" ] || touch "$RAW_LIST"
-cp -f "$RAW_LIST" "$RAW_LIST.old"
+[ -f "$RAW_LIST" ] || touch "$RAW_LIST" || exit 1
+RAW_SNAPSHOT="$RAW_LIST.old.new.$$"
+cp -f "$RAW_LIST" "$RAW_SNAPSHOT" || { rm -f "$RAW_SNAPSHOT"; exit 1; }
+mv -f "$RAW_SNAPSHOT" "$RAW_LIST.old" || { rm -f "$RAW_SNAPSHOT"; exit 1; }
 
 # EOF
