@@ -113,8 +113,8 @@ if [ -s "$REMOVE_LIST.old" ]; then
         pkg=$(echo "$old_line" | awk '{print $1}')
         awk -v pkg="$pkg" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null && continue
         restore_success=true
-        pm install-existing "$pkg" >/dev/null 2>&1 || restore_success=false
-        pm enable "$pkg" >/dev/null 2>&1 || restore_success=false
+        pm install-existing "$pkg" </dev/null >/dev/null 2>&1 || restore_success=false
+        pm enable "$pkg" </dev/null >/dev/null 2>&1 || restore_success=false
         [ "$restore_success" = true ] || echo "$old_line" >> "$FAILED_RESTORES" || exit 1
     done < "$REMOVE_LIST.old"
 fi
@@ -122,7 +122,7 @@ fi
 # make sure app is uninstalled if user is switching to uninstall only mode
 if [ -s "$REMOVE_LIST" ] && [ "$uninstall_only_mode" = "true" ]; then
     for pkg in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
-        pm uninstall --user 0 "$pkg" >/dev/null 2>&1 || true
+        pm uninstall --user 0 "$pkg" </dev/null >/dev/null 2>&1 || true
     done
 fi
 

@@ -85,13 +85,13 @@ is_apk_path() {
 }
 
 get_apk_path() {
-    pm path "$1" 2>/dev/null |
+    pm path "$1" </dev/null 2>/dev/null |
         sed -n 's|^package:\(/.*\.apk\)$|\1|p' |
         head -n1
 }
 
 get_factory_apk_path() {
-    pm list packages -f -s -u --factory-only "$1" 2>/dev/null |
+    pm list packages -f -s -u --factory-only "$1" </dev/null 2>/dev/null |
         awk -F= -v pkg="$1" '$NF == pkg {
             sub(/^package:/, "", $1)
             if ($1 ~ /^\/.*\.apk$/) {
@@ -103,8 +103,8 @@ get_factory_apk_path() {
 
 uninstall_for_user() {
     package_name="$1"
-    pm list packages "$package_name" 2>/dev/null | grep -qx "package:$package_name" || return 0
-    pm uninstall --user 0 "$package_name" >/dev/null 2>&1
+    pm list packages "$package_name" </dev/null 2>/dev/null | grep -qx "package:$package_name" || return 0
+    pm uninstall --user 0 "$package_name" </dev/null >/dev/null 2>&1
 }
 
 append_line() {
@@ -289,9 +289,9 @@ prepare_nuke_list() {
             factory_path=$(get_factory_apk_path "$package_name")
             is_apk_path "$factory_path" && saved_path="$factory_path"
         fi
-        if echo "$apk_path" | grep -q '^/data/app' && pm list packages -s | grep -qx "package:$package_name"; then
+        if echo "$apk_path" | grep -q '^/data/app' && pm list packages -s </dev/null | grep -qx "package:$package_name"; then
             if [ "$update" = true ]; then
-                pm uninstall-system-updates "$package_name" >/dev/null 2>&1 || true
+                pm uninstall-system-updates "$package_name" </dev/null >/dev/null 2>&1 || true
                 apk_path=$(get_apk_path "$package_name")
                 if echo "$apk_path" | grep -q '^/data/app'; then
                     uninstall_for_user "$package_name" || { rm -f "$list_tmp"; return 1; }
@@ -358,14 +358,14 @@ nuke_system_apps() {
     # remove any updates for the apps being nuked
     for package_name in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
         # check if it's a system app that has been updated
-        if pm list packages -s | grep -qx "package:$package_name" && get_apk_path "$package_name" | grep -q "/data/app"; then
-            pm uninstall-system-updates "$package_name" >/dev/null 2>&1 || true
+        if pm list packages -s </dev/null | grep -qx "package:$package_name" && get_apk_path "$package_name" | grep -q "/data/app"; then
+            pm uninstall-system-updates "$package_name" </dev/null >/dev/null 2>&1 || true
         fi
     done
 
     if [ "$uninstall_only_mode" = "true" ]; then
         for package_name in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
-            pm uninstall --user 0 "$package_name" >/dev/null 2>&1 || true
+            pm uninstall --user 0 "$package_name" </dev/null >/dev/null 2>&1 || true
         done
     else
         # whiteout creation. the list is "<pkg> <path> <label>" — rewrite it
@@ -427,8 +427,8 @@ nuke_system_apps() {
     if [ -f "$REMOVE_LIST.old" ]; then
         for pkg in $(grep -Ev "^$|^#" "$REMOVE_LIST.old" | awk '{print $1}'); do
             awk -v pkg="$pkg" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null && continue
-            pm install-existing "$pkg" >/dev/null 2>&1 || restore_success="false"
-            pm enable "$pkg" >/dev/null 2>&1 || restore_success="false"
+            pm install-existing "$pkg" </dev/null >/dev/null 2>&1 || restore_success="false"
+            pm enable "$pkg" </dev/null >/dev/null 2>&1 || restore_success="false"
         done
     fi
     if [ "$uninstall_only_mode" = "true" ] && [ "$restore_success" = "true" ]; then

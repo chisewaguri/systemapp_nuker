@@ -6,10 +6,10 @@ REMOVE_LIST="$PERSIST_DIR/nuke_list.txt.old"
 # Install apps that are uninstalled
 restore_success=true
 for pkg in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
-    if ! pm path "$pkg" >/dev/null 2>&1; then
-        pm install-existing "$pkg" >/dev/null 2>&1 || restore_success=false
+    if ! pm path "$pkg" </dev/null >/dev/null 2>&1; then
+        pm install-existing "$pkg" </dev/null >/dev/null 2>&1 || restore_success=false
     fi
-    pm enable "$pkg" >/dev/null 2>&1 || restore_success=false
+    pm enable "$pkg" </dev/null >/dev/null 2>&1 || restore_success=false
 done
 
 if [ "$restore_success" = true ]; then
