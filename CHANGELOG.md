@@ -3,6 +3,16 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v2.2.2
+
+> v2.2.1 users should update. Package-manager calls can miss APK paths while processing the nuke list, leaving apps visible after reboot.
+
+#### Scripts
+- keep package-manager commands from inheriting the nuke list as stdin
+- rebuild missing APK paths and whiteouts during module update
+
+---
+
 ### v2.2.1
 
 > v2.2.0 users must update. v2.2.0 can fail to nuke apps with package-manager errors or installed system updates.
