@@ -176,6 +176,7 @@ export default function Settings() {
           ),
           trailingContent: (
             <md-switch
+              aria-label={t('settings.whiteout_toggle')}
               icons
               selected={whiteoutEnabled}
               onChange={handleWhiteoutToggle}

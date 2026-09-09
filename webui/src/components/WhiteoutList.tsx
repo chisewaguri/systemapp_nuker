@@ -101,6 +101,7 @@ const WhiteoutList = forwardRef<WhiteoutListHandle, WhiteoutListProps>(function 
     trailingContent: (
       <div className={`transition-all duration-200 ease-out ${checkboxVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50 pointer-events-none'}`}>
         <md-checkbox
+          aria-label={whiteout}
           touch-target="wrapper"
           checked={selectedWhiteouts.has(whiteout)}
           onChange={() => toggleWhiteout(whiteout)}

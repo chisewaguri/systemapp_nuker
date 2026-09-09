@@ -93,11 +93,20 @@ export default class AppList {
       }))
     }
 
-    this.#apps = pkgs.map((_: string, i: number) => ({
-      ...infos[i],
-      nuked: false,
-      pending: false,
-    }))
+    const infoByPackage = new Map(infos.map(info => [info.packageName, info]))
+    this.#apps = pkgs.map((packageName: string) => {
+      const info = infoByPackage.get(packageName)
+      return {
+        packageName,
+        appLabel: info?.appLabel || packageName,
+        versionName: info?.versionName ?? null,
+        versionCode: info?.versionCode ?? null,
+        uid: info?.uid ?? null,
+        isSystem: true,
+        nuked: false,
+        pending: false,
+      }
+    })
   }
 
   async #getNukedAppList() {

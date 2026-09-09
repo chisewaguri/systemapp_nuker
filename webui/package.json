@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "test": "node --test tests/*.test.cjs",
     "dev": "vite",
     "build": "tsc -b && vite build --emptyOutDir",
     "lint": "eslint .",

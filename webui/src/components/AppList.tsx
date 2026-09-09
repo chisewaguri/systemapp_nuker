@@ -64,17 +64,7 @@ const AppList = forwardRef<AppListHandle, AppListProps>(function AppList({ apps,
   const { t } = useTranslation()
 
   useEffect(() => {
-    setSelectedPackages(prev => {
-      const next = new Set(prev)
-      for (const app of apps) {
-        if (app.pending) {
-          next.add(app.packageName)
-        } else {
-          next.delete(app.packageName)
-        }
-      }
-      return next
-    })
+    setSelectedPackages(new Set())
   }, [apps])
 
   useImperativeHandle(ref, () => ({
@@ -138,10 +128,16 @@ const AppList = forwardRef<AppListHandle, AppListProps>(function AppList({ apps,
               {t(`category.${cat}`)}
             </span>
           )}
+          {app.pending && (
+            <span className="text-xs font-medium text-primary select-none">
+              {t(app.nuked ? 'app_info.pending_restore' : 'app_info.pending_removal')}
+            </span>
+          )}
         </>
       ),
       trailingContent: (
         <md-checkbox
+          aria-label={`${app.appLabel} (${app.packageName})`}
           touch-target="wrapper"
           checked={selectedPackages.has(app.packageName)}
           onChange={() => togglePackage(app.packageName)}

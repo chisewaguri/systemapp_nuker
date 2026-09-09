@@ -98,6 +98,10 @@ export default function WhiteoutPage() {
   const handleAdd = async (value: string | null) => {
     setFileSelectorOpen(false)
     if (!value) return
+    if (/^\/(?:system\/)?data(?:\/|$)/.test(value)) {
+      snackBar.show(t('whiteout.data_not_supported'), false)
+      return
+    }
     const finalPath = (value.startsWith('/system/') ? value : `/system${value}`).replace(/\/+$/, '')
     await saveWhiteouts([...whiteoutManager.whiteouts, finalPath])
   }

@@ -28,29 +28,17 @@ export class File {
   static async write(path: string, data: string): Promise<void> {
     const result = await exec(`
       target=${shellQuote(path)}
-      content=${shellQuote(data.trim())}
-
-      # Prefer an atomic replacement, but keep compatibility with root hosts
-      # that allow writing the existing file while rejecting sibling files in
-      # the persistent directory (for example, some Magisk Alpha setups).
-      if tmp=$(busybox mktemp "$target.tmp.XXXXXX"); then
-        trap 'rm -f "$tmp"' EXIT HUP INT TERM
-        if printf '%s\\n' "$content" > "$tmp"; then
-          atomic=true
-          if [ -e "$target" ]; then
-            mode=$(busybox stat -c %a "$target") || atomic=false
-            owner=$(busybox stat -c %u:%g "$target") || atomic=false
-            [ "$atomic" = true ] && busybox chmod "$mode" "$tmp" || atomic=false
-            [ "$atomic" = true ] && busybox chown "$owner" "$tmp" || atomic=false
-            [ "$atomic" = true ] && busybox chcon --reference="$target" "$tmp" >/dev/null 2>&1 || true
-          fi
-          [ "$atomic" = true ] && busybox mv -f "$tmp" "$target" && exit 0
-        fi
+      tmp=$(busybox mktemp "$target.tmp.XXXXXX") || exit 1
+      trap 'rm -f "$tmp"' EXIT HUP INT TERM
+      printf '%s\\n' ${shellQuote(data.trim())} > "$tmp" || exit 1
+      if [ -e "$target" ]; then
+        mode=$(busybox stat -c %a "$target") || exit 1
+        owner=$(busybox stat -c %u:%g "$target") || exit 1
+        busybox chmod "$mode" "$tmp" || exit 1
+        busybox chown "$owner" "$tmp" || exit 1
+        busybox chcon --reference="$target" "$tmp" >/dev/null 2>&1 || true
       fi
-
-      # The direct write is intentionally the last resort: it preserves the
-      # behavior supported by older WebUI hosts when atomic staging is not.
-      printf '%s\\n' "$content" > "$target"
+      busybox mv -f "$tmp" "$target"
     `)
     if (result.errno !== 0) throw new Error(`File.write failed (${result.errno}): ${result.stderr}`)
   }

@@ -35,11 +35,12 @@ export default function BackupRestoreDialog({ open, onDismiss, onDontRestore, on
 
     const onClosed = () => {
       consume('backup-restore')
+      onDismiss()
     }
 
     el.addEventListener('closed', onClosed)
     return () => el.removeEventListener('closed', onClosed)
-  }, [consume])
+  }, [consume, onDismiss])
 
   const dialog = (
     <md-dialog ref={dialogRef}>

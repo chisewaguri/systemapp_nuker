@@ -25,6 +25,7 @@ const en = {
   },
   whiteout: {
     title: "Whiteout",
+    data_not_supported: "Whiteouts cannot target /data or its contents",
   },
   settings: {
     title: "Settings",
@@ -41,6 +42,7 @@ const en = {
     source_code_desc: "View source code on GitHub",
     telegram: "Telegram support",
     telegram_desc: "Join Telegram group for support and discussion",
+    whiteout_toggle: "Show whiteout page",
   },
   /** Category display names — used for filter chips */
   category: {
@@ -69,6 +71,8 @@ const en = {
     nuked: "Nuked",
     installed: "Installed",
     pending: "Pending",
+    pending_restore: "Pending restore",
+    pending_removal: "Pending removal",
   },
   nuke_config: {
     export_success: "Config exported to {{path}}",

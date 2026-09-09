@@ -78,8 +78,9 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
     ? `${displayApp.versionName} (${displayApp.versionCode})`
     : displayApp?.versionName ?? displayApp?.versionCode?.toString() ?? null
 
-  const status = displayApp?.nuked ? t('app_info.nuked')
-    : displayApp?.pending ? t('app_info.pending')
+  const status = displayApp?.pending
+    ? t(displayApp.nuked ? 'app_info.pending_restore' : 'app_info.pending_removal')
+    : displayApp?.nuked ? t('app_info.nuked')
     : t('app_info.installed')
 
   const fields = displayApp ? (() => {

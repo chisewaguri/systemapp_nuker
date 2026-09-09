@@ -47,10 +47,7 @@ export default function Restore() {
       for (const app of currentApps) {
         const isSelected = selected.includes(app.packageName)
 
-        if (app.pending && !isSelected) {
-          appListManager.setRestore(app.packageName, false)
-          count++
-        } else if (!app.pending && isSelected) {
+        if (isSelected) {
           appListManager.setRestore(app.packageName, true)
           count++
         }

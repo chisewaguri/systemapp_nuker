@@ -47,6 +47,12 @@ restore_all_legacy=false
 # whiteout creator
 whiteout_create() {
     path="$1"
+    case "$path" in
+        /data|/data/*|/system/data|/system/data/*)
+            echo "whiteouts cannot target /data: $path" >&2
+            return 1
+            ;;
+    esac
     case "/$path/" in
         */../*|*/./*)
             echo "invalid whiteout path: $path" >&2

@@ -56,10 +56,7 @@ export default function Home() {
       for (const app of currentApps) {
         const isSelected = selected.includes(app.packageName)
 
-        if (app.pending && !isSelected) {
-          appListManager.setNuke(app.packageName, false)
-          count++
-        } else if (!app.pending && isSelected) {
+        if (isSelected) {
           appListManager.setNuke(app.packageName, true)
           count++
         }

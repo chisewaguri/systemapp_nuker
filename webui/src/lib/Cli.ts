@@ -51,7 +51,8 @@ export class Cli {
   }
 
   static async restore(restore: boolean = true): Promise<boolean> {
-    const { errno } = await exec(`
+    try {
+      const { errno } = await exec(`
       for f in ${PERSIST_DIR}/*.bak; do
         [ -f "$f" ] || continue
         ${restore ? `
@@ -61,7 +62,10 @@ export class Cli {
         ` : `rm -f "$f" || exit 1`}
       done;
     `)
-    return errno === 0
+      return errno === 0
+    } catch {
+      return false
+    }
   }
 
   static async needRestore() {

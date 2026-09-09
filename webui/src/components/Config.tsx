@@ -59,6 +59,7 @@ export default function Config({ items, onSave, disabled = false }: ConfigProps)
         ),
         trailingContent: (
           <md-switch
+            aria-label={label}
             icons
             selected={item.value}
             disabled={disabled}
