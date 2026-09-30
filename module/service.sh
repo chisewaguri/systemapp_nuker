@@ -98,6 +98,10 @@ done
 # make sure persist dir exist
 [ ! -d "$PERSIST_DIR" ] && mkdir -p "$PERSIST_DIR"
 
+# copy the list this boot mounted, so WebUI edits made after boot stay pending
+APPLIED="$PERSIST_DIR/nuke_list.txt.applied"
+{ [ -f "$REMOVE_LIST" ] || touch "$REMOVE_LIST"; } && cp -f "$REMOVE_LIST" "$APPLIED" || exit 1
+
 # reset bootcount
 echo "BOOTCOUNT=0" > "$PERSIST_DIR/count.sh"
 chmod 755 "$PERSIST_DIR/count.sh"
@@ -111,7 +115,7 @@ if [ -s "$REMOVE_LIST.old" ]; then
             ""|\#*) continue ;;
         esac
         pkg=$(echo "$old_line" | awk '{print $1}')
-        awk -v pkg="$pkg" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null && continue
+        awk -v pkg="$pkg" '$1 == pkg { found=1 } END { exit !found }' "$APPLIED" 2>/dev/null && continue
         restore_success=true
         pm install-existing "$pkg" </dev/null >/dev/null 2>&1 || restore_success=false
         pm enable "$pkg" </dev/null >/dev/null 2>&1 || restore_success=false
@@ -120,22 +124,29 @@ if [ -s "$REMOVE_LIST.old" ]; then
 fi
 
 # make sure app is uninstalled if user is switching to uninstall only mode
-if [ -s "$REMOVE_LIST" ] && [ "$uninstall_only_mode" = "true" ]; then
-    for pkg in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
-        pm uninstall --user 0 "$pkg" </dev/null >/dev/null 2>&1 || true
+FAILED_UNINSTALLS="$PERSIST_DIR/uninstall_failed.tmp"
+rm -f "$FAILED_UNINSTALLS"
+if [ -s "$APPLIED" ] && [ "$uninstall_only_mode" = "true" ]; then
+    for pkg in $(grep -Ev "^$|^#" "$APPLIED" | awk '{print $1}'); do
+        pm uninstall --user 0 "$pkg" </dev/null >/dev/null 2>&1
+        # already uninstalled apps fail too, so check the result instead
+        pm list packages "$pkg" </dev/null 2>/dev/null | grep -qx "package:$pkg" && echo "$pkg" >> "$FAILED_UNINSTALLS"
     done
 fi
 
 # ensure the remove list exists and save nuked apps to old list
-[ -f "$REMOVE_LIST" ] || touch "$REMOVE_LIST" || exit 1
 SNAPSHOT="$REMOVE_LIST.old.new.$$"
-cp -f "$REMOVE_LIST" "$SNAPSHOT" || { rm -f "$SNAPSHOT"; exit 1; }
+if [ -f "$FAILED_UNINSTALLS" ]; then
+    awk 'NR==FNR { failed[$1]=1; next } !($1 in failed)' "$FAILED_UNINSTALLS" "$APPLIED" > "$SNAPSHOT"
+else
+    cp -f "$APPLIED" "$SNAPSHOT"
+fi || { rm -f "$SNAPSHOT"; exit 1; }
 if [ -s "$SNAPSHOT" ] && [ "$(tail -c 1 "$SNAPSHOT" | wc -l)" -eq 0 ]; then
     echo >> "$SNAPSHOT" || { rm -f "$SNAPSHOT"; exit 1; }
 fi
 [ ! -f "$FAILED_RESTORES" ] || cat "$FAILED_RESTORES" >> "$SNAPSHOT" || { rm -f "$SNAPSHOT"; exit 1; }
 mv -f "$SNAPSHOT" "$REMOVE_LIST.old" || { rm -f "$SNAPSHOT"; exit 1; }
-rm -f "$FAILED_RESTORES"
+rm -f "$FAILED_RESTORES" "$FAILED_UNINSTALLS" "$APPLIED"
 [ -f "$RAW_LIST" ] || touch "$RAW_LIST" || exit 1
 RAW_SNAPSHOT="$RAW_LIST.old.new.$$"
 cp -f "$RAW_LIST" "$RAW_SNAPSHOT" || { rm -f "$RAW_SNAPSHOT"; exit 1; }

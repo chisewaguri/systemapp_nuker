@@ -343,6 +343,7 @@ prepare_nuke_list() {
         while IFS= read -r metadata || [ -n "$metadata" ]; do
             case "$metadata" in
                 "# legacy-whiteout "*)
+                    whiteout_was_restored "$(normalize_whiteout_path "${metadata#\# legacy-whiteout }")" && continue
                     grep -Fqx "$metadata" "$list_tmp"
                     grep_status=$?
                     [ "$grep_status" -eq 0 ] && continue
@@ -358,6 +359,7 @@ prepare_nuke_list() {
 
 # nuke app from REMOVE_LIST
 nuke_system_apps() {
+    restore_success="true"
     total=$(grep -Ev "^$|^#" "$REMOVE_LIST" | wc -l)
     list_tmp="$REMOVE_LIST.tmp.$$"
 
@@ -371,7 +373,12 @@ nuke_system_apps() {
 
     if [ "$uninstall_only_mode" = "true" ]; then
         for package_name in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
-            pm uninstall --user 0 "$package_name" </dev/null >/dev/null 2>&1 || true
+            pm uninstall --user 0 "$package_name" </dev/null >/dev/null 2>&1
+            # already uninstalled apps fail too, so check the result instead
+            if pm list packages "$package_name" </dev/null 2>/dev/null | grep -qx "package:$package_name"; then
+                echo "cant uninstall $package_name" >&2
+                restore_success="false"
+            fi
         done
     else
         # whiteout creation. the list is "<pkg> <path> <label>" — rewrite it
@@ -429,7 +436,6 @@ nuke_system_apps() {
     #but the last nuked app doens't exist yet
     # this means a reboot is required to restore first then only pm install-existing can work immediately
     # showing "Uninstall only mode detected" to stdout allows webui to skip the reboot button
-    restore_success="true"
     if [ -f "$REMOVE_LIST.old" ]; then
         for pkg in $(grep -Ev "^$|^#" "$REMOVE_LIST.old" | awk '{print $1}'); do
             awk -v pkg="$pkg" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null && continue
