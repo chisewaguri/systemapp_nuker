@@ -79,8 +79,8 @@ update_description() {
     fi
     
     # set module description - escape special characters for sed
-    escaped_string=$(echo "description=$string" | sed 's/[[\.*^$()+?{|]/\\&/g')
-    sed -i "s/^description=.*/$escaped_string/g" "$MODDIR/module.prop"
+    escaped_string=$(printf '%s\n' "description=$string" | sed 's/[\/&\\]/\\&/g')
+    sed -i "s/^description=.*/$escaped_string/" "$MODDIR/module.prop"
 }
 
 # === MAIN SCRIPT ===
