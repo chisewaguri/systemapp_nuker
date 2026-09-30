@@ -33,7 +33,7 @@ export class File {
       if [ -e "$target" ]; then
         cp -p "$target" "$tmp" 2>/dev/null
       else
-        : > "$tmp" 2>/dev/null
+        true > "$tmp" 2>/dev/null
       fi
       # Some hosts refuse to create files next to the target, so write it in place there
       # and put the original back if that write fails.
