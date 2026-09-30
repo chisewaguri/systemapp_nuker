@@ -35,11 +35,14 @@ export class File {
       else
         : > "$tmp" 2>/dev/null
       fi
-      # Some hosts refuse to create files next to the target, so write it in place there.
+      # Some hosts refuse to create files next to the target, so write it in place there
+      # and put the original back if that write fails.
       if [ $? -ne 0 ]; then
         rm -f "$tmp" 2>/dev/null
-        printf '%s\\n' "$content" > "$target"
-        exit
+        old=$(cat "$target" 2>/dev/null; echo x)
+        printf '%s\\n' "$content" > "$target" && exit
+        [ -e "$target" ] && printf '%s' "\${old%x}" > "$target"
+        exit 1
       fi
       trap 'rm -f "$tmp"' EXIT HUP INT TERM
       printf '%s\\n' "$content" > "$tmp" || exit 1

@@ -122,7 +122,7 @@ test('raw whiteouts reject data paths before filesystem operations and preserve 
     if (!rejected) assert.ok(result.stdout.includes('/fixture' + (input.startsWith('/system/') ? input : '/system' + input)))
   }
 })
-for (const [failure, writes] of [['cp', true], ['touch', true], ['write', false], ['mv', false], [null, true]]) {
+for (const [failure, writes] of [['cp', true], ['touch', true], ['write', false], ['cp+write', false], ['mv', false], [null, true]]) {
   test(`file write ${writes ? 'writes' : 'preserves the original'} on ${failure ?? 'no'} failure`, async t => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-write-test-'))
     t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
@@ -138,6 +138,8 @@ for (const [failure, writes] of [['cp', true], ['touch', true], ['write', false]
           cp: 'cp() { return 1; }',
           mv: 'mv() { return 1; }',
           write: "printf() { command printf '%s' partial; return 1; }",
+          // only the first printf fails, so the restore of the original can run
+          'cp+write': "cp() { return 1; }; printf() { if [ -z \"$failed\" ]; then failed=1; command printf '%s' partial; return 1; fi; command printf \"$@\"; }",
         }[failure] ?? ''
         const result = spawnSync(shell, ['-c', stubs + '\n' + script], { cwd: dir, encoding: 'utf8' })
         if (failure === 'touch') fs.rmSync(path.join(dir, 'state.txt.tmp'), { recursive: true })
