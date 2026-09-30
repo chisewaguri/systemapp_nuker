@@ -24,9 +24,11 @@ fi
 BOOTCOUNT=$(( BOOTCOUNT + 1))
 
 # pm uninstall --user 0 only writes inst="false" into package-restrictions,
-# and pm cant run while system_server is looping, so undo it in the file
+# and pm cant run while system_server is looping, so undo it in the file.
+# .bak is read because a retry runs after the list was moved there.
 reinstall_packages() {
-    pkgs=$(cat "$PERSIST_DIR"/nuke_list.txt "$PERSIST_DIR"/nuke_list.txt.old 2>/dev/null |
+    failed=0
+    pkgs=$(cat "$PERSIST_DIR"/nuke_list.txt "$PERSIST_DIR"/nuke_list.txt.old "$PERSIST_DIR"/nuke_list.txt.bak 2>/dev/null |
         grep -Ev "^$|^#" | awk '{print $1}' | tr '\n' ' ')
     [ -n "$pkgs" ] || return 0
     for xml in "$@"; do
@@ -34,18 +36,18 @@ reinstall_packages() {
         text="$xml.san.xml"
         fixed="$xml.san.fixed"
         if [ "$(head -c 3 "$xml")" = ABX ]; then
-            abx2xml "$xml" "$text" || { echo "app_nuker_debug: abx2xml failed for $xml" >> /dev/kmsg; rm -f "$text"; continue; }
+            abx2xml "$xml" "$text" || { echo "app_nuker_debug: abx2xml failed for $xml" >> /dev/kmsg; rm -f "$text"; failed=1; continue; }
         else
-            cp -f "$xml" "$text" || continue
+            cp -f "$xml" "$text" || { failed=1; continue; }
         fi
         awk -v pkgs=" $pkgs" '
             /<pkg / && match($0, /name="[^"]*"/) {
                 if (index(pkgs, " " substr($0, RSTART + 6, RLENGTH - 7) " ")) sub(/ inst="false"/, "")
             }
-            { print }' "$text" > "$fixed" || { rm -f "$text" "$fixed"; continue; }
+            { print }' "$text" > "$fixed" || { rm -f "$text" "$fixed"; failed=1; continue; }
         if ! cmp -s "$text" "$fixed"; then
             if [ "$(head -c 3 "$xml")" = ABX ]; then
-                xml2abx "$fixed" "$text" || { echo "app_nuker_debug: xml2abx failed for $xml" >> /dev/kmsg; rm -f "$text" "$fixed"; continue; }
+                xml2abx "$fixed" "$text" || { echo "app_nuker_debug: xml2abx failed for $xml" >> /dev/kmsg; rm -f "$text" "$fixed"; failed=1; continue; }
             else
                 mv -f "$fixed" "$text"
             fi
@@ -54,18 +56,19 @@ reinstall_packages() {
                 chmod "$(stat -c %a "$xml")" "$text" &&
                 { chcon --reference="$xml" "$text" || /system/bin/chcon "$(/system/bin/stat -c %C "$xml")" "$text"; } &&
                 mv -f "$text" "$xml" ||
-                echo "app_nuker_debug: cant replace $xml" >> /dev/kmsg
+                { echo "app_nuker_debug: cant replace $xml" >> /dev/kmsg; failed=1; }
         fi
         rm -f "$text" "$fixed"
     done
+    return $failed
 }
 
 if [ $BOOTCOUNT -gt 1 ]; then # on 2nd post-fs-data without reaching service
-    touch $MODDIR/disable
-
-    # system_server can read any of these copies, so fix them all
+    # system_server can read any of these copies. If the repair fails, keep
+    # the module enabled so the next loop retries. With the whiteouts below
+    # deleted, an enabled module hides nothing.
     xml=/data/system/users/0/package-restrictions
-    reinstall_packages "$xml.xml" "$xml-backup.xml" "$xml.xml.fallback" "$xml.xml.reservecopy"
+    reinstall_packages "$xml.xml" "$xml-backup.xml" "$xml.xml.fallback" "$xml.xml.reservecopy" && touch $MODDIR/disable
 
     # remove whiteouts
     for dir in system system_ext vendor product odm mi_ext \
