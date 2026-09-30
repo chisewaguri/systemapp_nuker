@@ -122,34 +122,33 @@ test('raw whiteouts reject data paths before filesystem operations and preserve 
     if (!rejected) assert.ok(result.stdout.includes('/fixture' + (input.startsWith('/system/') ? input : '/system' + input)))
   }
 })
-for (const failure of ['mktemp', 'write', 'stat', 'chmod', 'chown', 'mv', null]) {
-  test(`file write preserves the original on ${failure ?? 'no'} failure`, async t => {
+for (const [failure, writes] of [['cp', true], ['touch', true], ['write', false], ['mv', false], [null, true]]) {
+  test(`file write ${writes ? 'writes' : 'preserves the original'} on ${failure ?? 'no'} failure`, async t => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-write-test-'))
     t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
-    fs.writeFileSync(path.join(dir, 'state.txt'), 'original\n')
+    // 'touch' covers a target that does not exist yet, where the staging file is created with a redirect.
+    if (failure !== 'touch') fs.writeFileSync(path.join(dir, 'state.txt'), 'original\n')
     const { shellQuote } = load('src/lib/shell.ts', {})
     const { File } = load('src/lib/File.ts', {
       './shell': { shellQuote },
       'kernelsu-alt': { exec: async script => {
-        const stubs = `
-          busybox() {
-            applet="$1"; shift
-            [ "$applet" = '${failure}' ] && return 1
-            case "$applet" in
-              chcon|chown) return 0 ;;
-              *) command "$applet" "$@" ;;
-            esac
-          }
-          ${failure === 'write' ? "printf() { command printf '%s' partial; return 1; }" : ''}
-        `
-        const result = spawnSync(shell, ['-c', stubs + script], { cwd: dir, encoding: 'utf8' })
+        // A read-only staging file makes the ': > "$tmp"' redirect fail like a host that rejects sibling files.
+        if (failure === 'touch') fs.mkdirSync(path.join(dir, 'state.txt.tmp'))
+        const stubs = {
+          cp: 'cp() { return 1; }',
+          mv: 'mv() { return 1; }',
+          write: "printf() { command printf '%s' partial; return 1; }",
+        }[failure] ?? ''
+        const result = spawnSync(shell, ['-c', stubs + '\n' + script], { cwd: dir, encoding: 'utf8' })
+        if (failure === 'touch') fs.rmSync(path.join(dir, 'state.txt.tmp'), { recursive: true })
         if (result.error) throw result.error
         return { errno: result.status, stdout: result.stdout, stderr: result.stderr }
       } },
     })
-    if (failure) await assert.rejects(File.write('state.txt', "new 'quoted' $data\nsecond line"))
-    else await File.write('state.txt', "new 'quoted' $data\nsecond line")
-    assert.equal(fs.readFileSync(path.join(dir, 'state.txt'), 'utf8'), failure ? 'original\n' : "new 'quoted' $data\nsecond line\n")
+    const write = File.write('state.txt', "new 'quoted' $data\nsecond line")
+    if (writes) await write
+    else await assert.rejects(write)
+    assert.equal(fs.readFileSync(path.join(dir, 'state.txt'), 'utf8'), writes ? "new 'quoted' $data\nsecond line\n" : 'original\n')
     assert.deepEqual(fs.readdirSync(dir), ['state.txt'])
   })
 }

@@ -28,17 +28,22 @@ export class File {
   static async write(path: string, data: string): Promise<void> {
     const result = await exec(`
       target=${shellQuote(path)}
-      tmp=$(busybox mktemp "$target.tmp.XXXXXX") || exit 1
-      trap 'rm -f "$tmp"' EXIT HUP INT TERM
-      printf '%s\\n' ${shellQuote(data.trim())} > "$tmp" || exit 1
+      content=${shellQuote(data.trim())}
+      tmp="$target.tmp"
       if [ -e "$target" ]; then
-        mode=$(busybox stat -c %a "$target") || exit 1
-        owner=$(busybox stat -c %u:%g "$target") || exit 1
-        busybox chmod "$mode" "$tmp" || exit 1
-        busybox chown "$owner" "$tmp" || exit 1
-        busybox chcon --reference="$target" "$tmp" >/dev/null 2>&1 || true
+        cp -p "$target" "$tmp" 2>/dev/null
+      else
+        : > "$tmp" 2>/dev/null
       fi
-      busybox mv -f "$tmp" "$target"
+      # Some hosts refuse to create files next to the target, so write it in place there.
+      if [ $? -ne 0 ]; then
+        rm -f "$tmp" 2>/dev/null
+        printf '%s\\n' "$content" > "$target"
+        exit
+      fi
+      trap 'rm -f "$tmp"' EXIT HUP INT TERM
+      printf '%s\\n' "$content" > "$tmp" || exit 1
+      mv -f "$tmp" "$target"
     `)
     if (result.errno !== 0) throw new Error(`File.write failed (${result.errno}): ${result.stderr}`)
   }
