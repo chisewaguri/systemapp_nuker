@@ -61,9 +61,10 @@ export function useIconObserver() {
     }
   }, [loadIcon, observeElements])
 
+  // Rows are recreated after a search or refresh, so look for new ones on every render.
   useEffect(() => {
     observeElements()
-  }, [observeElements])
+  })
 
   return containerRef
 }

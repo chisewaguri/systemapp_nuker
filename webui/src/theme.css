@@ -5,7 +5,6 @@
   --top-inset: var(--window-inset-top, 0px);
   --bottom-inset: var(--window-inset-bottom, 0px);
 
-  --md-focus-ring-color: transparent;
 
   --md-sys-color-primary: var(--primary, #6750A4);
   --md-sys-color-on-primary: var(--onPrimary, #FFFFFF);

@@ -57,6 +57,7 @@ export default function WhiteoutPage() {
     whiteoutListRef.current?.hideCheckboxes()
     setEditMode(false)
     setAllSelected(false)
+    setDeleteDialogOpen(false)
   }, [consume])
 
   useEffect(() => {
