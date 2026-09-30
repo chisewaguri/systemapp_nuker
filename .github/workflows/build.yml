@@ -20,12 +20,17 @@ on:
       - 'webui/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
     - name: Checkout
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       with:
         fetch-depth: 0
 
@@ -52,12 +57,12 @@ jobs:
         echo "RELEASE_ZIP_NAME=$RELEASE_ZIP_NAME" >> $GITHUB_ENV
 
     - name: Setup pnpm
-      uses: pnpm/action-setup@v6
+      uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
       with:
         version: 'latest'
 
     - name: Setup Node
-      uses: actions/setup-node@v7
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
       with:
         node-version: 'lts/*'
         cache: 'pnpm'
@@ -67,6 +72,8 @@ jobs:
       run: |
         cd webui
         pnpm install --frozen-lockfile
+        pnpm lint
+        pnpm test
         pnpm build
 
     - name: Extract changelog for version
@@ -114,7 +121,7 @@ jobs:
         mv "${{ env.RELEASE_ZIP_NAME }}.zip" ../
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
         name: ${{ env.ZIP_NAME }}
         path: |
@@ -123,9 +130,7 @@ jobs:
 
     - name: Create release
       if: github.ref_type == 'tag'
-      uses: softprops/action-gh-release@v3
-      env:
-        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
       with:
         tag_name: ${{ env.VERSION }}
         name: ${{ env.VERSION }}
