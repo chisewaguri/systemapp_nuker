@@ -1,4 +1,4 @@
-import { listPackages, getPackagesInfo, type PackagesInfo } from 'kernelsu-alt'
+import { exec, listPackages, getPackagesInfo, type PackagesInfo } from 'kernelsu-alt'
 import { PERSIST_DIR } from '../constant'
 import { File } from './File'
 import { isDev } from './utils'
@@ -25,6 +25,14 @@ function parseNuking(content: string): NukeInfo[] {
       const { packageName, appLabel } = parseNukeLine(line)
       return { packageName, appLabel }
     })
+}
+
+// kernelsu-alt's pm fallback treats each stdout chunk as one package name.
+async function listSystemPackages(): Promise<string[]> {
+  if (typeof (globalThis as { ksu?: { listPackages?: unknown } }).ksu?.listPackages === 'function') return listPackages('system')
+  const { errno, stdout, stderr } = await exec('pm list packages -s')
+  if (errno !== 0) throw new Error(`pm list packages failed (${errno}): ${stderr}`)
+  return stdout.split('\n').map(line => line.trim().replace(/^package:/, '')).filter(Boolean)
 }
 
 export default class AppList {
@@ -77,7 +85,7 @@ export default class AppList {
       return
     }
 
-    const pkgs = await listPackages('system')
+    const pkgs = await listSystemPackages()
 
     let infos: PackagesInfo[]
     try {

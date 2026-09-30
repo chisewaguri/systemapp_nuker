@@ -30,6 +30,7 @@ async function appsFixture(infos) {
   const { default: AppList } = load('src/lib/AppList.ts', {
     'kernelsu-alt': {
       listPackages: async () => pkgs,
+      exec: async () => ({ errno: 0, stdout: pkgs.map(pkg => `package:${pkg}`).join('\n'), stderr: '' }),
       getPackagesInfo: async () => infos ?? pkgs.map(packageName => ({ packageName, appLabel: packageName, isSystem: true })),
     },
     '../constant': { PERSIST_DIR: '/persist' },
