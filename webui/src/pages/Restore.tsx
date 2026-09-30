@@ -62,11 +62,8 @@ export default function Restore() {
         showSnackBar(t('global.write_error'), false)
         setApps(appListManager.nukedAppList)
       } else {
-        const applied = await Cli.nuke(showSnackBar)
-        if (!applied) {
-          setApps(appListManager.nukedAppList)
-          return
-        }
+        // A failed nuke rolls the lists back on disk, so reload either way.
+        await Cli.nuke(showSnackBar)
         await appListManager.refresh()
           .then(() => setApps(appListManager.nukedAppList))
           .catch(() => {

@@ -12,7 +12,8 @@ import Settings from './pages/Settings'
 import BackupRestoreDialog from './components/dialog/BackupRestoreDialog'
 import SnackBar, { useSnackBar } from './components/SnackBar'
 import { Cli } from './lib/Cli'
-import { AppListProvider } from './lib/AppListContext'
+import { AppListProvider, useAppList } from './lib/AppListContext'
+import { whiteoutManager } from './lib/Whiteout'
 import { runMutation } from './lib/mutationLock'
 import { pageHash, readPagePath, type PagePath } from './lib/navigation'
 
@@ -26,6 +27,8 @@ const pages: Record<PagePath, React.FC> = {
 function App() {
   const [activeTab, setActiveTab] = useState<PagePath>(() => readPagePath(location.hash))
   const [showBackupRestoreDialog, setShowBackupRestoreDialog] = useState(false)
+  const [pageKey, setPageKey] = useState(0)
+  const appList = useAppList()
   const { state: snackBarState, show: showSnackBar, hide: hideSnackBar } = useSnackBar()
 
   useEffect(() => {
@@ -82,19 +85,23 @@ function App() {
       if (await Cli.nuke(showSnackBar) && !await Cli.restore(false)) {
         showSnackBar(t('backup.error'), false)
       }
+      // The managers still hold the lists from before the backup was restored.
+      await Promise.all([appList.refresh(), whiteoutManager.refresh()])
+        .catch(() => showSnackBar(t('global.read_error'), false))
+      setPageKey(key => key + 1)
     })
     if (!started) {
       setShowBackupRestoreDialog(true)
       showSnackBar(t('global.processing'), true, 3000)
     }
-  }, [showSnackBar])
+  }, [appList, showSnackBar])
 
   const Page = pages[activeTab]
 
   return (
     <>
       <Layout activeTab={activeTab} onTabChange={handleTabChange}>
-        <Page />
+        <Page key={pageKey} />
       </Layout>
       <BackupRestoreDialog
         open={showBackupRestoreDialog}

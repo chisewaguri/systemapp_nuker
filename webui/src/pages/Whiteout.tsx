@@ -6,13 +6,11 @@ import Fab from '../components/Fab'
 import WhiteoutList, { type WhiteoutListHandle } from '../components/WhiteoutList'
 import SnackBar, { useSnackBar } from '../components/SnackBar'
 import FileSelector from '../lib/FileSelector'
-import { Whiteout as WhiteoutManager } from '../lib/Whiteout'
+import { whiteoutManager } from '../lib/Whiteout'
 import { Cli } from '../lib/Cli'
 import { useHistory } from '../hooks/useHistory'
 import { runMutation } from '../lib/mutationLock'
 import LoadError from '../components/LoadError'
-
-const whiteoutManager = new WhiteoutManager()
 
 export default function WhiteoutPage() {
   const { t } = useTranslation()
@@ -84,11 +82,8 @@ export default function WhiteoutPage() {
       if (!ok) {
         snackBar.show(t('global.write_error'), false)
       } else {
-        const applied = await Cli.nuke(snackBar.show)
-        if (!applied) {
-          setWhiteouts([...whiteoutManager.whiteouts])
-          return
-        }
+        // A failed nuke rolls the lists back on disk, so reload either way.
+        await Cli.nuke(snackBar.show)
         await whiteoutManager.refresh().catch(() => {
           setLoadFailed(true)
           snackBar.show(t('global.read_error'), false)

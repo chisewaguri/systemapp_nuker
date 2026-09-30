@@ -71,11 +71,8 @@ export default function Home() {
         showSnackBar(t('global.write_error'), false)
         setApps(appListManager.systemAppList)
       } else {
-        const applied = await Cli.nuke(showSnackBar)
-        if (!applied) {
-          setApps(appListManager.systemAppList)
-          return
-        }
+        // A failed nuke rolls the lists back on disk, so reload either way.
+        await Cli.nuke(showSnackBar)
         await appListManager.refresh()
           .then(() => setApps(appListManager.systemAppList))
           .catch(() => {

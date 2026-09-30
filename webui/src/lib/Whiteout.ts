@@ -70,3 +70,5 @@ export class Whiteout {
     }
   }
 }
+
+export const whiteoutManager = new Whiteout()

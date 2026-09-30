@@ -1,4 +1,4 @@
-import { exec, spawn, toast } from 'kernelsu-alt'
+import { exec, toast } from 'kernelsu-alt'
 import { File } from './File'
 import { t } from 'i18next'
 import { MOD_DIR, PERSIST_DIR } from '../constant'
@@ -7,43 +7,28 @@ import type { useSnackBar } from '../components/SnackBar'
 export type BackupStatus = 'available' | 'absent' | 'error'
 
 export class Cli {
-  static nuke(show: ReturnType<typeof useSnackBar>['show']): Promise<boolean> {
-    return new Promise(resolve => {
-      let out = ''
-      const err: string[] = []
-      let ps: ReturnType<typeof spawn>
-      try {
-        ps = spawn('busybox', ['nsenter', '-t1', '-m', `${MOD_DIR}/nuke.sh`], {
-          env: { PATH: '/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH' }
-        })
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        show(t('nuke.error', { stderr: message }), false)
-        resolve(false)
-        return
-      }
-      ps.stdout.on('data', data => out += data)
-      ps.stderr.on('data', data => err.push(data))
-      ps.on('exit', code => {
-        if (code !== 0) {
-          show(t('nuke.error', { stderr: err.join('\n') }), false)
-          return resolve(false)
-        }
-        if (out.includes('Uninstall only mode')) {
-          show(t('nuke.success_no_reboot'))
-        } else {
-          show(t('nuke.success'), true, 5000, {
-            text: t('nuke.reboot'),
-            callback: () => Cli.reboot(show),
-          })
-        }
-        resolve(true)
+  static async nuke(show: ReturnType<typeof useSnackBar>['show']): Promise<boolean> {
+    let result: Awaited<ReturnType<typeof exec>>
+    try {
+      // spawn emits a host error before its listener exists, exec rejects instead.
+      result = await exec(`PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH; busybox nsenter -t1 -m ${MOD_DIR}/nuke.sh`)
+    } catch (error) {
+      show(t('nuke.error', { stderr: error instanceof Error ? error.message : String(error) }), false)
+      return false
+    }
+    if (result.errno !== 0) {
+      show(t('nuke.error', { stderr: result.stderr }), false)
+      return false
+    }
+    if (result.stdout.includes('Uninstall only mode')) {
+      show(t('nuke.success_no_reboot'))
+    } else {
+      show(t('nuke.success'), true, 5000, {
+        text: t('nuke.reboot'),
+        callback: () => Cli.reboot(show),
       })
-      ps.on('error', error => {
-        show(t('nuke.error', { stderr: error.message }), false)
-        resolve(false)
-      })
-    })
+    }
+    return true
   }
 
   static reboot(show: ReturnType<typeof useSnackBar>['show']) {
