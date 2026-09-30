@@ -14,8 +14,9 @@ import SnackBar, { useSnackBar } from './components/SnackBar'
 import { Cli } from './lib/Cli'
 import { AppListProvider } from './lib/AppListContext'
 import { runMutation } from './lib/mutationLock'
+import { pageHash, readPagePath, type PagePath } from './lib/navigation'
 
-const pages: Record<string, React.FC> = {
+const pages: Record<PagePath, React.FC> = {
   '/': Home,
   '/restore': Restore,
   '/whiteout': Whiteout,
@@ -23,15 +24,32 @@ const pages: Record<string, React.FC> = {
 }
 
 function App() {
-  const [activeTab, setActiveTab] = useState('/')
+  const [activeTab, setActiveTab] = useState<PagePath>(() => readPagePath(location.hash))
   const [showBackupRestoreDialog, setShowBackupRestoreDialog] = useState(false)
   const { state: snackBarState, show: showSnackBar, hide: hideSnackBar } = useSnackBar()
 
   useEffect(() => {
-    Cli.needRestore().then(needRestore => {
-      if (needRestore) setShowBackupRestoreDialog(true)
+    Cli.needRestore().then(status => {
+      if (status === 'available') setShowBackupRestoreDialog(true)
+      if (status === 'error') showSnackBar(t('backup.check_error'), false)
     })
-  }, [])
+  }, [showSnackBar])
+
+  useEffect(() => {
+    const syncTab = () => setActiveTab(readPagePath(location.hash))
+    if (location.hash !== pageHash(activeTab)) {
+      history.replaceState(history.state, '', pageHash(activeTab))
+    }
+    window.addEventListener('popstate', syncTab)
+    return () => window.removeEventListener('popstate', syncTab)
+  }, [activeTab])
+
+  const handleTabChange = useCallback((tab: string) => {
+    const nextTab = readPagePath(tab)
+    if (nextTab === activeTab) return
+    history.pushState({}, '', pageHash(nextTab))
+    setActiveTab(nextTab)
+  }, [activeTab])
 
   const handleDismiss = useCallback(() => {
     setShowBackupRestoreDialog(false)
@@ -71,11 +89,11 @@ function App() {
     }
   }, [showSnackBar])
 
-  const Page = pages[activeTab] ?? Home
+  const Page = pages[activeTab]
 
   return (
     <>
-      <Layout activeTab={activeTab} onTabChange={setActiveTab}>
+      <Layout activeTab={activeTab} onTabChange={handleTabChange}>
         <Page />
       </Layout>
       <BackupRestoreDialog

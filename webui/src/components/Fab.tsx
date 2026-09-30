@@ -3,12 +3,13 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 interface FabProps {
   onClick: () => void
   icon: string
+  label: string
   variant?: 'primary' | 'secondary' | 'tertiary'
   open?: boolean
   onVisibilityChange?: (visible: boolean) => void
 }
 
-export default function Fab({ onClick, icon, variant, open = true, onVisibilityChange }: FabProps) {
+export default function Fab({ onClick, icon, label, variant, open = true, onVisibilityChange }: FabProps) {
   const [scrollVisible, setScrollVisible] = useState(true)
   const lastScrollTop = useRef(0)
   const ticking = useRef(false)
@@ -47,15 +48,17 @@ export default function Fab({ onClick, icon, variant, open = true, onVisibilityC
     onVisibilityChange?.(visible)
   }, [visible, onVisibilityChange])
 
+  if (!visible) return null
+
   return (
     <div
       className={`
         fixed inset-e-4 z-30 bottom-before-bottombar mb-4
         transition-all duration-300 ease-out
-        ${visible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-20 opacity-0 scale-90 pointer-events-none'}
+        translate-y-0 opacity-100 scale-100
       `}
     >
-      <md-fab onClick={onClick} {...(variant && { variant })}>
+      <md-fab aria-label={label} onClick={onClick} {...(variant && { variant })}>
         <md-icon slot="icon">{icon}</md-icon>
       </md-fab>
     </div>

@@ -4,6 +4,7 @@ import SegmentedList, { type SegmentedListItem } from './SegmentedList'
 interface WhiteoutListProps {
   whiteouts: string[]
   searchQuery: string
+  emptyMessage: string
   onSelectionChange?: (hasSelection: boolean) => void
   onEditModeChange?: (isEditing: boolean) => void
 }
@@ -18,9 +19,13 @@ export interface WhiteoutListHandle {
   deselectAll: () => void
 }
 
-const WhiteoutList = forwardRef<WhiteoutListHandle, WhiteoutListProps>(function WhiteoutList({ whiteouts, searchQuery, onSelectionChange, onEditModeChange }, ref) {
+const WhiteoutList = forwardRef<WhiteoutListHandle, WhiteoutListProps>(function WhiteoutList({ whiteouts, searchQuery, emptyMessage, onSelectionChange, onEditModeChange }, ref) {
   const [selectedWhiteouts, setSelectedWhiteouts] = useState<Set<string>>(new Set())
   const [checkboxVisible, setCheckboxVisible] = useState(false)
+  const filteredWhiteouts = whiteouts.filter(whiteout =>
+    searchQuery === '' ||
+    whiteout.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   const handleSelectionChange = useCallback((newSelection: Set<string>) => {
     queueMicrotask(() => onSelectionChange?.(newSelection.size > 0))
@@ -45,7 +50,7 @@ const WhiteoutList = forwardRef<WhiteoutListHandle, WhiteoutListProps>(function 
     },
     isCheckboxVisible: () => checkboxVisible,
     selectAll: () => {
-      const all = new Set(whiteouts)
+      const all = new Set(filteredWhiteouts)
       setSelectedWhiteouts(all)
       handleSelectionChange(all)
     },
@@ -81,11 +86,6 @@ const WhiteoutList = forwardRef<WhiteoutListHandle, WhiteoutListProps>(function 
     })
   }
 
-  const filteredWhiteouts = whiteouts.filter(whiteout =>
-    searchQuery === '' ||
-    whiteout.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
   const listItems: SegmentedListItem[] = filteredWhiteouts.map(whiteout => ({
     key: whiteout,
     leadingContent: (
@@ -98,8 +98,8 @@ const WhiteoutList = forwardRef<WhiteoutListHandle, WhiteoutListProps>(function 
         {whiteout}
       </span>
     ),
-    trailingContent: (
-      <div className={`transition-all duration-200 ease-out ${checkboxVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-50 pointer-events-none'}`}>
+    trailingContent: checkboxVisible ? (
+      <div>
         <md-checkbox
           aria-label={whiteout}
           touch-target="wrapper"
@@ -107,11 +107,13 @@ const WhiteoutList = forwardRef<WhiteoutListHandle, WhiteoutListProps>(function 
           onChange={() => toggleWhiteout(whiteout)}
         />
       </div>
-    ),
+    ) : undefined,
     onContextMenu: (e: React.MouseEvent) => handleContextMenu(e, whiteout),
   }))
 
-  return <SegmentedList items={listItems} />
+  return filteredWhiteouts.length > 0
+    ? <SegmentedList items={listItems} />
+    : <div className="flex items-center justify-center px-6 py-12 text-sm text-on-surface-variant text-center">{emptyMessage}</div>
 })
 
 export default WhiteoutList

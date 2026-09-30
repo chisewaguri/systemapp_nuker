@@ -31,6 +31,7 @@ interface AppListProps {
   apps: AppInfo[]
   searchQuery: string
   selectedCategories: string[]
+  emptyMessage: string
 }
 
 export interface AppListHandle {
@@ -57,7 +58,7 @@ function AppIcon({ packageName }: { packageName: string }) {
   )
 }
 
-const AppList = forwardRef<AppListHandle, AppListProps>(function AppList({ apps, searchQuery, selectedCategories }, ref) {
+const AppList = forwardRef<AppListHandle, AppListProps>(function AppList({ apps, searchQuery, selectedCategories, emptyMessage }, ref) {
   const [selectedApp, setSelectedApp] = useState<AppInfo | null>(null)
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set())
   const containerRef = useIconObserver()
@@ -149,7 +150,9 @@ const AppList = forwardRef<AppListHandle, AppListProps>(function AppList({ apps,
 
   return (
     <div ref={containerRef}>
-      <SegmentedList items={listItems} />
+      {listItems.some(item => !item.hidden)
+        ? <SegmentedList items={listItems} />
+        : <div className="flex items-center justify-center px-6 py-12 text-sm text-on-surface-variant text-center">{emptyMessage}</div>}
       <AppInfoDialog app={selectedApp} onClose={handleDialogClose} />
     </div>
   )

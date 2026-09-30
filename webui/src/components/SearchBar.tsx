@@ -12,6 +12,7 @@ export default function SearchBar({ value, onChange }: SearchBarProps) {
   return (
     <md-filled-text-field
       className="w-full"
+      aria-label={t('global.search')}
       placeholder={t('global.search')}
       value={value}
       onInput={(e: React.InputEvent<MdFilledTextField>) => onChange(e.currentTarget.value)}
@@ -24,9 +25,9 @@ export default function SearchBar({ value, onChange }: SearchBarProps) {
     >
       <md-icon slot="leading-icon">search</md-icon>
       {value && (
-        <md-icon slot="trailing-icon" onClick={() => onChange('')}>
-          clear
-        </md-icon>
+        <md-icon-button slot="trailing-icon" aria-label={t('global.clear_search')} onClick={() => onChange('')}>
+          <md-icon>clear</md-icon>
+        </md-icon-button>
       )}
     </md-filled-text-field>
   )

@@ -8,6 +8,7 @@ import { useHistory } from '../../hooks/useHistory'
 import { essential, caution, safe, google, categories } from '../../data/category'
 import AndroidSvg from '../../assets/android.svg?react'
 import GoogleSvg from '../../assets/google.svg?react'
+import { toast } from 'kernelsu-alt'
 
 const categoryMap: Record<string, string[]> = {
   essential,
@@ -130,12 +131,20 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
         {fields.map(({ label, value, icon }) => {
           const SvgIcon = categorySvgIcons[icon]
           return (
-            <div
-              key={label}
-              className="flex items-center gap-3 rounded-lg hover:bg-surface-container-high transition-colors"
+            <button
+              key={label || value}
+              type="button"
+              aria-label={t('app_info.copy', { label: label || t('app_info.description') })}
+              className="flex w-full items-center gap-3 rounded-lg border-0 bg-transparent p-0 text-start hover:bg-surface-container-high transition-colors"
               onClick={() => {
                 if (value) {
-                  navigator.clipboard.writeText(value)
+                  const copy = navigator.clipboard?.writeText(value)
+                  if (!copy) {
+                    toast(t('global.copy_error'))
+                    return
+                  }
+                  copy.then(() => toast(t('global.copied')))
+                    .catch(() => toast(t('global.copy_error')))
                 }
               }}
             >
@@ -150,7 +159,8 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
                 {label && <span className="text-xs text-on-surface-variant">{label}</span>}
                 <span className={`text-sm text-on-surface ${label ? 'truncate' : 'whitespace-normal wrap-break-word'}`}>{value}</span>
               </div>
-            </div>
+              <md-icon class="text-on-surface-variant">content_copy</md-icon>
+            </button>
           )
         })}
       </div>

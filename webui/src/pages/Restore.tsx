@@ -11,6 +11,7 @@ import SnackBar, { useSnackBar } from '../components/SnackBar'
 import Fab from '../components/Fab'
 import { categories } from '../data/category'
 import { runMutation } from '../lib/mutationLock'
+import LoadError from '../components/LoadError'
 
 export default function Restore() {
   const { t } = useTranslation()
@@ -61,7 +62,11 @@ export default function Restore() {
         showSnackBar(t('global.write_error'), false)
         setApps(appListManager.nukedAppList)
       } else {
-        await Cli.nuke(showSnackBar)
+        const applied = await Cli.nuke(showSnackBar)
+        if (!applied) {
+          setApps(appListManager.nukedAppList)
+          return
+        }
         await appListManager.refresh()
           .then(() => setApps(appListManager.nukedAppList))
           .catch(() => {
@@ -90,11 +95,7 @@ export default function Restore() {
   }
 
   if (loadFailed) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <span className="text-error">{t('global.read_error')}</span>
-      </div>
-    )
+    return <LoadError />
   }
 
   if (apps.length === 0) {
@@ -134,10 +135,12 @@ export default function Restore() {
         apps={apps}
         searchQuery={searchQuery}
         selectedCategories={selectedCategories}
+        emptyMessage={t('global.no_results')}
       />
       <Fab
         onClick={handleFabClick}
         icon="restore"
+        label={t('restore.apply')}
         variant="primary"
         onVisibilityChange={handleFabVisibilityChange}
       />

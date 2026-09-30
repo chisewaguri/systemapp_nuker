@@ -4,6 +4,8 @@ import { t } from 'i18next'
 import { MOD_DIR, PERSIST_DIR } from '../constant'
 import type { useSnackBar } from '../components/SnackBar'
 
+export type BackupStatus = 'available' | 'absent' | 'error'
+
 export class Cli {
   static nuke(show: ReturnType<typeof useSnackBar>['show']): Promise<boolean> {
     return new Promise(resolve => {
@@ -68,17 +70,17 @@ export class Cli {
     }
   }
 
-  static async needRestore() {
+  static async needRestore(): Promise<BackupStatus> {
     try {
       const dirExist = await File.isDirectory(PERSIST_DIR)
       if (!dirExist) {
-        await File.createDirectory(PERSIST_DIR).catch(() => {})
-        return false
+        await File.createDirectory(PERSIST_DIR)
+        return 'absent'
       }
       const ps = await exec(`[ -f ${PERSIST_DIR}/nuke_list.txt.bak ] || [ -f ${PERSIST_DIR}/raw_whiteouts.txt.bak ]`)
-      return ps.errno === 0
+      return ps.errno === 0 ? 'available' : 'absent'
     } catch {
-      return false
+      return 'error'
     }
   }
 

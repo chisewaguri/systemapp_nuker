@@ -53,6 +53,13 @@ export default function SegmentedList({ items, className = '' }: SegmentedListPr
             `}
             onClick={item.onClick}
             onContextMenu={item.onContextMenu}
+            tabIndex={item.onClick || item.onContextMenu ? 0 : undefined}
+            onKeyDown={item.onClick ? event => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                item.onClick?.()
+              }
+            } : undefined}
           >
             {!item.noRipple && <md-ripple />}
             {item.leadingContent}

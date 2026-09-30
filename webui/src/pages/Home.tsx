@@ -13,6 +13,7 @@ import FileSelector from '../lib/FileSelector'
 import Fab from '../components/Fab'
 import { categories } from '../data/category'
 import { runMutation } from '../lib/mutationLock'
+import LoadError from '../components/LoadError'
 
 export default function Home() {
   const { t } = useTranslation()
@@ -70,7 +71,11 @@ export default function Home() {
         showSnackBar(t('global.write_error'), false)
         setApps(appListManager.systemAppList)
       } else {
-        await Cli.nuke(showSnackBar)
+        const applied = await Cli.nuke(showSnackBar)
+        if (!applied) {
+          setApps(appListManager.systemAppList)
+          return
+        }
         await appListManager.refresh()
           .then(() => setApps(appListManager.systemAppList))
           .catch(() => {
@@ -99,11 +104,7 @@ export default function Home() {
   }
 
   if (loadFailed) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <span className="text-error">{t('global.read_error')}</span>
-      </div>
-    )
+    return <LoadError />
   }
 
   return (
@@ -126,10 +127,12 @@ export default function Home() {
         apps={apps}
         searchQuery={searchQuery}
         selectedCategories={selectedCategories}
+        emptyMessage={apps.length === 0 ? t('home.empty') : t('global.no_results')}
       />
       <Fab
         onClick={handleFabClick}
         icon="remove_selection"
+        label={t('home.apply')}
         variant="primary"
         onVisibilityChange={handleFabVisibilityChange}
       />

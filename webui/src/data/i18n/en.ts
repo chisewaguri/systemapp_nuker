@@ -15,16 +15,36 @@ const en = {
     read_error: "Failed to load data",
     write_error: "Failed to save changes",
     processing: "Processing...",
+    retry: "Try again",
+    no_results: "No matching results",
+    copied: "Copied",
+    copy_error: "Couldn't copy",
+    clear_search: "Clear search",
   },
   home: {
     title: "System App Nuker",
+    empty: "No system apps found",
+    apply: "Apply app removals",
   },
   restore: {
     title: "Restore",
     empty: "No apps to restore",
+    apply: "Apply app restores",
   },
   whiteout: {
     title: "Whiteout",
+    selected: "{{count}} selected",
+    empty: "No whiteout paths added",
+    edit: "Edit whiteouts",
+    close_edit: "Stop editing",
+    select_all: "Select all whiteouts",
+    deselect_all: "Deselect all whiteouts",
+    delete: "Delete selected whiteouts",
+    delete_title: "Delete whiteouts?",
+    delete_message_one: "This removes {{count}} selected path. The change is applied during the module update.",
+    delete_message_other: "This removes {{count}} selected paths. The change is applied during the module update.",
+    cancel: "Cancel",
+    add: "Add whiteout path",
     data_not_supported: "Whiteouts cannot target /data or its contents",
   },
   settings: {
@@ -42,7 +62,9 @@ const en = {
     source_code_desc: "View source code on GitHub",
     telegram: "Telegram support",
     telegram_desc: "Join Telegram group for support and discussion",
+    advanced: "Advanced",
     whiteout_toggle: "Show whiteout page",
+    whiteout_toggle_desc: "Show raw whiteout controls in this WebUI host",
   },
   /** Category display names — used for filter chips */
   category: {
@@ -73,6 +95,8 @@ const en = {
     pending: "Pending",
     pending_restore: "Pending restore",
     pending_removal: "Pending removal",
+    copy: "Copy {{label}}",
+    description: "description",
   },
   nuke_config: {
     export_success: "Config exported to {{path}}",
@@ -88,6 +112,7 @@ const en = {
     delete_backup: "Delete backup",
     restore: "Restore",
     error: "Failed to process backup files",
+    check_error: "Couldn't check for backup files",
   },
   config: {
     uninstall_only_mode: "Uninstall Only Mode",

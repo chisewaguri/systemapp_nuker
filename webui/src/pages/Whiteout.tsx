@@ -10,6 +10,7 @@ import { Whiteout as WhiteoutManager } from '../lib/Whiteout'
 import { Cli } from '../lib/Cli'
 import { useHistory } from '../hooks/useHistory'
 import { runMutation } from '../lib/mutationLock'
+import LoadError from '../components/LoadError'
 
 const whiteoutManager = new WhiteoutManager()
 
@@ -23,6 +24,8 @@ export default function WhiteoutPage() {
   const [editMode, setEditMode] = useState(false)
   const [allSelected, setAllSelected] = useState(false)
   const [fileSelectorOpen, setFileSelectorOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [selectedCount, setSelectedCount] = useState(0)
   const whiteoutListRef = useRef<WhiteoutListHandle>(null)
   const { push, consume } = useHistory()
 
@@ -38,8 +41,11 @@ export default function WhiteoutPage() {
 
   const handleSelectionChange = useCallback(() => {
     const selected = whiteoutListRef.current?.getSelectedWhiteouts() ?? []
-    setAllSelected(selected.length === whiteouts.length && whiteouts.length > 0)
-  }, [whiteouts.length])
+    const query = searchQuery.toLowerCase()
+    const visibleCount = whiteouts.filter(whiteout => query === '' || whiteout.toLowerCase().includes(query)).length
+    setSelectedCount(selected.length)
+    setAllSelected(selected.length === visibleCount && visibleCount > 0)
+  }, [searchQuery, whiteouts])
 
   const handleEditModeChange = useCallback((isEditing: boolean) => {
     setEditMode(isEditing)
@@ -78,7 +84,11 @@ export default function WhiteoutPage() {
       if (!ok) {
         snackBar.show(t('global.write_error'), false)
       } else {
-        await Cli.nuke(snackBar.show)
+        const applied = await Cli.nuke(snackBar.show)
+        if (!applied) {
+          setWhiteouts([...whiteoutManager.whiteouts])
+          return
+        }
         await whiteoutManager.refresh().catch(() => {
           setLoadFailed(true)
           snackBar.show(t('global.read_error'), false)
@@ -89,7 +99,12 @@ export default function WhiteoutPage() {
     if (!started) snackBar.show(t('global.processing'), true, 3000)
   }
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
+    if (selectedCount > 0) setDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    setDeleteDialogOpen(false)
     const selected = whiteoutListRef.current?.getSelectedWhiteouts() ?? []
     await saveWhiteouts(whiteouts.filter(w => !selected.includes(w)))
     handleClose()
@@ -115,20 +130,16 @@ export default function WhiteoutPage() {
   }
 
   if (loadFailed) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <span className="text-error">{t('global.read_error')}</span>
-      </div>
-    )
+    return <LoadError />
   }
 
   return (
     <>
       <Header
-        title={t('whiteout.title')}
+        title={editMode && selectedCount > 0 ? t('whiteout.selected', { count: selectedCount }) : t('whiteout.title')}
         navigationIcon={
           editMode ? (
-            <md-icon-button onClick={handleClose}>
+            <md-icon-button aria-label={t('whiteout.close_edit')} onClick={handleClose}>
               <md-icon>close</md-icon>
             </md-icon-button>
           ) : undefined
@@ -136,14 +147,18 @@ export default function WhiteoutPage() {
         action={
           editMode ? (
             <div className="flex items-center gap-2">
-              <md-icon-button onClick={handleSelectAll}>
+              <md-icon-button aria-label={t(allSelected ? 'whiteout.deselect_all' : 'whiteout.select_all')} onClick={handleSelectAll}>
                 <md-icon>{allSelected ? 'deselect' : 'select_all'}</md-icon>
               </md-icon-button>
-              <md-icon-button onClick={handleDelete}>
+              <md-icon-button aria-label={t('whiteout.delete')} disabled={selectedCount === 0} onClick={handleDelete}>
                 <md-icon>delete</md-icon>
               </md-icon-button>
             </div>
-          ) : undefined
+          ) : (
+            <md-icon-button aria-label={t('whiteout.edit')} onClick={() => whiteoutListRef.current?.showCheckboxes()}>
+              <md-icon>edit</md-icon>
+            </md-icon-button>
+          )
         }
         bottomContent={
           <SearchBar value={searchQuery} onChange={setSearchQuery} />
@@ -153,16 +168,26 @@ export default function WhiteoutPage() {
         ref={whiteoutListRef}
         whiteouts={whiteouts}
         searchQuery={searchQuery}
+        emptyMessage={whiteouts.length === 0 ? t('whiteout.empty') : t('global.no_results')}
         onSelectionChange={handleSelectionChange}
         onEditModeChange={handleEditModeChange}
       />
       <Fab
         onClick={() => setFileSelectorOpen(true)}
         icon="add"
+        label={t('whiteout.add')}
         variant="primary"
         open={!editMode}
       />
       <FileSelector open={fileSelectorOpen} fileType="any" mode="path" folder={true} onSelect={handleAdd} root="/" />
+      <md-dialog open={deleteDialogOpen} onClosed={() => setDeleteDialogOpen(false)}>
+        <div slot="headline">{t('whiteout.delete_title')}</div>
+        <div slot="content">{t('whiteout.delete_message', { count: selectedCount })}</div>
+        <div slot="actions">
+          <md-text-button onClick={() => setDeleteDialogOpen(false)}>{t('whiteout.cancel')}</md-text-button>
+          <md-filled-button onClick={confirmDelete}>{t('whiteout.delete')}</md-filled-button>
+        </div>
+      </md-dialog>
       <SnackBar state={snackBar.state} onHide={snackBar.hide} />
     </>
   )

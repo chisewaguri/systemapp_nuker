@@ -13,6 +13,7 @@ import { REPO, TELEGRAM, LOCAL_STORAGE_KEY } from '../constant'
 import TelegramIcon from '../assets/telegram.svg?react'
 import WhiteoutIcon from '../assets/folder_off.svg?react'
 import { runMutation } from '../lib/mutationLock'
+import LoadError from '../components/LoadError'
 
 export default function Settings() {
   const { t } = useTranslation()
@@ -81,7 +82,7 @@ export default function Settings() {
     return (
       <div className="flex items-center justify-center h-full">
         {loadFailed
-          ? <span className="text-error">{t('global.read_error')}</span>
+          ? <LoadError />
           : <md-circular-progress indeterminate />}
       </div>
     )
@@ -161,7 +162,7 @@ export default function Settings() {
       </div>
       <Config items={items} onSave={handleSave} disabled={saving} />
       <div className="text-sm text-primary ps-8 pb-2">
-        Advanced
+        {t('settings.advanced')}
       </div>
       <SegmentedList items={[
         {
@@ -170,8 +171,8 @@ export default function Settings() {
           leadingContent: <md-icon class="text-on-surface-variant"><WhiteoutIcon /></md-icon>,
           content: (
             <>
-              <span className="text-on-surface">Use whiteout feature</span>
-              <span className="text-outline text-xs">Enable raw whiteout configuration page in WebUI</span>
+              <span className="text-on-surface">{t('settings.whiteout_toggle')}</span>
+              <span className="text-outline text-xs">{t('settings.whiteout_toggle_desc')}</span>
             </>
           ),
           trailingContent: (
