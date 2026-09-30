@@ -3,6 +3,29 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v2.2.3
+
+> Magisk and Magisk Alpha users should update. The WebUI could not save any change there and showed "Failed to save changes" (#62).
+
+#### Scripts
+- restore apps removed in uninstall-only mode when bootloop protection triggers, and retry until it works
+- restore every uninstalled app when the module is removed
+- only show apps as nuked once they are actually hidden
+- report failed mountify mounts in the module description instead of showing apps as nuked
+
+#### WebUI
+- save changes without busybox, which Magisk does not put on the WebUI's PATH
+- reload the app lists after a failed nuke or a backup restore, so rejected changes are not sent again
+- keep the original file when a save fails partway
+- stop hanging when the manager cannot start the nuke script
+- add empty states, a retry button, screen reader labels, and back navigation between tabs
+- confirm before deleting whiteouts
+
+#### Workflows
+- run lint and tests before building, and pin actions to commits
+
+---
+
 ### v2.2.2
 
 > v2.2.1 users should update. Package-manager calls can miss APK paths while processing the nuke list, leaving apps visible after reboot.
