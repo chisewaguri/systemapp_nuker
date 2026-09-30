@@ -135,6 +135,12 @@ if [ -s "$APPLIED" ] && [ "$uninstall_only_mode" = "true" ]; then
 fi
 
 # ensure the remove list exists and save nuked apps to old list
+# a failed mount left these apps visible, so dont record them as applied
+if [ -f "$PERSIST_DIR/mount_failed" ]; then
+    update_description "[ERROR] mount failed, apps are not hidden"
+    rm -f "$APPLIED" "$FAILED_RESTORES" "$FAILED_UNINSTALLS"
+    exit 1
+fi
 SNAPSHOT="$REMOVE_LIST.old.new.$$"
 if [ -f "$FAILED_UNINSTALLS" ]; then
     awk 'NR==FNR { failed[$1]=1; next } !($1 in failed)' "$FAILED_UNINSTALLS" "$APPLIED" > "$SNAPSHOT"

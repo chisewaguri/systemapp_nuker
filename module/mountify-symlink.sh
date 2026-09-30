@@ -50,7 +50,7 @@ if [ -d "$basefolder/$FAKE_MOUNT_NAME" ]; then
         if [ -d "$part" ]; then
             for DIR in "$part"/*; do
                 [ -d "$DIR" ] || continue
-                busybox mount -t overlay -o "lowerdir=$basefolder/$FAKE_MOUNT_NAME/$DIR:/$DIR" overlay "/$DIR"
+                busybox mount -t overlay -o "lowerdir=$basefolder/$FAKE_MOUNT_NAME/$DIR:/$DIR" overlay "/$DIR" || touch "$MOUNT_FAILED"
             done
         fi
     done
@@ -61,7 +61,7 @@ if [ -d "$basefolder/$FAKE_MOUNT_NAME/system" ]; then
 	cd "$basefolder/$FAKE_MOUNT_NAME/system"
 	for DIR in $(ls -d */ | sed 's/.$//' ); do
 		# only mount if its NOT a symlink
-		[ ! -L $DIR ] && busybox mount -t overlay -o "lowerdir=$basefolder/$FAKE_MOUNT_NAME/system/$DIR:/system/$DIR" overlay /system/$DIR
+		[ -L $DIR ] || busybox mount -t overlay -o "lowerdir=$basefolder/$FAKE_MOUNT_NAME/system/$DIR:/system/$DIR" overlay /system/$DIR || touch "$MOUNT_FAILED"
 	done
 fi
 

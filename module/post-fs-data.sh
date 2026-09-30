@@ -96,6 +96,9 @@ else # on post-fs-data
 fi
 
 # --- mount thing ---
+# the mountify scripts create this when a mount fails, service.sh checks it
+MOUNT_FAILED="$PERSIST_DIR/mount_failed"
+rm -f "$MOUNT_FAILED"
 # mode 2: metamodule or mountify module handles mounting — nothing to do here
 # mode 1: standalone mountify script handles mounting
 # mode 0: legacy/default — manager mounts (or falls through for old KSU; warn in log)
