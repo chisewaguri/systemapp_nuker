@@ -123,6 +123,27 @@ test('raw whiteouts reject data paths before filesystem operations and preserve 
     if (!rejected) assert.ok(result.stdout.includes('/fixture' + (input.startsWith('/system/') ? input : '/system' + input)))
   }
 })
+test('cached apk paths match the exact package and skip /data copies', t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-cache-test-'))
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+  // parser cache strings are UTF-16 with a length char in front, as seen on Android 16
+  const entry = (name, pkg, apk) => fs.writeFileSync(path.join(dir, name),
+    Buffer.from(`\u0007Baklava\u001a${pkg}${String.fromCharCode(apk.length)}${apk}￿`, 'utf16le'))
+  entry('YouTube-16-1', 'com.google.android.youtube', '/product/app/YouTube/YouTube.apk')
+  entry('Foo2-16-1', 'com.foo2', '/system/app/Foo2/Foo2.apk')
+  entry('Wall-16-1', 'com.wall', '/product/overlay/MiuiGlobalWallpaperOverlay.apk')
+  entry('Bar-16-1', 'com.bar', '/system/app/Bar/Bar.apk')
+  entry('Bar-16-2', 'com.bar', '/data/app/~~x/com.bar-1/base.apk')
+  const source = fs.readFileSync(path.join(root, '../module/nuke.sh'), 'utf8')
+  const fn = source.match(/cached_apk_paths\(\) \{[\s\S]*?\n\}/)[0].replace('/data/system/package_cache/*/*', `${dir.replace(/\\/g, '/')}/*`)
+  const result = spawnSync(shell, ['-c', `${fn}\ncached_apk_paths 'com.google.android.youtube com.foo com.wall com.bar'`], { encoding: 'utf8' })
+  if (result.error) throw result.error
+  assert.deepEqual(result.stdout.trim().split('\n').sort(), [
+    'com.bar /system/app/Bar/Bar.apk',
+    'com.google.android.youtube /product/app/YouTube/YouTube.apk',
+    'com.wall /product/overlay/MiuiGlobalWallpaperOverlay.apk',
+  ])
+})
 for (const [failure, writes] of [['cp', true], ['touch', true], ['write', false], ['cp+write', false], ['mv', false], [null, true]]) {
   test(`file write ${writes ? 'writes' : 'preserves the original'} on ${failure ?? 'no'} failure`, async t => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-write-test-'))

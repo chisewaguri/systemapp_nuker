@@ -209,26 +209,33 @@ nuke_saved_apps() {
 }
 
 # android drops a hidden system app from packages.xml, but its package parser
-# cache entry stays, with the package name right before the apk path and
-# sometimes a length byte between them. the format is internal and an OTA can
-# wipe it, so a package found nowhere or at two paths gets no path.
+# cache entry stays. it holds the package name, then the apk path prefixed by
+# its length, and that length shows up as one printable char when it falls in
+# range. the format is internal and an OTA can wipe it, so a package found
+# nowhere or at two system paths gets no path.
 # reading every cache file takes about 20s for 660 apps, and only runs on update
 cached_apk_paths() {
     for cache in /data/system/package_cache/*/*; do
         [ -f "$cache" ] || continue
         tr -d '\000' < "$cache" | tr -c 'A-Za-z0-9._/-' '\n' |
             awk -v want="$1" '
-                BEGIN { n = split(want, w, " "); for (i = 1; i <= n; i++) wanted[w[i]] = 1 }
+                BEGIN {
+                    n = split(want, w, " "); for (i = 1; i <= n; i++) wanted[w[i]] = 1
+                    for (i = 32; i < 127; i++) chr[i] = sprintf("%c", i)
+                }
                 /\/[A-Za-z0-9._\/-]*\.apk$/ {
-                    apk = substr($0, index($0, "/"))
-                    sub(/^\/+/, "/", apk)
-                    head = substr($0, 1, index($0, "/") - 1)
+                    i = index($0, "/")
+                    head = substr($0, 1, i - 1)
+                    apk = substr($0, i)
+                    # a 47 char path has "/" as its length char, so it looks like "//..."
+                    if (substr(apk, 2, 1) == "/") apk = substr(apk, 2)
+                    else if (head != "" && substr(head, length(head)) == chr[length(apk)]) head = substr(head, 1, length(head) - 1)
                     if (head == "") head = prev
-                    for (p in wanted) if (index(head, p) == 1 && length(head) - length(p) <= 1) { print p " " apk; exit }
+                    if (head in wanted) print head " " apk
                     exit
                 }
                 NF { prev = $0 }'
-    done | sort -u | awk '{ n[$1]++; path[$1] = $2 } END { for (p in n) if (n[p] == 1 && path[p] !~ /^\/data\//) print p " " path[p] }'
+    done | sort -u | awk '$2 !~ /^\/data\// { n[$1]++; path[$1] = $2 } END { for (p in n) if (n[p] == 1) print p " " path[p] }'
 }
 
 # pre-2.1 lists have no apk path, and pm cant report it once a whiteout hides
