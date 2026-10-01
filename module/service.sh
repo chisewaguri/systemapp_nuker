@@ -123,11 +123,16 @@ if [ -s "$REMOVE_LIST.old" ]; then
     done < "$REMOVE_LIST.old"
 fi
 
-# make sure app is uninstalled if user is switching to uninstall only mode
+# apps with no saved path have no whiteout, so they are uninstalled in every mode
 FAILED_UNINSTALLS="$PERSIST_DIR/uninstall_failed.tmp"
 rm -f "$FAILED_UNINSTALLS"
-if [ -s "$APPLIED" ] && [ "$uninstall_only_mode" = "true" ]; then
-    for pkg in $(grep -Ev "^$|^#" "$APPLIED" | awk '{print $1}'); do
+if [ "$uninstall_only_mode" = "true" ]; then
+    to_uninstall=$(grep -Ev "^$|^#" "$APPLIED" | awk '{print $1}')
+else
+    to_uninstall=$(grep -Ev "^$|^#" "$APPLIED" | awk '$2 !~ /^\/.*\.apk$/ || $2 ~ /^\/data\// {print $1}')
+fi
+if [ -n "$to_uninstall" ]; then
+    for pkg in $to_uninstall; do
         pm uninstall --user 0 "$pkg" </dev/null >/dev/null 2>&1
         # already uninstalled apps fail too, so check the result instead
         pm list packages "$pkg" </dev/null 2>/dev/null | grep -qx "package:$pkg" && echo "$pkg" >> "$FAILED_UNINSTALLS"

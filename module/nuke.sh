@@ -40,7 +40,6 @@ my_stock"
 
 # args handling
 [ "$1" = "update" ] && update=true || update=false
-restore_all_legacy=false
 
 # ----- functions -----
 
@@ -113,22 +112,6 @@ uninstall_for_user() {
     pm uninstall --user 0 "$package_name" </dev/null >/dev/null 2>&1
 }
 
-append_line() {
-    file="$1"
-    line="$2"
-    temp_file="$file.append.$$"
-    if [ -f "$file" ]; then
-        cp -f "$file" "$temp_file" || { rm -f "$temp_file"; return 1; }
-    else
-        : > "$temp_file" || return 1
-    fi
-    if [ -s "$temp_file" ] && [ "$(tail -c 1 "$temp_file" | wc -l)" -eq 0 ]; then
-        echo >> "$temp_file" || { rm -f "$temp_file"; return 1; }
-    fi
-    echo "$line" >> "$temp_file" || { rm -f "$temp_file"; return 1; }
-    mv -f "$temp_file" "$file" || { rm -f "$temp_file"; return 1; }
-}
-
 replace_file() {
     source_file="$1"
     target_file="$2"
@@ -197,17 +180,15 @@ whiteout_was_restored() {
     return 1
 }
 
-# keep the whiteouts that are already active while rebuilding the module
+# a whiteout with no owner hid a pre-2.1 app whose path couldnt be recovered.
+# dropping it lets service.sh uninstall that app for user 0 at boot.
 preserve_whiteouts() {
     for old_whiteout in $(find "$MODDIR" -type c 2>/dev/null); do
-        [ "$restore_all_legacy" = true ] && continue
         whiteout=$(normalize_whiteout_path "${old_whiteout#"$MODDIR"}")
         raw_whiteout_was_restored "$whiteout" && continue
         whiteout_was_restored "$whiteout" && continue
+        whiteout_has_saved_path "$whiteout" || whiteout_is_raw "$whiteout" || continue
         whiteout_create "$whiteout" > /dev/null || return 1
-        if ! whiteout_has_saved_path "$whiteout" && ! whiteout_is_raw "$whiteout" && ! grep -Fqx "# legacy-whiteout $whiteout" "$REMOVE_LIST" 2>/dev/null; then
-            append_line "$REMOVE_LIST" "# legacy-whiteout $whiteout" || return 1
-        fi
     done
 }
 
@@ -227,48 +208,55 @@ nuke_saved_apps() {
     done < "$REMOVE_LIST"
 }
 
-nuke_legacy_whiteouts() {
-    [ -f "$REMOVE_LIST" ] || return 0
-    while IFS= read -r line || [ -n "$line" ]; do
-        case "$line" in
-            "# legacy-whiteout "*)
-                whiteout_create "${line#\# legacy-whiteout }" > /dev/null || return 1
-                ;;
-        esac
-    done < "$REMOVE_LIST"
+# android drops a hidden system app from packages.xml, but its package parser
+# cache entry stays, with the package name right before the apk path and
+# sometimes a length byte between them. the format is internal and an OTA can
+# wipe it, so a package found nowhere or at two paths gets no path.
+# reading every cache file takes about 20s for 660 apps, and only runs on update
+cached_apk_paths() {
+    for cache in /data/system/package_cache/*/*; do
+        [ -f "$cache" ] || continue
+        tr -d '\000' < "$cache" | tr -c 'A-Za-z0-9._/-' '\n' |
+            awk -v want="$1" '
+                BEGIN { n = split(want, w, " "); for (i = 1; i <= n; i++) wanted[w[i]] = 1 }
+                /\/[A-Za-z0-9._\/-]*\.apk$/ {
+                    apk = substr($0, index($0, "/"))
+                    sub(/^\/+/, "/", apk)
+                    head = substr($0, 1, index($0, "/") - 1)
+                    if (head == "") head = prev
+                    for (p in wanted) if (index(head, p) == 1 && length(head) - length(p) <= 1) { print p " " apk; exit }
+                    exit
+                }
+                NF { prev = $0 }'
+    done | sort -u | awk '{ n[$1]++; path[$1] = $2 } END { for (p in n) if (n[p] == 1 && path[p] !~ /^\/data\//) print p " " path[p] }'
 }
 
-check_legacy_restores() {
-    [ -f "$REMOVE_LIST.old" ] || return 0
-    legacy_kept=false
-    legacy_removed=false
-    while IFS= read -r line || [ -n "$line" ]; do
-        case "$line" in
-            ""|\#*) continue ;;
-        esac
-        package_name=$(echo "$line" | awk '{print $1}')
-        saved_path=$(echo "$line" | awk '{print $2}')
-        is_apk_path "$saved_path" && continue
-        if awk -v pkg="$package_name" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null; then
-            legacy_kept=true
-        else
-            legacy_removed=true
-        fi
-    done < "$REMOVE_LIST.old"
-
-    if [ "$legacy_removed" = true ] && [ "$legacy_kept" = false ]; then
-        restore_all_legacy=true
-        return 0
-    fi
-    if [ "$legacy_removed" = true ]; then
-        echo "cant restore old apps one at a time because their paths werent saved" >&2
-        return 1
-    fi
+# pre-2.1 lists have no apk path, and pm cant report it once a whiteout hides
+# the app. without one, the app can only be uninstalled for user 0.
+recover_legacy_paths() {
+    pathless=$(cat "$REMOVE_LIST" "$REMOVE_LIST.old" 2>/dev/null | grep -Ev '^$|^#' |
+        awk '$2 !~ /^\/.*\.apk$/ || $2 ~ /^\/data\// { print $1 }' | sort -u | tr '\n' ' ')
+    [ -n "$pathless" ] || return 0
+    found=$(cached_apk_paths "$pathless" | tr '\n' ' ')
+    [ -n "$found" ] || return 0
+    for list in "$REMOVE_LIST" "$REMOVE_LIST.old"; do
+        [ -f "$list" ] || continue
+        list_tmp="$list.recover.$$"
+        awk -v found="$found" '
+            BEGIN { n = split(found, f, " "); for (i = 1; i < n; i += 2) path[f[i]] = f[i + 1] }
+            /^$/ || /^#/ || !($1 in path) || ($2 ~ /^\/.*\.apk$/ && $2 !~ /^\/data\//) { print; next }
+            {
+                label = $0
+                sub(/^[^ ]* */, "", label)
+                if ($2 ~ /^\//) sub(/^[^ ]* */, "", label)
+                print $1 " " path[$1] " " label
+            }' "$list" > "$list_tmp" || { rm -f "$list_tmp"; return 1; }
+        mv -f "$list_tmp" "$list" || { rm -f "$list_tmp"; return 1; }
+    done
 }
 
 # fill missing paths while newly selected apps are still visible
 prepare_nuke_list() {
-    check_legacy_restores || return 1
     [ -s "$REMOVE_LIST" ] || return 0
     list_tmp="$REMOVE_LIST.tmp.$$"
 
@@ -338,21 +326,6 @@ prepare_nuke_list() {
 
         echo "$package_name $apk_path $label" || { rm -f "$list_tmp"; return 1; }
     done < "$REMOVE_LIST" > "$list_tmp" || { rm -f "$list_tmp"; return 1; }
-
-    if [ "$restore_all_legacy" != true ] && [ -f "$REMOVE_LIST.old" ]; then
-        while IFS= read -r metadata || [ -n "$metadata" ]; do
-            case "$metadata" in
-                "# legacy-whiteout "*)
-                    whiteout_was_restored "$(normalize_whiteout_path "${metadata#\# legacy-whiteout }")" && continue
-                    grep -Fqx "$metadata" "$list_tmp"
-                    grep_status=$?
-                    [ "$grep_status" -eq 0 ] && continue
-                    [ "$grep_status" -eq 1 ] || { rm -f "$list_tmp"; return 1; }
-                    echo "$metadata" >> "$list_tmp" || { rm -f "$list_tmp"; return 1; }
-                    ;;
-            esac
-        done < "$REMOVE_LIST.old"
-    fi
 
     mv -f "$list_tmp" "$REMOVE_LIST" || { rm -f "$list_tmp"; return 1; }
 }
@@ -487,9 +460,8 @@ if [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
 fi
 
 if [ "$update" = true ]; then
+    recover_legacy_paths || exit 1
     prepare_nuke_list || exit 1
-elif [ "$DUMMYZIP" = true ]; then
-    check_legacy_restores || exit 1
 fi
 
 # ----- main script -----
@@ -524,8 +496,6 @@ for item in system system_ext vendor product update $targets; do
     rm -rf "$MODULE_UPDATE_DIR/$item"
 done
 
-# old whiteouts are still mounted here. keep them because pm cant see the
-# apps anymore and old 2.0 lists dont have their paths
 if [ "$DUMMYZIP" = true ] && [ "$uninstall_only_mode" != "true" ]; then
     preserve_whiteouts || exit 1
 fi
@@ -536,9 +506,6 @@ if [ "$update" = true ] && [ "$uninstall_only_mode" != "true" ]; then
     fi
 elif [ -s "$REMOVE_LIST" ]; then
     nuke_system_apps || exit 1
-fi
-if [ "$uninstall_only_mode" != "true" ]; then
-    nuke_legacy_whiteouts || exit 1
 fi
 
 # handle raw whiteout
