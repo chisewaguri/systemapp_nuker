@@ -3,6 +3,17 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v2.2.4
+
+> v2.0.x users should update. Updating from 2.0 could fail with "cant find system apk" when a nuked app had a Play Store update (#63).
+
+#### Scripts
+- keep updating when a nuked app only shows its Play Store copy, and uninstall that copy for user 0
+- recover the APK path of apps nuked before 2.1, so they can be restored one at a time
+- uninstall an app for user 0 when its old path cannot be recovered, so it stays hidden
+
+---
+
 ### v2.2.3
 
 > Magisk and Magisk Alpha users should update. The WebUI could not save any change there and showed "Failed to save changes" (#62).
