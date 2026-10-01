@@ -219,9 +219,9 @@ nuke_saved_apps() {
         esac
         package_name=$(echo "$line" | awk '{print $1}')
         saved_path=$(echo "$line" | awk '{print $2}')
-        if is_apk_path "$saved_path"; then
-            whiteout_create "$(dirname "$saved_path")" > /dev/null || return 1
-        else
+        is_apk_path "$saved_path" && { whiteout_create "$(dirname "$saved_path")" > /dev/null || return 1; }
+        # with the system apk hidden, a /data/app update is a plain user app
+        if ! is_apk_path "$saved_path" || get_apk_path "$package_name" | grep -q '^/data/app'; then
             uninstall_for_user "$package_name" || return 1
         fi
     done < "$REMOVE_LIST"
@@ -330,10 +330,10 @@ prepare_nuke_list() {
             echo "$package_name  $label" || { rm -f "$list_tmp"; return 1; }
             continue
         fi
+        # the old whiteout hides the system apk, so pm only sees the /data/app update
         if echo "$apk_path" | grep -q '^/data/app'; then
-            echo "cant find system apk for $package_name" >&2
-            rm -f "$list_tmp"
-            return 1
+            echo "$package_name $saved_path $label" || { rm -f "$list_tmp"; return 1; }
+            continue
         fi
 
         echo "$package_name $apk_path $label" || { rm -f "$list_tmp"; return 1; }
@@ -411,11 +411,6 @@ nuke_system_apps() {
                 apk_path=""
             fi
             [ -n "$apk_path" ] || apk_path="$saved_path"
-            if echo "$apk_path" | grep -q '^/data/app'; then
-                echo "cant remove system update for $package_name" >&2
-                rm -f "$list_tmp"
-                return 1
-            fi
             if [ "$apk_path" != "" ]; then
                 if ! whiteout_create "$(dirname "$apk_path")" > /dev/null; then
                     rm -f "$list_tmp"
