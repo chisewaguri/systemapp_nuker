@@ -112,6 +112,15 @@ export function getUad(pkg: string): { removal: Removal, description: string | n
   return { removal: toRemoval(entry[0]), description: description || null }
 }
 
+export function removalCounts(apps: { packageName: string }[]): Partial<Record<Removal, number>> {
+  const counts: Partial<Record<Removal, number>> = {}
+  for (const app of apps) {
+    const { removal } = getUad(app.packageName)
+    counts[removal] = (counts[removal] ?? 0) + 1
+  }
+  return counts
+}
+
 /** Downloads the latest list as root. A failed or malformed download keeps the current copy. */
 export async function updateUad(): Promise<UadSource> {
   const target = shellQuote(DOWNLOADED)

@@ -81,6 +81,8 @@ const en = {
     expert: "Expert",
     unsafe: "Unsafe",
     unknown: "Unknown",
+    filter: "Filter by removal level",
+    clear_all: "Clear filter",
   },
   removal_desc: {
     none: "UAD-ng has no description for this app. Check what it does before removing it.",

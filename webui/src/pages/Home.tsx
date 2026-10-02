@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import Header from '../components/Header'
 import SearchBar from '../components/SearchBar'
-import FilterGroup from '../components/FilterGroup'
+import { removalCounts } from '../lib/uad'
 import AppList, { type AppListHandle } from '../components/AppList'
 import { type AppInfo } from '../lib/AppList'
 import { useAppList } from '../lib/AppListContext'
@@ -111,10 +111,10 @@ export default function Home() {
         title={t('home.title')}
         bottomContent={
           <>
-            <SearchBar value={searchQuery} onChange={setSearchQuery} />
-            <FilterGroup
-              selectedCategories={selectedCategories}
-              onToggle={toggleCategory}
+            <SearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              filter={{ selected: selectedCategories, onToggle: toggleCategory, counts: removalCounts(apps) }}
             />
           </>
         }
