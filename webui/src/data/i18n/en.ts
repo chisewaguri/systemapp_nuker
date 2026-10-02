@@ -66,6 +66,17 @@ const en = {
     whiteout_toggle: "Show whiteout page",
     whiteout_toggle_desc: "Show raw whiteout controls in this WebUI host",
   },
+  /** UAD-ng removal levels, used for list labels and filter chips */
+  removal: {
+    recommended: "Recommended",
+    advanced: "Advanced",
+    expert: "Expert",
+    unsafe: "Unsafe",
+    unknown: "Unknown",
+  },
+  removal_desc: {
+    unknown: "Not in the UAD-ng list. Check what this app does before removing it.",
+  },
   /** Category display names — used for filter chips */
   category: {
     essential: "Essential",

@@ -3,6 +3,7 @@ import { PERSIST_DIR } from '../constant'
 import { File } from './File'
 import { isDev } from './utils'
 import { parseNukeLine } from './nukeList'
+import { loadUad } from './uad'
 
 export interface AppInfo extends Omit<PackagesInfo, 'versionName' | 'versionCode' | 'uid'> {
   versionName: string | null
@@ -49,7 +50,8 @@ export default class AppList {
   }
 
   async #init() {
-    await this.#refresh()
+    // labels come from the uad list, so load it with the apps to avoid relabeling after first render
+    await Promise.all([this.#refresh(), loadUad()])
   }
 
   async #refresh() {
