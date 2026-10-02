@@ -14,6 +14,7 @@ import TelegramIcon from '../assets/telegram.svg?react'
 import WhiteoutIcon from '../assets/folder_off.svg?react'
 import { runMutation } from '../lib/mutationLock'
 import LoadError from '../components/LoadError'
+import { UAD_REPO, updateUad, uadSource, type UadSource } from '../lib/uad'
 
 export default function Settings() {
   const { t } = useTranslation()
@@ -24,6 +25,8 @@ export default function Settings() {
   const [items, setItems] = useState<ConfigLib['config']>([])
   const [fileSelectorOpen, setFileSelectorOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [uad, setUad] = useState<UadSource>(uadSource)
+  const [uadUpdating, setUadUpdating] = useState(false)
   const [whiteoutEnabled, setWhiteoutEnabled] = useState(() => {
     return localStorage.getItem(LOCAL_STORAGE_KEY + 'use-whiteout') === 'true'
   })
@@ -68,6 +71,29 @@ export default function Settings() {
       snackBar.show(t('global.processing'), true, 3000)
     }
   }
+
+  const handleUadUpdate = async () => {
+    const started = await runMutation(async () => {
+      setUadUpdating(true)
+      snackBar.show(t('settings.uad_updating'), true, 60000)
+      try {
+        const source = await updateUad()
+        setUad(source)
+        snackBar.show(t('settings.uad_updated', { count: source.count }))
+      } catch (error) {
+        snackBar.show(t('settings.uad_update_error', { error: error instanceof Error ? error.message : String(error) }), false)
+      } finally {
+        setUadUpdating(false)
+      }
+    })
+    if (!started) snackBar.show(t('global.processing'), true, 3000)
+  }
+
+  const uadSubtitle = uad.kind === 'downloaded'
+    ? t('settings.uad_source_downloaded', { date: uad.date ?? '?', count: uad.count })
+    : uad.kind === 'bundled'
+      ? t('settings.uad_source_bundled', { count: uad.count })
+      : t('settings.uad_source_none')
 
   const handleImport = async (content: string | null) => {
     setFileSelectorOpen(false)
@@ -183,8 +209,28 @@ export default function Settings() {
               onChange={handleWhiteoutToggle}
             />
           ),
-        }
+        },
+        {
+          key: 'uad-update',
+          className: '!p-4',
+          leadingContent: <md-icon class="text-on-surface-variant">sync</md-icon>,
+          content: (
+            <>
+              <span className="text-on-surface">{t('settings.uad_update')}</span>
+              <span className="text-outline text-xs">{uadSubtitle}</span>
+            </>
+          ),
+          trailingContent: uadUpdating ? <md-circular-progress indeterminate style={{ '--md-circular-progress-size': '24px' } as React.CSSProperties} /> : undefined,
+          onClick: uadUpdating ? undefined : handleUadUpdate,
+        },
       ]} />
+      <button
+        type="button"
+        className="block w-full border-0 bg-transparent px-8 pt-2 pb-4 text-start text-xs leading-relaxed text-outline underline-offset-2 hover:underline"
+        onClick={() => Cli.openLink(UAD_REPO)}
+      >
+        {t('settings.uad_credit')}
+      </button>
       <div className="text-sm text-primary ps-8 pb-2">
         {t('settings.backup_restore')}
       </div>

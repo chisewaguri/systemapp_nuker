@@ -66,6 +66,7 @@ If **Uninstall Only Mode** is enabled, the module skips whiteouts and runs `pm u
 - **Mounting Mode** selects manager mounting, the bundled Mountify script, or an external metamodule. The installer picks this automatically. If you do not know what is mounting what, leave the poor setting alone.
 - **Import Config** loads a saved package list.
 - **Export Config** writes the current list to `/sdcard/Download/`.
+- **Update app descriptions** downloads the latest [UAD-ng](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) list. A copy ships with every release, so this is only for picking up newer descriptions. Nothing is downloaded unless you tap it.
 - **Use whiteout feature** shows the raw whiteout page. Raw paths can hide almost anything under the system partitions, including things your phone was rather attached to.
 
 ## If something goes wrong
@@ -81,6 +82,7 @@ The guard is a seat belt, not a challenge. Nuking SystemUI to see what happens s
 - [@backslashxx](https://github.com/backslashxx) for [Mountify](https://github.com/backslashxx/mountify), its mounting scripts, and the whiteout work this module builds on.
 - [@KOWX712](https://github.com/KOWX712) for the WebUI and [Tricky Addon Update Target List](https://github.com/KOWX712/Tricky-Addon-Update-Target-List), which inspired parts of the package-list handling.
 - [@j-hc](https://github.com/j-hc) for [zygisk-detach](https://github.com/j-hc/zygisk-detach), which helped shape earlier app-list handling.
+- [Universal Android Debloater Next Generation](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) for the app descriptions and removal levels shown in the WebUI, licensed GPL-3.0.
 - Everyone who sent code, logs, bug reports, or one of those deeply suspicious "small suggestions."
 
 ## Contributing
