@@ -237,6 +237,29 @@ if [ "$ksu_is_metamodule" = true ] && [ "$mounting_mode" = "0" ]; then
     echo "[!]             Module WILL NOT be mounted. Please install a metamodule"
 fi
 
+# swap the webui and scripts into the live module now so they work before the reboot.
+# whiteout trees and manager flags stay as they are, the new whiteouts apply on reboot.
+is_live_state() {
+    case "$1" in
+        system|system_ext|vendor|product|odm|mi_ext|my_*) return 0 ;;
+        disable|remove|update|skip_mount|skip_mountify) return 0 ;;
+    esac
+    return 1
+}
+mkdir -p "$MODDIR" || abort "Failed to create module folder"
+for item in "$MODDIR"/* "$MODDIR"/.[!.]*; do
+    [ -e "$item" ] || [ -L "$item" ] || continue
+    is_live_state "${item##*/}" || rm -rf "$item"
+done
+for item in "$MODPATH"/* "$MODPATH"/.[!.]*; do
+    [ -e "$item" ] || [ -L "$item" ] || continue
+    is_live_state "${item##*/}" && continue
+    case "${item##*/}" in customize.sh|META-INF) continue ;; esac
+    cp -a "$item" "$MODDIR/" || abort "Failed to update the live module"
+    chcon -R u:object_r:system_file:s0 "$MODDIR/${item##*/}" 2>/dev/null
+done
+echo "[+] WebUI updated, no reboot needed to open it."
+
 # success message
 echo "[✓] System App Nuker setup complete."
 
