@@ -83,6 +83,8 @@ export default function Settings() {
       snackBar.show(t('settings.uad_updating'), true, 60000)
       try {
         const source = await updateUad()
+      // starting the root shell can hold the page for a moment, so let the spinner paint first
+      await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve)))
         setUad(source)
         snackBar.show(t('settings.uad_updated', { count: source.count }))
       } catch (error) {

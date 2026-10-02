@@ -179,15 +179,24 @@ for (const [failure, writes] of [['cp', true], ['touch', true], ['write', false]
 }
 
 const UAD_DOWNLOADED = '/persist/uad_lists.json'
+// answers the sed range reads uad.ts uses for big files, everything else gets `other`
+function sedExec(read, other = { errno: 0, stdout: '', stderr: '' }) {
+  return async script => {
+    const range = script.match(/^sed -n '(\d+),(\d+)p' '(.*)'$/)
+    if (!range) return other
+    const lines = read(range[3]).split('\n')
+    if (lines.at(-1) === '') lines.pop()
+    const part = lines.slice(Number(range[1]) - 1, Number(range[2]))
+    return { errno: 0, stdout: part.length ? `${part.join('\n')}\n` : '', stderr: '' }
+  }
+}
 function uadFixture({ downloaded, bundled }) {
   const fetched = []
   const mod = load('src/lib/uad.ts', {
     '../constant': { PERSIST_DIR: '/persist' },
-    './File': { File: {
-      readIfExists: async file => (file === UAD_DOWNLOADED ? downloaded ?? '' : ''),
-    } },
+    './File': { File: { exist: async file => file === UAD_DOWNLOADED && downloaded !== undefined } },
     './shell': { shellQuote: value => `'${value}'` },
-    'kernelsu-alt': { exec: async () => ({ errno: 0, stdout: '', stderr: '' }) },
+    'kernelsu-alt': { exec: sedExec(file => (file === UAD_DOWNLOADED ? downloaded ?? '' : '')) },
   }, {
     fetch: async url => {
       fetched.push(url)
@@ -292,10 +301,7 @@ for (const [failure, kept] of [['download', true], ['notuad', true], ['move', tr
     }[failure] ?? `curl() { while [ "$1" != "-o" ]; do shift; done; printf '%s' '${fresh}' > "$2"; }`
     const { updateUad, getUad } = load('src/lib/uad.ts', {
       '../constant': { PERSIST_DIR: persist },
-      './File': { File: {
-        read: async f => fs.readFileSync(f, 'utf8'),
-        readIfExists: async f => (fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : ''),
-      } },
+      './File': { File: { exist: async f => fs.existsSync(f) } },
       './shell': { shellQuote: value => `'${value.replaceAll("'", "'\\''")}'` },
       'kernelsu-alt': { exec: async script => {
         const result = spawnSync(shell, ['-c', `${stubs}\n${script}`], { encoding: 'utf8' })
@@ -342,9 +348,9 @@ test('a slow older uad load cannot overwrite a newer one', async () => {
   const bundleGate = new Promise(resolve => { releaseBundle = resolve })
   const { loadUad, uadReady, getUad } = load('src/lib/uad.ts', {
     '../constant': { PERSIST_DIR: '/persist' },
-    './File': { File: { readIfExists: async () => downloaded } },
+    './File': { File: { exist: async () => downloaded !== '' } },
     './shell': { shellQuote: value => `'${value}'` },
-    'kernelsu-alt': { exec: async () => ({ errno: 0, stdout: '2026-10-02\n', stderr: '' }) },
+    'kernelsu-alt': { exec: sedExec(() => downloaded, { errno: 0, stdout: '2026-10-02\n', stderr: '' }) },
   }, {
     fetch: async () => {
       await bundleGate

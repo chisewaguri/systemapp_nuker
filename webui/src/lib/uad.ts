@@ -46,9 +46,23 @@ let entries: Trimmed = {}
 let source: UadSource = { kind: 'none', count: 0, date: null }
 let loading: Promise<UadSource> | null = null
 
+// the host passes stdout back as one javascript call, which never returns for a file this big
+async function readLarge(path: string): Promise<string> {
+  const quoted = shellQuote(path)
+  const step = 2000
+  let content = ''
+  for (let start = 1; ; start += step) {
+    const { errno, stdout, stderr } = await exec(`sed -n '${start},${start + step - 1}p' ${quoted}`)
+    if (errno !== 0) throw new Error(stderr.trim() || `could not read ${path}`)
+    if (!stdout) return content
+    content += stdout.endsWith('\n') ? stdout : `${stdout}\n`
+  }
+}
+
 async function readDownloaded(): Promise<{ list: Trimmed, date: string | null } | null> {
   try {
-    const content = await File.readIfExists(DOWNLOADED)
+    if (!(await File.exist(DOWNLOADED))) return null
+    const content = await readLarge(DOWNLOADED)
     if (!content.trim()) return null
     const list = trimUad(JSON.parse(content))
     if (!list) return null
@@ -145,7 +159,7 @@ export async function updateUad(): Promise<UadSource> {
     await exec(`rm -f ${temp}`)
     throw new Error(download.stderr.trim() || `download failed (${download.errno})`)
   }
-  const valid = await File.read(`${DOWNLOADED}.new`)
+  const valid = await readLarge(`${DOWNLOADED}.new`)
     .then(content => trimUad(JSON.parse(content)) !== null)
     .catch(() => false)
   if (!valid) {
