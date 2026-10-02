@@ -33,7 +33,15 @@ export class Cli {
   }
 
   static reboot(show: ReturnType<typeof useSnackBar>['show']) {
-    exec('svc power reboot || reboot').then(({errno, stderr}) => {
+    // a late-loaded kernelsu is gone after a full reboot, so soft reboot like its manager does
+    exec(`
+      PATH=/data/adb/ksu/bin:$PATH
+      if ksud debug info 2>/dev/null | grep -q '^late_load: true'; then
+        ksud soft-reboot
+      else
+        svc power reboot || reboot
+      fi
+    `).then(({errno, stderr}) => {
       if (errno != 0) show(t('nuke.reboot_error', { stderr }), false)
     })
   }
