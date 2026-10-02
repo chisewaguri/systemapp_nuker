@@ -135,7 +135,7 @@ const en = {
     mounting_mode: "Mounting Mode",
     mounting_mode_desc: "Controls how the module is mounted. Auto-detected based on your environment.",
     mounting_mode_0: "Default/Legacy - Manager",
-    mounting_mode_1: "Mountify Standalone - Built-in",
+    mounting_mode_1: "mountify Standalone - Built-in",
     mounting_mode_2: "Metamodule - External",
   },
   nuke: {
