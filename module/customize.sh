@@ -246,18 +246,29 @@ is_live_state() {
     esac
     return 1
 }
-mkdir -p "$MODDIR" || abort "Failed to create module folder"
-for item in "$MODDIR"/* "$MODDIR"/.[!.]*; do
-    [ -e "$item" ] || [ -L "$item" ] || continue
-    is_live_state "${item##*/}" || rm -rf "$item"
-done
+[ "$MODPATH" -ef "$MODDIR" ] && abort "Installer is writing into the live module"
+# copy into a staging folder first, so a failed copy leaves the live module untouched
+stage="$MODDIR/.staged"
+mkdir -p "$MODDIR" && rm -rf "$stage" && mkdir "$stage" || abort "Failed to create module folder"
 for item in "$MODPATH"/* "$MODPATH"/.[!.]*; do
     [ -e "$item" ] || [ -L "$item" ] || continue
     is_live_state "${item##*/}" && continue
     case "${item##*/}" in customize.sh|META-INF) continue ;; esac
-    cp -a "$item" "$MODDIR/" || abort "Failed to update the live module"
-    chcon -R u:object_r:system_file:s0 "$MODDIR/${item##*/}" 2>/dev/null
+    if ! cp -a "$item" "$stage/"; then
+        rm -rf "$stage"
+        abort "Failed to update the live module"
+    fi
 done
+chcon -R u:object_r:system_file:s0 "$stage" 2>/dev/null
+for item in "$MODDIR"/* "$MODDIR"/.[!.]*; do
+    [ -e "$item" ] || [ -L "$item" ] || continue
+    [ "$item" = "$stage" ] || is_live_state "${item##*/}" || rm -rf "$item"
+done
+for item in "$stage"/* "$stage"/.[!.]*; do
+    [ -e "$item" ] || [ -L "$item" ] || continue
+    mv -f "$item" "$MODDIR/" || abort "Failed to update the live module"
+done
+rmdir "$stage"
 echo "[+] WebUI updated, no reboot needed to open it."
 
 # success message
