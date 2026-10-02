@@ -3,6 +3,22 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v2.2.5
+
+> Adds app descriptions and removal levels from UAD-ng (#60).
+
+#### WebUI
+- show what each app is and how risky it is to remove, from a UAD-ng list bundled with every release
+- update that list from Settings. Nothing is downloaded unless you tap it
+- filter apps by removal level from a button in the search bar
+- keep icons for nuked apps on the Restore page
+- add a Credits dialog under About
+
+#### Workflows
+- bundle the latest UAD-ng list into each build
+
+---
+
 ### v2.2.4
 
 > v2.0.x users should update. Updating from 2.0 could fail with "cant find system apk" when a nuked app had a Play Store update (#63).
