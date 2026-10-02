@@ -14,7 +14,7 @@ import TelegramIcon from '../assets/telegram.svg?react'
 import WhiteoutIcon from '../assets/folder_off.svg?react'
 import { runMutation } from '../lib/mutationLock'
 import LoadError from '../components/LoadError'
-import { UAD_REPO, updateUad, uadSource, type UadSource } from '../lib/uad'
+import { UAD_REPO, updateUad, uadReady, uadSource, type UadSource } from '../lib/uad'
 
 export default function Settings() {
   const { t } = useTranslation()
@@ -37,6 +37,10 @@ export default function Settings() {
     localStorage.setItem(LOCAL_STORAGE_KEY + 'use-whiteout', newValue ? 'true' : 'false')
     window.dispatchEvent(new CustomEvent('whiteout-toggled', { detail: newValue }))
   }
+
+  useEffect(() => {
+    uadReady().then(setUad)
+  }, [])
 
   useEffect(() => {
     const cfg = new ConfigLib()
