@@ -44,6 +44,7 @@ function isTrimmed(raw: unknown): raw is Trimmed {
 
 let entries: Trimmed = {}
 let source: UadSource = { kind: 'none', count: 0, date: null }
+let loading: Promise<UadSource> | null = null
 
 async function readDownloaded(): Promise<{ list: Trimmed, date: string | null } | null> {
   try {
@@ -70,7 +71,17 @@ async function readBundled(): Promise<Trimmed | null> {
 }
 
 /** Loads the downloaded list, then the bundled one. Never throws, an empty result labels every app unknown. */
-export async function loadUad(): Promise<UadSource> {
+export function loadUad(): Promise<UadSource> {
+  loading = readUad()
+  return loading
+}
+
+/** The current source, waiting for a load that is still running. */
+export function uadReady(): Promise<UadSource> {
+  return loading ?? loadUad()
+}
+
+async function readUad(): Promise<UadSource> {
   const downloaded = await readDownloaded()
   if (downloaded) {
     entries = downloaded.list
@@ -102,6 +113,7 @@ export async function updateUad(): Promise<UadSource> {
   const url = shellQuote(UAD_URL)
   const download = await exec(`
     PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
+    mkdir -p ${shellQuote(PERSIST_DIR)} || exit 1
     rm -f ${temp}
     if command -v curl >/dev/null 2>&1; then
       curl -fsSL --max-time 60 ${url} -o ${temp}
