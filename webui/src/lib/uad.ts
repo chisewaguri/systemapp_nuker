@@ -39,7 +39,7 @@ export function trimUad(raw: unknown): Trimmed | null {
 function isTrimmed(raw: unknown): raw is Trimmed {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false
   const values = Object.values(raw)
-  return values.length > 0 && values.every(v => Array.isArray(v) && typeof v[0] === 'string')
+  return values.length > 0 && values.every(v => Array.isArray(v) && v.length === 2 && typeof v[0] === 'string' && typeof v[1] === 'string')
 }
 
 let entries: Trimmed = {}
@@ -137,7 +137,7 @@ export async function updateUad(): Promise<UadSource> {
     await exec(`rm -f ${temp}`)
     throw new Error('the downloaded list is not a uad-ng list')
   }
-  const swap = await exec(`mv -f ${temp} ${target}`)
+  const swap = await exec(`mv -f ${temp} ${target} || { rm -f ${temp}; exit 1; }`)
   if (swap.errno !== 0) throw new Error(swap.stderr.trim() || 'could not save the list')
   return loadUad()
 }
