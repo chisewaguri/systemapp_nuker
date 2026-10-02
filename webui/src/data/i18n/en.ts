@@ -72,7 +72,17 @@ const en = {
     uad_updating: "Downloading the UAD-ng list...",
     uad_updated: "App descriptions updated, {{count}} apps",
     uad_update_error: "Couldn't update app descriptions: {{error}}",
-    uad_credit: "App descriptions and removal levels come from Universal Android Debloater Next Generation, licensed GPL-3.0.",
+    credits: "Credits",
+    credits_desc: "Projects System App Nuker builds on",
+  },
+  credits: {
+    title: "Credits",
+    mountify: "Mounting scripts and the whiteout work this module builds on",
+    uad: "App descriptions and removal levels, licensed GPL-3.0",
+    tricky_addon: "Inspired the WebUI and parts of the package list handling",
+    zygisk_detach: "Helped shape the earlier app list handling",
+    everyone: "And everyone who sent code, logs and bug reports.",
+    close: "Close",
   },
   /** UAD-ng removal levels, used for list labels and filter chips */
   removal: {
