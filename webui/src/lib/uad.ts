@@ -72,8 +72,15 @@ async function readBundled(): Promise<Trimmed | null> {
 
 /** Loads the downloaded list, then the bundled one. Never throws, an empty result labels every app unknown. */
 export function loadUad(): Promise<UadSource> {
-  loading = readUad()
-  return loading
+  const current: Promise<UadSource> = readUad().then(([list, read]): UadSource | Promise<UadSource> => {
+    // a newer load started while this one was reading, so its result is stale
+    if (loading !== current) return loading ?? read
+    entries = list
+    source = read
+    return read
+  })
+  loading = current
+  return current
 }
 
 /** The current source, waiting for a load that is still running. */
@@ -81,19 +88,16 @@ export function uadReady(): Promise<UadSource> {
   return loading ?? loadUad()
 }
 
-async function readUad(): Promise<UadSource> {
+async function readUad(): Promise<[Trimmed, UadSource]> {
   const downloaded = await readDownloaded()
   if (downloaded) {
-    entries = downloaded.list
-    source = { kind: 'downloaded', count: Object.keys(entries).length, date: downloaded.date }
-    return source
+    const count = Object.keys(downloaded.list).length
+    return [downloaded.list, { kind: 'downloaded', count, date: downloaded.date }]
   }
   const bundled = await readBundled()
-  entries = bundled ?? {}
-  source = bundled
-    ? { kind: 'bundled', count: Object.keys(entries).length, date: null }
-    : { kind: 'none', count: 0, date: null }
-  return source
+  return bundled
+    ? [bundled, { kind: 'bundled', count: Object.keys(bundled).length, date: null }]
+    : [{}, { kind: 'none', count: 0, date: null }]
 }
 
 export function uadSource(): UadSource {

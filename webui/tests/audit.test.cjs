@@ -334,3 +334,30 @@ test('opening a link from a description never runs shell syntax in the url', asy
   assert.equal(ran.trim().split('\n').pop(), url)
   fs.rmSync(dir, { recursive: true, force: true })
 })
+
+test('a slow older uad load cannot overwrite a newer one', async () => {
+  let downloaded = ''
+  let releaseBundle
+  const bundleGate = new Promise(resolve => { releaseBundle = resolve })
+  const { loadUad, uadReady, getUad } = load('src/lib/uad.ts', {
+    '../constant': { PERSIST_DIR: '/persist' },
+    './File': { File: { readIfExists: async () => downloaded } },
+    './shell': { shellQuote: value => `'${value}'` },
+    'kernelsu-alt': { exec: async () => ({ errno: 0, stdout: '2026-10-02\n', stderr: '' }) },
+  }, {
+    fetch: async () => {
+      await bundleGate
+      return { ok: true, json: async () => ({ 'com.a': ['Recommended', 'bundled'] }) }
+    },
+  })
+
+  const startup = loadUad()
+  downloaded = JSON.stringify({ 'com.a': { description: 'fresh', removal: 'Unsafe' } })
+  assert.equal((await loadUad()).kind, 'downloaded')
+  releaseBundle()
+  await startup
+
+  assert.deepEqual(getUad('com.a'), { removal: 'unsafe', description: 'fresh' })
+  assert.equal((await uadReady()).kind, 'downloaded')
+  assert.equal((await startup).kind, 'downloaded')
+})
