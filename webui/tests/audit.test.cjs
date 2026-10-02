@@ -176,3 +176,63 @@ for (const [failure, writes] of [['cp', true], ['touch', true], ['write', false]
     assert.deepEqual(fs.readdirSync(dir), ['state.txt'])
   })
 }
+
+const UAD_DOWNLOADED = '/persist/uad_lists.json'
+function uadFixture({ downloaded, bundled }) {
+  const fetched = []
+  const mod = load('src/lib/uad.ts', {
+    '../constant': { PERSIST_DIR: '/persist' },
+    './File': { File: {
+      readIfExists: async file => (file === UAD_DOWNLOADED ? downloaded ?? '' : ''),
+    } },
+    './shell': { shellQuote: value => `'${value}'` },
+    'kernelsu-alt': { exec: async () => ({ errno: 0, stdout: '', stderr: '' }) },
+  }, {
+    fetch: async url => {
+      fetched.push(url)
+      if (bundled === undefined) throw new Error('no bundle')
+      return { ok: true, json: async () => bundled }
+    },
+  })
+  return { ...mod, fetched }
+}
+
+test('uad trim keeps level and description and rejects lists that are not uad shaped', () => {
+  const { trimUad } = uadFixture({})
+  assert.deepEqual(trimUad({
+    'com.a': { list: 'Oem', description: ' A app.\n', removal: 'Recommended', dependencies: [] },
+    'com.b': { description: '', removal: 'Unsafe' },
+  }), { 'com.a': ['Recommended', 'A app.'], 'com.b': ['Unsafe', ''] })
+  for (const bad of [[], {}, 'html', null, { 'com.a': { description: 'x' } }, { 'com.a': 'x' }]) {
+    assert.equal(trimUad(bad), null, JSON.stringify(bad))
+  }
+})
+
+test('uad removal levels map case-insensitively and unknown values fall back to unknown', () => {
+  const { toRemoval } = uadFixture({})
+  assert.equal(toRemoval('Recommended'), 'recommended')
+  assert.equal(toRemoval('UNSAFE'), 'unsafe')
+  assert.equal(toRemoval('Experimental'), 'unknown')
+  assert.equal(toRemoval(''), 'unknown')
+})
+
+test('uad loads the downloaded copy first, then the bundle, then nothing', async () => {
+  const upstream = JSON.stringify({ 'com.dl': { description: 'From download', removal: 'Expert' } })
+  const bundled = { 'com.bundled': ['Advanced', 'From bundle'], 'com.blank': ['Recommended', '  '] }
+
+  const dl = uadFixture({ downloaded: upstream, bundled })
+  assert.deepEqual(await dl.loadUad(), { kind: 'downloaded', count: 1, date: null })
+  assert.deepEqual(dl.getUad('com.dl'), { removal: 'expert', description: 'From download' })
+  assert.deepEqual(dl.getUad('com.bundled'), { removal: 'unknown', description: null })
+
+  for (const corrupt of ['<html>rate limited</html>', '[]', '{}']) {
+    const fb = uadFixture({ downloaded: corrupt, bundled })
+    assert.equal((await fb.loadUad()).kind, 'bundled', corrupt)
+    assert.deepEqual(fb.getUad('com.bundled'), { removal: 'advanced', description: 'From bundle' })
+    assert.deepEqual(fb.getUad('com.blank'), { removal: 'recommended', description: null })
+  }
+
+  const none = uadFixture({})
+  assert.deepEqual(await none.loadUad(), { kind: 'none', count: 0, date: null })
+  assert.deepEqual(none.getUad('com.anything'), { removal: 'unknown', description: null })
+})
