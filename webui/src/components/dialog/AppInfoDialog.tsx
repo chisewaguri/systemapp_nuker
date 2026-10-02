@@ -168,7 +168,7 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
               </md-icon-button>
             </div>
             <span className="pe-3 text-sm leading-relaxed whitespace-pre-line wrap-break-word">{linkify(uadText)}</span>
-            {uad.description && <span className="text-xs opacity-70">{t('app_info.uad_source')}</span>}
+            {uad.description && <span className="text-xs opacity-85">{t('app_info.uad_source')}</span>}
           </div>
         )}
       </div>

@@ -77,6 +77,7 @@ export default function Settings() {
   }
 
   const handleUadUpdate = async () => {
+    if (uadUpdating) return
     const started = await runMutation(async () => {
       setUadUpdating(true)
       snackBar.show(t('settings.uad_updating'), true, 60000)
