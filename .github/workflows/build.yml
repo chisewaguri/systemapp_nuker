@@ -74,6 +74,11 @@ jobs:
         pnpm install --frozen-lockfile
         pnpm lint
         pnpm test
+        # releases must ship app descriptions, other builds can go without them
+        if ! node scripts/fetch-uad.cjs; then
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then exit 1; fi
+          echo "::warning::uad-ng list download failed, building without app descriptions"
+        fi
         pnpm build
 
     - name: Extract changelog for version
