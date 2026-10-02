@@ -5,31 +5,33 @@ import type { MdDialog } from '@material/web/dialog/dialog.js'
 import type { AppInfo } from '../../lib/AppList'
 import { customizeDialogAnimation } from '../../hooks/useDialogAnimation'
 import { useHistory } from '../../hooks/useHistory'
-import { essential, caution, safe, google, categories } from '../../data/category'
 import AndroidSvg from '../../assets/android.svg?react'
-import GoogleSvg from '../../assets/google.svg?react'
 import { toast } from 'kernelsu-alt'
+import { getUad } from '../../lib/uad'
+import { Cli } from '../../lib/Cli'
 
-const categoryMap: Record<string, string[]> = {
-  essential,
-  caution,
-  safe,
-  google,
-}
-
-const categoryIconMap: Record<string, string> = Object.fromEntries(
-  categories.map(c => [c.id, c.icon ?? 'help'])
-)
-
-const categorySvgIcons: Record<string, React.FC<{ className?: string }>> = {
-  google: GoogleSvg,
-}
-
-function getAppCategory(packageName: string): string {
-  for (const [catId, pkgs] of Object.entries(categoryMap)) {
-    if (pkgs.includes(packageName)) return catId
+function copyText(text: string, t: (key: string) => string) {
+  const copy = navigator.clipboard?.writeText(text)
+  if (!copy) {
+    toast(t('global.copy_error'))
+    return
   }
-  return 'unknown'
+  copy.then(() => toast(t('global.copied')))
+    .catch(() => toast(t('global.copy_error')))
+}
+
+// uad-ng descriptions carry bare urls, so split them out into tappable links
+function linkify(text: string) {
+  return text.split(/(https?:\/\/\S+)/g).map((part, i) => i % 2 === 0 ? part : (
+    <a
+      key={i}
+      href={part}
+      className="underline break-all"
+      onClick={e => { e.preventDefault(); e.stopPropagation(); Cli.openLink(part) }}
+    >
+      {part.replace(/^https?:\/\//, '')}
+    </a>
+  ))
 }
 
 interface AppInfoDialogProps {
@@ -84,16 +86,14 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
     : displayApp?.nuked ? t('app_info.nuked')
     : t('app_info.installed')
 
-  const fields = displayApp ? (() => {
-    const cat = getAppCategory(displayApp.packageName)
-    return [
-      { label: t('app_info.version'), value: version, icon: 'history' },
-      { label: t('app_info.uid'), value: displayApp.uid?.toString(), icon: 'person' },
-      { label: t('app_info.status'), value: status, icon: 'circle' },
-      { label: t('app_info.category'), value: t(`category.${cat}`), icon: 'label_important' },
-      { label: '', value: t(`category_desc.${cat}`), icon: cat },
-    ].filter(f => f.value != null && f.value !== '')
-  })() : []
+  const fields = displayApp ? [
+    { label: t('app_info.version'), value: version, icon: 'history' },
+    { label: t('app_info.uid'), value: displayApp.uid?.toString(), icon: 'person' },
+    { label: t('app_info.status'), value: status, icon: 'circle' },
+  ].filter(f => f.value != null && f.value !== '') : []
+
+  const uad = displayApp ? getUad(displayApp.packageName) : null
+  const uadText = uad ? uad.description ?? t('removal_desc.unknown') : ''
 
   const dialog = (
     <md-dialog ref={dialogRef}>
@@ -128,41 +128,41 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
       </div>
 
       <div slot="content" className="flex flex-col gap-3 pt-6">
-        {fields.map(({ label, value, icon }) => {
-          const SvgIcon = categorySvgIcons[icon]
-          return (
-            <button
-              key={label || value}
-              type="button"
-              aria-label={t('app_info.copy', { label: label || t('app_info.description') })}
-              className="flex w-full items-center gap-3 rounded-lg border-0 bg-transparent p-0 text-start hover:bg-surface-container-high transition-colors"
-              onClick={() => {
-                if (value) {
-                  const copy = navigator.clipboard?.writeText(value)
-                  if (!copy) {
-                    toast(t('global.copy_error'))
-                    return
-                  }
-                  copy.then(() => toast(t('global.copied')))
-                    .catch(() => toast(t('global.copy_error')))
-                }
-              }}
-            >
-              {SvgIcon ? (
-                <span className="flex items-center justify-center w-6 h-6 text-on-surface-variant"><SvgIcon className="w-5 h-5" /></span>
-              ) : (
-                <md-icon style={{ color: categories.find(c => c.id === icon)?.color || 'var(--md-sys-color-on-surface-variant)' }}>
-                  {categoryIconMap[icon] ?? icon}
-                </md-icon>
-              )}
-              <div className="flex flex-col min-w-0 flex-1">
-                {label && <span className="text-xs text-on-surface-variant">{label}</span>}
-                <span className={`text-sm text-on-surface ${label ? 'truncate' : 'whitespace-normal wrap-break-word'}`}>{value}</span>
-              </div>
-              <md-icon class="text-on-surface-variant">content_copy</md-icon>
-            </button>
-          )
-        })}
+        {fields.map(({ label, value, icon }) => (
+          <button
+            key={label}
+            type="button"
+            aria-label={t('app_info.copy', { label })}
+            className="flex w-full items-center gap-3 rounded-lg border-0 bg-transparent p-0 text-start hover:bg-surface-container-high transition-colors"
+            onClick={() => value && copyText(value, t)}
+          >
+            <md-icon class="text-on-surface-variant">{icon}</md-icon>
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="text-xs text-on-surface-variant">{label}</span>
+              <span className="text-sm text-on-surface truncate">{value}</span>
+            </div>
+            <md-icon class="text-on-surface-variant">content_copy</md-icon>
+          </button>
+        ))}
+        {uad && (
+          <button
+            type="button"
+            aria-label={t('app_info.copy', { label: t('app_info.description') })}
+            className="flex w-full flex-col gap-1.5 rounded-2xl border-0 px-4 py-3 text-start transition-[filter] hover:brightness-95"
+            style={{
+              backgroundColor: `var(--removal-${uad.removal}-container)`,
+              color: `var(--removal-on-${uad.removal}-container)`,
+            }}
+            onClick={() => copyText(uadText, t)}
+          >
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: `var(--removal-${uad.removal})` }} />
+              {t(`removal.${uad.removal}`)}
+            </span>
+            <span className="text-sm leading-relaxed whitespace-pre-line wrap-break-word">{linkify(uadText)}</span>
+            {uad.description && <span className="text-xs opacity-70">{t('app_info.uad_source')}</span>}
+          </button>
+        )}
       </div>
 
       <div slot="actions">

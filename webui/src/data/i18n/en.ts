@@ -77,27 +77,10 @@ const en = {
   removal_desc: {
     unknown: "Not in the UAD-ng list. Check what this app does before removing it.",
   },
-  /** Category display names — used for filter chips */
-  category: {
-    essential: "Essential",
-    caution: "Caution",
-    safe: "Safe",
-    google: "Google",
-    unknown: "Unknown",
-  },
-  /** Category descriptions — shown in detail views */
-  category_desc: {
-    essential: "Critical system components. Removing these may break core functionality.",
-    caution: "This might be used by other system components.",
-    safe: "Non-essential apps that can be removed without affecting system stability.",
-    google: "Google apps and services that may be required for the Play Store ecosystem.",
-    unknown: "Apps with unknown classification.",
-  },
   app_info: {
     version: "Version",
     uid: "UID",
     status: "Status",
-    category: "Category",
     type: "Type",
     system_app: "System App",
     user_app: "User App",
@@ -108,6 +91,7 @@ const en = {
     pending_removal: "Pending removal",
     copy: "Copy {{label}}",
     description: "description",
+    uad_source: "From UAD-ng",
   },
   nuke_config: {
     export_success: "Config exported to {{path}}",
