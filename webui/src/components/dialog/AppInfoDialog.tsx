@@ -131,7 +131,7 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
         </span>
       </div>
 
-      <div slot="content" className="flex flex-col gap-3 pt-6 pb-2">
+      <div slot="content" className="flex flex-col gap-3 pt-2 pb-2">
         {fields.map(({ label, value, icon }) => (
           <button
             key={label}
@@ -150,13 +150,13 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
         ))}
         {uad && (
           <div
-            className="flex w-full flex-col gap-1.5 rounded-2xl ps-4 pe-1 pt-1 pb-3 font-sans"
+            className="-mx-2 mt-1 box-border flex flex-col gap-1 rounded-2xl py-2 ps-4 pe-0 font-sans"
             style={{
               backgroundColor: `var(--removal-${uad.removal}-container)`,
               color: `var(--removal-on-${uad.removal}-container)`,
             }}
           >
-            <div className="flex items-center gap-2 text-sm font-medium">
+            <div className="flex min-h-10 items-center gap-2 text-sm font-medium">
               <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: `var(--removal-${uad.removal})` }} />
               <span className="flex-1">{t(`removal.${uad.removal}`)}</span>
               <md-icon-button
@@ -167,8 +167,8 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
                 <md-icon>content_copy</md-icon>
               </md-icon-button>
             </div>
-            <span className="pe-3 text-sm leading-relaxed whitespace-pre-line wrap-break-word">{linkify(uadText)}</span>
-            {uad.description && <span className="text-xs opacity-85">{t('app_info.uad_source')}</span>}
+            <span className="pe-4 text-sm leading-normal whitespace-pre-line wrap-break-word">{linkify(uadText)}</span>
+            {uad.description && <span className="pe-4 pt-1 pb-1 text-xs opacity-85">{t('app_info.uad_source')}</span>}
           </div>
         )}
       </div>

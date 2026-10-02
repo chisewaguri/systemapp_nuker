@@ -219,7 +219,7 @@ test('uad removal levels map case-insensitively and unknown values fall back to 
 
 test('uad loads the downloaded copy first, then the bundle, then nothing', async () => {
   const upstream = JSON.stringify({ 'com.dl': { description: 'From download', removal: 'Expert' } })
-  const bundled = { 'com.bundled': ['Advanced', 'From bundle'], 'com.blank': ['Recommended', '  '] }
+  const bundled = { 'com.bundled': ['Advanced', 'From bundle'], 'com.blank': ['Recommended', '  '], 'com.gaps': ['Expert', 'First\n\n\nSecond\n \nThird'] }
 
   const dl = uadFixture({ downloaded: upstream, bundled })
   assert.deepEqual(await dl.loadUad(), { kind: 'downloaded', count: 1, date: null })
@@ -231,6 +231,7 @@ test('uad loads the downloaded copy first, then the bundle, then nothing', async
     assert.equal((await fb.loadUad()).kind, 'bundled', corrupt)
     assert.deepEqual(fb.getUad('com.bundled'), { removal: 'advanced', description: 'From bundle' })
     assert.deepEqual(fb.getUad('com.blank'), { removal: 'recommended', description: null })
+    assert.deepEqual(fb.getUad('com.gaps'), { removal: 'expert', description: 'First\nSecond\nThird' })
   }
 
   const none = uadFixture({})

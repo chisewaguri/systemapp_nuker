@@ -107,7 +107,9 @@ export function uadSource(): UadSource {
 export function getUad(pkg: string): { removal: Removal, description: string | null } {
   const entry = Object.hasOwn(entries, pkg) ? entries[pkg] : undefined
   if (!entry) return { removal: 'unknown', description: null }
-  return { removal: toRemoval(entry[0]), description: entry[1].trim() || null }
+  // uad-ng separates paragraphs with blank lines, which read as gaps in a small card
+  const description = entry[1].replace(/\n\s*\n+/g, '\n').trim()
+  return { removal: toRemoval(entry[0]), description: description || null }
 }
 
 /** Downloads the latest list as root. A failed or malformed download keeps the current copy. */
