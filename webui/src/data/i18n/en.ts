@@ -83,7 +83,7 @@ const en = {
     unknown: "Unknown",
   },
   removal_desc: {
-    unknown: "Not in the UAD-ng list. Check what this app does before removing it.",
+    none: "UAD-ng has no description for this app. Check what it does before removing it.",
   },
   app_info: {
     version: "Version",

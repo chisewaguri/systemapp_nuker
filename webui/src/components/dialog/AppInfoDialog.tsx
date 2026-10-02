@@ -97,7 +97,7 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
   ].filter(f => f.value != null && f.value !== '') : []
 
   const uad = displayApp ? getUad(displayApp.packageName) : null
-  const uadText = uad ? uad.description ?? t('removal_desc.unknown') : ''
+  const uadText = uad ? uad.description ?? t('removal_desc.none') : ''
 
   const dialog = (
     <md-dialog ref={dialogRef}>
@@ -149,23 +149,27 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
           </button>
         ))}
         {uad && (
-          <button
-            type="button"
-            aria-label={t('app_info.copy', { label: t('app_info.description') })}
-            className="flex w-full flex-col gap-1.5 rounded-2xl border-0 px-4 py-3 text-start transition-[filter] hover:brightness-95"
+          <div
+            className="flex w-full flex-col gap-1.5 rounded-2xl ps-4 pe-1 pt-1 pb-3 font-sans"
             style={{
               backgroundColor: `var(--removal-${uad.removal}-container)`,
               color: `var(--removal-on-${uad.removal}-container)`,
             }}
-            onClick={() => copyText(uadText, t)}
           >
-            <span className="flex items-center gap-2 text-sm font-medium">
+            <div className="flex items-center gap-2 text-sm font-medium">
               <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: `var(--removal-${uad.removal})` }} />
-              {t(`removal.${uad.removal}`)}
-            </span>
-            <span className="text-sm leading-relaxed whitespace-pre-line wrap-break-word">{linkify(uadText)}</span>
+              <span className="flex-1">{t(`removal.${uad.removal}`)}</span>
+              <md-icon-button
+                aria-label={t('app_info.copy', { label: t('app_info.description') })}
+                style={{ '--md-icon-button-icon-color': 'currentColor' } as React.CSSProperties}
+                onClick={() => copyText(uadText, t)}
+              >
+                <md-icon>content_copy</md-icon>
+              </md-icon-button>
+            </div>
+            <span className="pe-3 text-sm leading-relaxed whitespace-pre-line wrap-break-word">{linkify(uadText)}</span>
             {uad.description && <span className="text-xs opacity-70">{t('app_info.uad_source')}</span>}
-          </button>
+          </div>
         )}
       </div>
 
