@@ -276,6 +276,42 @@ test('app list filter matches apps by uad-ng removal level and unlisted apps by 
   assert.deepEqual(visible(['recommended', 'unknown']), ['com.ok', 'com.unlisted'])
 })
 
+for (const [failure, kept] of [['download', true], ['notuad', true], ['move', true], [null, false]]) {
+  test(`uad update ${kept ? 'keeps the current list' : 'replaces the list'} on ${failure ?? 'no'} failure and leaves no temp file`, async t => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-uad-update-'))
+    t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+    const persist = dir.replace(/\\/g, '/')
+    const current = JSON.stringify({ 'com.old': { description: 'old', removal: 'Advanced' } })
+    fs.writeFileSync(path.join(dir, 'uad_lists.json'), current)
+    const fresh = failure === 'notuad' ? '<html>rate limited</html>' : JSON.stringify({ 'com.new': { description: 'new', removal: 'Unsafe' } })
+    const stubs = {
+      download: 'curl() { echo "curl: (6) could not resolve host" >&2; return 6; }',
+      notuad: `curl() { while [ "$1" != "-o" ]; do shift; done; printf '%s' '${fresh}' > "$2"; }`,
+      move: `curl() { while [ "$1" != "-o" ]; do shift; done; printf '%s' '${fresh}' > "$2"; }; mv() { return 1; }`,
+    }[failure] ?? `curl() { while [ "$1" != "-o" ]; do shift; done; printf '%s' '${fresh}' > "$2"; }`
+    const { updateUad, getUad } = load('src/lib/uad.ts', {
+      '../constant': { PERSIST_DIR: persist },
+      './File': { File: {
+        read: async f => fs.readFileSync(f, 'utf8'),
+        readIfExists: async f => (fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : ''),
+      } },
+      './shell': { shellQuote: value => `'${value.replaceAll("'", "'\\''")}'` },
+      'kernelsu-alt': { exec: async script => {
+        const result = spawnSync(shell, ['-c', `${stubs}\n${script}`], { encoding: 'utf8' })
+        if (result.error) throw result.error
+        return { errno: result.status, stdout: result.stdout, stderr: result.stderr }
+      } },
+    }, { fetch: async () => ({ ok: false }) })
+
+    const update = updateUad()
+    if (kept) await assert.rejects(update)
+    else await update
+    assert.equal(fs.readFileSync(path.join(dir, 'uad_lists.json'), 'utf8'), kept ? current : fresh)
+    assert.deepEqual(fs.readdirSync(dir), ['uad_lists.json'])
+    if (!kept) assert.deepEqual(getUad('com.new'), { removal: 'unsafe', description: 'new' })
+  })
+}
+
 test('opening a link from a description never runs shell syntax in the url', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-openlink-'))
   const marker = path.join(dir, 'pwned').replace(/\\/g, '/')
