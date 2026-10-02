@@ -74,7 +74,7 @@ async function readBundled(): Promise<Trimmed | null> {
 export function loadUad(): Promise<UadSource> {
   const current: Promise<UadSource> = readUad().then(([list, read]): UadSource | Promise<UadSource> => {
     // a newer load started while this one was reading, so its result is stale
-    if (loading !== current) return loading ?? read
+    if (loading && loading !== current) return loading
     entries = list
     source = read
     return read

@@ -14,7 +14,7 @@ new Function('require', 'module', 'exports', outputText)(() => ({}), mod, mod.ex
 const { trimUad, UAD_URL } = mod.exports
 
 async function main() {
-  const response = await fetch(UAD_URL)
+  const response = await fetch(UAD_URL, { signal: AbortSignal.timeout(120_000) })
   if (!response.ok) throw new Error(`${UAD_URL} returned ${response.status}`)
   const trimmed = trimUad(await response.json())
   if (!trimmed) throw new Error('the uad-ng list is not shaped as expected')
