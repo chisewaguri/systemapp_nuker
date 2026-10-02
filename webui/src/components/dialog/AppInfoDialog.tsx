@@ -8,6 +8,7 @@ import { useHistory } from '../../hooks/useHistory'
 import AndroidSvg from '../../assets/android.svg?react'
 import { toast } from 'kernelsu-alt'
 import { getUad } from '../../lib/uad'
+import { savedIcon } from '../../lib/iconCache'
 import { Cli } from '../../lib/Cli'
 
 function copyText(text: string, t: (key: string) => string) {
@@ -49,6 +50,7 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
   const [displayApp, setDisplayApp] = useState<AppInfo | null>(null)
   const [iconLoaded, setIconLoaded] = useState(false)
   const [iconError, setIconError] = useState(false)
+  const [iconSrc, setIconSrc] = useState('')
   const [imgKey, setImgKey] = useState(0)
   const { push, consume } = useHistory()
 
@@ -61,6 +63,7 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
       setImgKey(k => k + 1)
       setIconLoaded(false)
       setIconError(false)
+      setIconSrc(`ksu://icon/${app.packageName}`)
       push('app-info', () => dialogRef.current?.close())
     }
   }, [app, push])
@@ -115,11 +118,14 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
           ) : (
             <img
               key={imgKey}
-              src={`ksu://icon/${displayApp?.packageName}`}
+              src={iconSrc}
               alt=""
               className={`w-16 h-16 rounded-xl object-cover bg-surface-container-low transition-opacity ${iconLoaded ? 'opacity-100' : 'opacity-0'}`}
               onLoad={() => setIconLoaded(true)}
-              onError={() => setIconError(true)}
+              onError={() => {
+                if (!displayApp || iconSrc.startsWith('data:')) return setIconError(true)
+                savedIcon(displayApp.packageName).then(icon => icon ? setIconSrc(icon) : setIconError(true))
+              }}
             />
           )}
         </div>

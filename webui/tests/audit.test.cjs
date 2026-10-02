@@ -51,10 +51,10 @@ async function applyPage(page, apps, selected) {
   const source = fs.readFileSync(path.join(root, `src/pages/${page}.tsx`), 'utf8')
   const body = source.split('const handleFabClick = useCallback(async () => {')[1]
     .split('}, [appListManager, showSnackBar, t])')[0]
-  const run = new Function('appListManager', 'appListRef', 'runMutation', 'showSnackBar', 't', 'setApps', 'Cli', 'setLoadFailed',
+  const run = new Function('appListManager', 'appListRef', 'runMutation', 'showSnackBar', 't', 'setApps', 'Cli', 'setLoadFailed', 'saveIcons',
     `return (async () => {${body}})()`)
   await run(apps, { current: { getSelectedPackages: () => selected } }, async task => { await task(); return true },
-    () => {}, key => key, () => {}, { nuke: async () => true }, () => {})
+    () => {}, key => key, () => {}, { nuke: async () => true }, () => {}, async () => {})
 }
 
 test('Home can remove an app that is pending restoration', async () => {
@@ -361,4 +361,32 @@ test('a slow older uad load cannot overwrite a newer one', async () => {
   assert.deepEqual(getUad('com.a'), { removal: 'unsafe', description: 'fresh' })
   assert.equal((await uadReady()).kind, 'downloaded')
   assert.equal((await startup).kind, 'downloaded')
+})
+
+test('icon cache saves at nuke time and serves only data image urls back', async () => {
+  const files = new Map()
+  const fetched = []
+  const { saveIcons, savedIcon } = load('src/lib/iconCache.ts', {
+    'kernelsu-alt': { exec: async () => ({ errno: 0, stdout: '', stderr: '' }) },
+    '../constant': { PERSIST_DIR: '/persist' },
+    './File': { File: {
+      write: async (f, data) => { files.set(f, data) },
+      readIfExists: async f => files.get(f) ?? '',
+    } },
+    './shell': { shellQuote: value => `'${value}'` },
+  }, {
+    fetch: async url => { fetched.push(url); return url.endsWith('com.gone') ? { ok: false } : { ok: true, blob: async () => 'blob' } },
+    createImageBitmap: async () => 'bitmap',
+    document: { createElement: () => ({ getContext: () => ({ drawImage: () => {} }), toDataURL: () => 'data:image/png;base64,AAAA' }) },
+    Image: class { decode() { return Promise.reject(new Error('gone')) } },
+  })
+
+  await saveIcons(['com.yt', 'com.gone'])
+  assert.deepEqual(fetched, ['ksu://icon/com.yt', 'ksu://icon/com.gone'])
+  assert.deepEqual([...files.keys()], ['/persist/icons/com.yt'])
+  assert.equal(await savedIcon('com.yt'), 'data:image/png;base64,AAAA')
+  assert.equal(await savedIcon('com.gone'), null)
+
+  files.set('/persist/icons/com.bad', 'javascript:alert(1)')
+  assert.equal(await savedIcon('com.bad'), null)
 })

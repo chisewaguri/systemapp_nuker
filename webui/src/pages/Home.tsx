@@ -13,6 +13,7 @@ import FileSelector from '../lib/FileSelector'
 import Fab from '../components/Fab'
 import { runMutation } from '../lib/mutationLock'
 import LoadError from '../components/LoadError'
+import { saveIcons } from '../lib/iconCache'
 
 export default function Home() {
   const { t } = useTranslation()
@@ -70,6 +71,7 @@ export default function Home() {
         showSnackBar(t('global.write_error'), false)
         setApps(appListManager.systemAppList)
       } else {
+        await saveIcons(selected)
         // A failed nuke rolls the lists back on disk, so reload either way.
         await Cli.nuke(showSnackBar)
         await appListManager.refresh()

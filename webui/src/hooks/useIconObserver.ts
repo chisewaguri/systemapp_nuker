@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
+import { savedIcon } from '../lib/iconCache'
 
 export function useIconObserver() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -13,12 +14,19 @@ export function useIconObserver() {
       const loader = img.parentElement?.querySelector<HTMLElement>('.icon-loader')
       if (loader) loader.style.display = 'none'
     }
-    img.onerror = () => {
+    const showFallback = () => {
       img.style.display = 'none'
       const fallback = img.parentElement?.querySelector<HTMLElement>('.icon-fallback')
       if (fallback) fallback.style.display = 'flex'
       const loader = img.parentElement?.querySelector<HTMLElement>('.icon-loader')
       if (loader) loader.style.display = 'none'
+    }
+    img.onerror = () => {
+      img.onerror = showFallback
+      savedIcon(img.dataset.package ?? '').then(icon => {
+        if (icon) img.src = icon
+        else showFallback()
+      })
     }
     img.src = `ksu://icon/${img.dataset.package}`
   }, [])
