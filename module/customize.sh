@@ -271,6 +271,14 @@ done
 rmdir "$stage"
 echo "[+] WebUI updated, no reboot needed to open it."
 
+# the manager flags the module for update after this script returns. kernelsu will not open
+# the webui while that flag exists, and no manager needs it to apply modules_update at boot.
+(
+    i=0
+    while [ $i -lt 30 ] && [ ! -f "$MODDIR/update" ]; do sleep 1; i=$((i + 1)); done
+    rm -f "$MODDIR/update"
+) > /dev/null 2>&1 &
+
 # success message
 echo "[✓] System App Nuker setup complete."
 

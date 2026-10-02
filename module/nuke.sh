@@ -447,6 +447,9 @@ install_dummy() {
 
     # verify installation
     if [ "$installed" = true ]; then
+        # managers apply modules_update at boot without the update flag, and kernelsu
+        # will not open the webui while it exists
+        rm -f "$MODDIR/update"
         return 0
     else
         echo "dummy installation failed" >&2
