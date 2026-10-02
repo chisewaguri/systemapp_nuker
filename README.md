@@ -1,94 +1,53 @@
 # System App Nuker
 
-A systemless debloater for Magisk, KernelSU, and APatch. Pick the apps. Nuke them.
+Hides preinstalled system apps on Magisk, KernelSU, and APatch without touching the system partition.
 
-## Why SAN?
+[![Release](https://img.shields.io/github/v/release/chisewaguri/systemapp_nuker?logo=github&label=Release)](https://github.com/chisewaguri/systemapp_nuker/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/chisewaguri/systemapp_nuker/total?logo=github&label=Downloads)](https://github.com/chisewaguri/systemapp_nuker/releases)
+[![Telegram](https://img.shields.io/badge/Telegram-group-26A5E4?logo=telegram&logoColor=fff)](https://t.me/systemapp_nuker)
 
-Really, why not? Maybe for the sense of control over evil OEM ^^
+> [!WARNING]
+> Each app shows a removal level from UAD-ng. Treat it as advice. Removing an app marked Unsafe can stop your phone from booting.
 
-[Download the latest release](https://github.com/chisewaguri/systemapp_nuker/releases/latest) · [Changelog](CHANGELOG.md) · [Telegram](https://t.me/systemapp_nuker) · [Report a bug](https://github.com/chisewaguri/systemapp_nuker/issues)
+## Requirements
 
-## What it does
+One of these:
 
-- Lists installed system apps in a WebUI.
-- Groups known packages by how bad an idea removing them might be.
-- Hides selected apps with overlay whiteouts after a reboot.
-- Restores apps by removing their whiteouts.
-- Imports and exports nuke lists as JSON.
-- Backs up its lists and disables itself if it detects a bootloop.
+- [Magisk](https://github.com/topjohnwu/Magisk)
+- [KernelSU](https://github.com/tiann/KernelSU). Newer builds also need a metamodule such as [mountify](https://github.com/backslashxx/mountify).
+- [APatch](https://github.com/bmax121/APatch)
 
-The category labels are advice, so do use your brain a little.
+## Usage
 
-## Install
+On KernelSU and APatch, open the WebUI from the module page.
 
-1. Download the module ZIP from the [latest release](https://github.com/chisewaguri/systemapp_nuker/releases/latest).
-2. Install it through Magisk, KernelSU, or APatch.
-3. Reboot. Yes, really.
-4. Open the module WebUI.
+On Magisk, press the module action button. It opens [KSUWebUIStandalone](https://github.com/KOWX712/KsuWebUIStandalone) or [WebUI X](https://github.com/MMRLApp/WebUI-X-Portable). If neither is installed, it installs KSUWebUIStandalone first.
 
-KernelSU and APatch can open the WebUI from the module page. On Magisk, press the module action button. It opens KSUWebUIStandalone or WebUI X if either app is installed. If neither exists, it downloads and installs [KSUWebUIStandalone](https://github.com/KOWX712/KsuWebUIStandalone).
+To hide apps, select them on **Home**, press the nuke button, and reboot. To bring apps back, do the same from **Restore**.
 
-The installer figures out the available mount method. Newer KernelSU builds need a working metamodule such as [Mountify](https://github.com/backslashxx/mountify), or an environment where the bundled Mountify script can do its thing. If the installer complains about mounting, believe it. Optimism is not a mount method.
+## Features
 
-## Nuke an app
-
-1. Open **Home**.
-2. Pick your victims.
-3. Press the nuke button.
-4. Reboot when prompted.
-
-Selected apps move to **Restore** immediately and stay marked as pending until reboot. The whiteouts become active during boot, so staring harder at the icon will not make it disappear sooner. I tried.
-
-## Restore an app
-
-Changed your mind? Fair enough.
-
-1. Open **Restore**.
-2. Select the apps you want back.
-3. Press the restore button.
-4. Reboot when prompted.
-
-The module removes those apps from the next nuke list. Android sees them again after the new module state is mounted.
-
-## How it works
-
-The default mode creates overlay whiteouts at the directories that contain the selected APKs. Magisk, KernelSU, APatch, or Mountify mounts the module over the system partitions. Android then sees those directories as missing.
-
-The APKs are still sitting safely on the original partitions. "Nuke" is branding. We are not drilling holes into `/product`, sadly.
-
-System App Nuker saves each package's APK path before the whiteout hides it. That saved path lets module updates rebuild the same whiteouts even when `pm path` can no longer see the package.
-
-If **Uninstall Only Mode** is enabled, the module skips whiteouts and runs `pm uninstall --user 0` instead.
-
-## Settings worth knowing
-
-- **Uninstall Only Mode** uses Android's per-user uninstall instead of whiteouts.
-- **Mounting Mode** selects manager mounting, the bundled Mountify script, or an external metamodule. The installer picks this automatically. If you do not know what is mounting what, leave the poor setting alone.
-- **Import Config** loads a saved package list.
-- **Export Config** writes the current list to `/sdcard/Download/`.
-- **Update app descriptions** downloads the latest [UAD-ng](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) list. A copy ships with every release, so this is only for picking up newer descriptions. Nothing is downloaded unless you tap it.
-- **Use whiteout feature** shows the raw whiteout page. Raw paths can hide almost anything under the system partitions, including things your phone was rather attached to.
-
-## If something goes wrong
-
-The bootloop guard watches whether Android reaches the module service after boot. If two early boots happen without that service, the module disables itself, removes its whiteouts, backs up the nuke lists, and reboots.
-
-After the phone boots, re-enable the module and use the WebUI backup prompt to restore the saved lists. If Android cannot boot far enough for the guard to run, use your root manager's safe mode or recovery tools.
-
-The guard is a seat belt, not a challenge. Nuking SystemUI to see what happens still counts as finding out. Please do not make me add another warning.
+- Hides apps with overlay whiteouts. The APKs stay on the system partition, so restoring an app only needs a reboot.
+- Shows a description and removal level for each app, taken from [UAD-ng](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation).
+- Uninstall Only Mode runs `pm uninstall --user 0` instead of creating whiteouts.
+- Imports and exports nuke lists.
+- If two boots in a row fail, the module disables itself and removes its whiteouts.
 
 ## Credits
 
-- [@backslashxx](https://github.com/backslashxx) for [Mountify](https://github.com/backslashxx/mountify), its mounting scripts, and the whiteout work this module builds on.
-- [@KOWX712](https://github.com/KOWX712) for the WebUI and [Tricky Addon Update Target List](https://github.com/KOWX712/Tricky-Addon-Update-Target-List), which inspired parts of the package-list handling.
-- [@j-hc](https://github.com/j-hc) for [zygisk-detach](https://github.com/j-hc/zygisk-detach), which helped shape earlier app-list handling.
-- [Universal Android Debloater Next Generation](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) for the app descriptions and removal levels shown in the WebUI, licensed GPL-3.0.
-- Everyone who sent code, logs, bug reports, or one of those deeply suspicious "small suggestions."
+- [mountify](https://github.com/backslashxx/mountify) for the mounting scripts and whiteout work.
+- [UAD-ng](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) for app descriptions and removal levels, licensed GPL-3.0.
+- [Tricky Addon](https://github.com/KOWX712/Tricky-Addon-Update-Target-List) for the WebUI it inspired.
+- [zygisk-detach](https://github.com/j-hc/zygisk-detach) for the earlier app list handling.
+- Everyone who sent code, logs, or bug reports.
 
-## Contributing
+Build instructions are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Build commands and the other serious developer stuff live in [CONTRIBUTING.md](CONTRIBUTING.md). Bug reports, weird OEM behavior, and sane pull requests are welcome.
+## Links
 
-## License
+[![Download](https://custom-icon-badges.demolab.com/badge/-Download-F25278?style=for-the-badge&logo=download&logoColor=white)](https://github.com/chisewaguri/systemapp_nuker/releases/latest)
+[![Issue](https://custom-icon-badges.demolab.com/badge/-Open%20Issue-palegreen?style=for-the-badge&logoColor=black&logo=issue-opened)](https://github.com/chisewaguri/systemapp_nuker/issues)
+[![Changelog](https://custom-icon-badges.demolab.com/badge/-Changelog-orange?style=for-the-badge&logo=history&logoColor=white)](CHANGELOG.md)
+[![Telegram](https://custom-icon-badges.demolab.com/badge/-Telegram-blue?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/systemapp_nuker)
 
-System App Nuker is licensed under [GPL-3.0](LICENSE).
+Licensed under [GPL-3.0](LICENSE).
