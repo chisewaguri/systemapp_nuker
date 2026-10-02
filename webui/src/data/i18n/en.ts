@@ -65,6 +65,14 @@ const en = {
     advanced: "Advanced",
     whiteout_toggle: "Show whiteout page",
     whiteout_toggle_desc: "Show raw whiteout controls in this WebUI host",
+    uad_update: "Update app descriptions",
+    uad_source_bundled: "Bundled list, {{count}} apps",
+    uad_source_downloaded: "Downloaded {{date}}, {{count}} apps",
+    uad_source_none: "No list yet, tap to download",
+    uad_updating: "Downloading the UAD-ng list...",
+    uad_updated: "App descriptions updated, {{count}} apps",
+    uad_update_error: "Couldn't update app descriptions: {{error}}",
+    uad_credit: "App descriptions and removal levels come from Universal Android Debloater Next Generation, licensed GPL-3.0.",
   },
   /** UAD-ng removal levels, used for list labels and filter chips */
   removal: {
