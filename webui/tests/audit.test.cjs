@@ -88,7 +88,7 @@ test('partial and reordered host metadata preserves each package and searchable 
 test('backup operations return failure when the host rejects execution', async () => {
   const { Cli } = load('src/lib/Cli.ts', {
     'kernelsu-alt': { exec: async () => { throw new Error('host unavailable') } },
-    './File': {}, 'i18next': {}, '../constant': { PERSIST_DIR: '/persist' },
+    './File': {}, './shell': { shellQuote: value => `'${value}'` }, 'i18next': {}, '../constant': { PERSIST_DIR: '/persist' },
   })
   assert.equal(await Cli.restore(true), false)
   assert.equal(await Cli.restore(false), false)
@@ -274,4 +274,27 @@ test('app list filter matches apps by uad-ng removal level and unlisted apps by 
   assert.deepEqual(visible(['unsafe']), ['com.risky'])
   assert.deepEqual(visible(['unknown']), ['com.unlisted'])
   assert.deepEqual(visible(['recommended', 'unknown']), ['com.ok', 'com.unlisted'])
+})
+
+test('opening a link from a description never runs shell syntax in the url', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-openlink-'))
+  const marker = path.join(dir, 'pwned').replace(/\\/g, '/')
+  let ran
+  const { Cli } = load('src/lib/Cli.ts', {
+    'kernelsu-alt': {
+      toast: () => {},
+      exec: async script => {
+        const result = spawnSync(shell, ['-c', `am() { printf '%s\\n' "$@"; }\n${script}`], { encoding: 'utf8' })
+        ran = result.stdout
+        return { errno: result.status, stdout: result.stdout, stderr: result.stderr }
+      },
+    },
+    './File': {}, './shell': load('src/lib/shell.ts', {}), 'i18next': {}, '../constant': { PERSIST_DIR: '/persist' },
+  }, { setTimeout: fn => fn(), window: { open: () => {} } })
+  const url = `https://example.org/a?x=1&y=$(touch ${marker})\`touch ${marker}\`;touch ${marker}`
+  Cli.openLink(url)
+  await new Promise(resolve => setImmediate(resolve))
+  assert.equal(fs.existsSync(marker), false)
+  assert.equal(ran.trim().split('\n').pop(), url)
+  fs.rmSync(dir, { recursive: true, force: true })
 })

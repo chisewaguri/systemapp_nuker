@@ -1,5 +1,6 @@
 import { exec, toast } from 'kernelsu-alt'
 import { File } from './File'
+import { shellQuote } from './shell'
 import { t } from 'i18next'
 import { MOD_DIR, PERSIST_DIR } from '../constant'
 import type { useSnackBar } from '../components/SnackBar'
@@ -72,7 +73,7 @@ export class Cli {
   static openLink(url: string) {
     toast(`Redirecting to ${url}`)
     setTimeout(() => {
-      exec(`am start -a android.intent.action.VIEW -d ${url}`)
+      exec(`am start -a android.intent.action.VIEW -d ${shellQuote(url)}`)
         .then(({ errno }) => {
           if (errno !== 0) window.open(url, '_blank')
         })
