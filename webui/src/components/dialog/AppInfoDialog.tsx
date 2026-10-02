@@ -20,13 +20,17 @@ function copyText(text: string, t: (key: string) => string) {
     .catch(() => toast(t('global.copy_error')))
 }
 
-// uad-ng descriptions carry bare urls, so split them out into tappable links
+// uad-ng descriptions carry bare urls, often wrapped in parens or ending a sentence.
+// balanced parens stay in the url (wikipedia uses them), trailing punctuation stays out.
+const URL_RE = /(https?:\/\/(?:\([^\s()]*\)|[^\s()[\]])*(?:\([^\s()]*\)|[^\s()[\].,;:!?'"]))/g
+
 function linkify(text: string) {
-  return text.split(/(https?:\/\/\S+)/g).map((part, i) => i % 2 === 0 ? part : (
+  return text.split(URL_RE).map((part, i) => i % 2 === 0 ? part : (
     <a
       key={i}
       href={part}
-      className="underline break-all"
+      className="underline underline-offset-2 break-all"
+      style={{ color: 'inherit' }}
       onClick={e => { e.preventDefault(); e.stopPropagation(); Cli.openLink(part) }}
     >
       {part.replace(/^https?:\/\//, '')}
@@ -127,7 +131,7 @@ export default function AppInfoDialog({ app, onClose }: AppInfoDialogProps) {
         </span>
       </div>
 
-      <div slot="content" className="flex flex-col gap-3 pt-6">
+      <div slot="content" className="flex flex-col gap-3 pt-6 pb-2">
         {fields.map(({ label, value, icon }) => (
           <button
             key={label}
