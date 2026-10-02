@@ -11,7 +11,6 @@ import { Cli } from '../lib/Cli'
 import SnackBar, { useSnackBar } from '../components/SnackBar'
 import FileSelector from '../lib/FileSelector'
 import Fab from '../components/Fab'
-import { categories } from '../data/category'
 import { runMutation } from '../lib/mutationLock'
 import LoadError from '../components/LoadError'
 
@@ -112,7 +111,6 @@ export default function Home() {
           <>
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
             <FilterGroup
-              categories={categories}
               selectedCategories={selectedCategories}
               onToggle={toggleCategory}
             />

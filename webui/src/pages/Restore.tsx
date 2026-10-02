@@ -9,7 +9,6 @@ import { useAppList } from '../lib/AppListContext'
 import { Cli } from '../lib/Cli'
 import SnackBar, { useSnackBar } from '../components/SnackBar'
 import Fab from '../components/Fab'
-import { categories } from '../data/category'
 import { runMutation } from '../lib/mutationLock'
 import LoadError from '../components/LoadError'
 
@@ -120,7 +119,6 @@ export default function Restore() {
           <>
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
             <FilterGroup
-              categories={categories}
               selectedCategories={selectedCategories}
               onToggle={toggleCategory}
             />

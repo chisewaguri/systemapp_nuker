@@ -40,6 +40,7 @@ async function appsFixture(infos) {
     } },
     './utils': { isDev: () => false },
     './nukeList': { parseNukeLine },
+    './uad': { loadUad: async () => ({ kind: 'none', count: 0, date: null }) },
   })
   const apps = new AppList()
   await apps.waitForReady()
@@ -235,4 +236,42 @@ test('uad loads the downloaded copy first, then the bundle, then nothing', async
   const none = uadFixture({})
   assert.deepEqual(await none.loadUad(), { kind: 'none', count: 0, date: null })
   assert.deepEqual(none.getUad('com.anything'), { removal: 'unknown', description: null })
+})
+
+test('app list filter matches apps by uad-ng removal level and unlisted apps by unknown', () => {
+  const levels = { 'com.ok': 'recommended', 'com.risky': 'unsafe' }
+  let rendered
+  const { default: AppList } = load('src/components/AppList.tsx', {
+    react: {
+      useState: init => [typeof init === 'function' ? init() : init, () => {}],
+      useCallback: fn => fn,
+      useImperativeHandle: () => {},
+      forwardRef: fn => props => fn(props, null),
+      useEffect: () => {},
+    },
+    'react/jsx-runtime': {
+      jsx: (type, props) => { if (props && props.items) rendered = props.items; return null },
+      jsxs: (type, props) => { if (props && props.items) rendered = props.items; return null },
+      Fragment: 'Fragment',
+    },
+    'react-i18next': { useTranslation: () => ({ t: key => key }) },
+    '../lib/uad': {
+      getUad: pkg => ({ removal: levels[pkg] ?? 'unknown', description: null }),
+      removalLevels: [{ id: 'recommended', color: 'g' }, { id: 'unsafe', color: 'r' }, { id: 'unknown', color: 'x' }],
+    },
+    '../hooks/useIconObserver': { useIconObserver: () => ({ current: null }) },
+    '../assets/android.svg?react': () => null,
+    './dialog/AppInfoDialog': () => null,
+    './SegmentedList': props => { rendered = props.items; return null },
+  })
+  const apps = ['com.ok', 'com.risky', 'com.unlisted'].map(packageName => ({ packageName, appLabel: packageName, pending: false, nuked: false }))
+  const visible = selectedCategories => {
+    rendered = undefined
+    AppList({ apps, searchQuery: '', selectedCategories, emptyMessage: '' })
+    return rendered.filter(item => !item.hidden).map(item => item.key)
+  }
+  assert.deepEqual(visible([]), ['com.ok', 'com.risky', 'com.unlisted'])
+  assert.deepEqual(visible(['unsafe']), ['com.risky'])
+  assert.deepEqual(visible(['unknown']), ['com.unlisted'])
+  assert.deepEqual(visible(['recommended', 'unknown']), ['com.ok', 'com.unlisted'])
 })

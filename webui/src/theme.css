@@ -43,7 +43,37 @@
   --md-sys-color-surface-container-high: var(--surfaceContainerHigh, #ECE6F0);
   --md-sys-color-surface-container-highest: var(--surfaceContainerHighest, #E6E0E9);
 
+  /* uad-ng removal levels: dot color, card tint, text on the tint */
+  --removal-recommended: #2E7D32;
+  --removal-recommended-container: #DCEDD5;
+  --removal-on-recommended-container: #1B4D1E;
+  --removal-advanced: #A07800;
+  --removal-advanced-container: #FBEDC0;
+  --removal-on-advanced-container: #5C4500;
+  --removal-expert: #D45500;
+  --removal-expert-container: #FFDCC6;
+  --removal-on-expert-container: #6E2A00;
+  --removal-unsafe: #C62828;
+  --removal-unsafe-container: #FFDAD6;
+  --removal-on-unsafe-container: #7A1414;
+  --removal-unknown: #79747E;
+  --removal-unknown-container: var(--md-sys-color-surface-container-highest);
+  --removal-on-unknown-container: var(--md-sys-color-on-surface);
+
   @media (prefers-color-scheme: dark) {
+    --removal-recommended: #9CD67D;
+    --removal-recommended-container: #1E3A23;
+    --removal-on-recommended-container: #C6EFB0;
+    --removal-advanced: #E6C449;
+    --removal-advanced-container: #3D3313;
+    --removal-on-advanced-container: #F7E3A0;
+    --removal-expert: #FFB68A;
+    --removal-expert-container: #4A2511;
+    --removal-on-expert-container: #FFDCC6;
+    --removal-unsafe: #FFB4AB;
+    --removal-unsafe-container: #5C1B17;
+    --removal-on-unsafe-container: #FFDAD6;
+    --removal-unknown: #938F99;
     --md-sys-color-primary: var(--primary, #D0BCFF);
     --md-sys-color-on-primary: var(--onPrimary, #381E72);
     --md-sys-color-primary-container: var(--primaryContainer, #4F378B);

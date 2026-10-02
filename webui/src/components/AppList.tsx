@@ -1,31 +1,13 @@
 import { useState, useCallback, useImperativeHandle, forwardRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { AppInfo } from '../lib/AppList'
-import { categories, essential, caution, safe, google } from '../data/category'
+import { getUad, removalLevels } from '../lib/uad'
 import { useIconObserver } from '../hooks/useIconObserver'
 import AndroidSvg from '../assets/android.svg?react'
 import AppInfoDialog from './dialog/AppInfoDialog'
 import SegmentedList, { type SegmentedListItem } from './SegmentedList'
 
-const categoryMap: Record<string, string[]> = {
-  essential,
-  caution,
-  safe,
-  google,
-}
-
-const categoryColorMap: Record<string, string> = Object.fromEntries(
-  categories.map(c => [c.id, c.color])
-)
-
-function getAppCategory(packageName: string): string | null {
-  for (const [catId, pkgs] of Object.entries(categoryMap)) {
-    if (pkgs.includes(packageName)) {
-      return catId
-    }
-  }
-  return null
-}
+const removalColor = Object.fromEntries(removalLevels.map(level => [level.id, level.color]))
 
 interface AppListProps {
   apps: AppInfo[]
@@ -100,16 +82,9 @@ const AppList = forwardRef<AppListHandle, AppListProps>(function AppList({ apps,
       app.appLabel.toLowerCase().includes(searchQuery.toLowerCase()) ||
       app.packageName.toLowerCase().includes(searchQuery.toLowerCase())
 
-    const listedCategories = Object.entries(categoryMap)
-      .filter(([, pkgs]) => pkgs.includes(app.packageName))
-      .map(([id]) => id)
-    const appCategories = listedCategories.length > 0 ? listedCategories : ['unknown']
+    const { removal } = getUad(app.packageName)
+    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(removal)
 
-    const matchesCategory =
-      selectedCategories.length === 0 ||
-      appCategories.some(cat => selectedCategories.includes(cat))
-
-    const cat = getAppCategory(app.packageName)
     return {
       key: app.packageName,
       hidden: !(matchesSearch && matchesCategory),
@@ -123,12 +98,10 @@ const AppList = forwardRef<AppListHandle, AppListProps>(function AppList({ apps,
           <span className="text-outline text-sm truncate select-none">
             {app.packageName}
           </span>
-          {cat && (
-            <span className="flex items-center gap-1.5 text-xs text-on-surface-variant select-none">
-              <span className="inline-block w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: categoryColorMap[cat] }} />
-              {t(`category.${cat}`)}
-            </span>
-          )}
+          <span className="flex items-center gap-1.5 text-xs text-on-surface-variant select-none">
+            <span className="inline-block w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: removalColor[removal] }} />
+            {t(`removal.${removal}`)}
+          </span>
           {app.pending && (
             <span className="text-xs font-medium text-primary select-none">
               {t(app.nuked ? 'app_info.pending_restore' : 'app_info.pending_removal')}
