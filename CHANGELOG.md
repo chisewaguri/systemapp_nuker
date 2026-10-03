@@ -3,6 +3,20 @@ Simple debloater and whiteout maker with WebUI support.
 
 ### Changelog
 
+### v2.2.6
+
+> You no longer need to reboot before opening the WebUI. Installing or updating the module refreshes the WebUI right away, and nuked apps still disappear after the next reboot.
+
+#### Scripts
+- install the new WebUI and scripts into the running module, and leave its whiteouts for the reboot
+- keep the running module as it was if that copy fails
+- remove the update flag after an install or a nuke, so KernelSU opens the WebUI before the reboot
+
+#### WebUI
+- soft reboot when KernelSU was loaded after boot, so root survives the reboot
+
+---
+
 ### v2.2.5
 
 > Adds app descriptions and removal levels from UAD-ng (#60).
