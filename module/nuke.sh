@@ -106,6 +106,13 @@ get_factory_apk_path() {
         }'
 }
 
+# a restore drops the line, so re-nuking before the reboot needs the path
+# from the boot snapshot, since the old whiteout still hides the app from pm
+old_apk_path() {
+    [ -f "$REMOVE_LIST.old" ] || return 0
+    awk -v pkg="$1" '$1 == pkg && $2 ~ /^\/.*\.apk$/ && $2 !~ /^\/data\// { print $2; exit }' "$REMOVE_LIST.old"
+}
+
 uninstall_for_user() {
     package_name="$1"
     pm list packages "$package_name" </dev/null 2>/dev/null | grep -qx "package:$package_name" || return 0
@@ -284,6 +291,7 @@ prepare_nuke_list() {
             label=$(echo "$line" | sed 's/^[^ ]* *//')
             saved_path=""
         fi
+        [ -n "$saved_path" ] || saved_path=$(old_apk_path "$package_name")
         apk_path=$(get_apk_path "$package_name")
         factory_path=""
         if echo "$apk_path" | grep -q '^/data/app' || [ -z "$saved_path" ]; then
