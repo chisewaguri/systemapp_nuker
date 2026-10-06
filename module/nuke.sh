@@ -11,6 +11,7 @@ PERSIST_DIR="/data/adb/system_app_nuker"
 # nuke_list.txt is "<pkg> <path> <label>". pm path cant see nuked apps
 # (theyre hidden by whiteouts), so the saved path is reused when pm fails
 REMOVE_LIST="${REMOVE_LIST:-$PERSIST_DIR/nuke_list.txt}"
+PM_UNINSTALLED="$PERSIST_DIR/pm_uninstalled.txt"
 
 # import config
 uninstall_only_mode="false"
@@ -117,6 +118,25 @@ uninstall_for_user() {
     package_name="$1"
     pm list packages "$package_name" </dev/null 2>/dev/null | grep -qx "package:$package_name" || return 0
     pm uninstall --user 0 "$package_name" </dev/null >/dev/null 2>&1
+}
+
+# reinstall apps pm uninstalled earlier that are no longer in the list. they are not in
+# .old yet, so the usual restore skips them.
+reinstall_unlisted() {
+    [ -f "$PM_UNINSTALLED" ] || return 0
+    for pkg in $(cat "$PM_UNINSTALLED"); do
+        awk -v pkg="$pkg" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null && continue
+        pm install-existing "$pkg" </dev/null >/dev/null 2>&1
+    done
+}
+
+# uninstall listed apps for user 0 so they disappear before the reboot. -k keeps their
+# data, like a whiteout does. the whiteout takes over at boot.
+pm_uninstall_listed() {
+    for pkg in $(grep -Ev "^$|^#" "$REMOVE_LIST" 2>/dev/null | awk '{print $1}'); do
+        pm list packages "$pkg" </dev/null 2>/dev/null | grep -qx "package:$pkg" || continue
+        pm uninstall -k --user 0 "$pkg" </dev/null >/dev/null 2>&1 && echo "$pkg" >> "$PM_UNINSTALLED"
+    done
 }
 
 replace_file() {
@@ -474,6 +494,7 @@ if [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
     fi
     replace_file "$REMOVE_LIST.old" "$REMOVE_LIST" || exit 1
     replace_file "$PERSIST_DIR/raw_whiteouts.txt.old" "$PERSIST_DIR/raw_whiteouts.txt" || exit 1
+    reinstall_unlisted
     exit 1
 fi
 
@@ -524,6 +545,10 @@ if [ "$update" = true ] && [ "$uninstall_only_mode" != "true" ]; then
     fi
 elif [ -s "$REMOVE_LIST" ]; then
     nuke_system_apps || exit 1
+fi
+if [ "$DUMMYZIP" = true ] && [ "$uninstall_only_mode" != "true" ]; then
+    reinstall_unlisted
+    pm_uninstall_listed
 fi
 
 # handle raw whiteout
