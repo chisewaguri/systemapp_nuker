@@ -7,10 +7,8 @@ import AppList, { type AppListHandle } from '../components/AppList'
 import { type AppInfo } from '../lib/AppList'
 import { useAppList } from '../lib/AppListContext'
 import { whiteoutManager } from '../lib/Whiteout'
-import { NukeConfig } from '../lib/NukeConfig'
 import { Cli } from '../lib/Cli'
 import SnackBar, { useSnackBar } from '../components/SnackBar'
-import FileSelector from '../lib/FileSelector'
 import Fab from '../components/Fab'
 import { runMutation } from '../lib/mutationLock'
 import LoadError from '../components/LoadError'
@@ -23,7 +21,6 @@ export default function Home() {
   const [apps, setApps] = useState<AppInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [loadFailed, setLoadFailed] = useState(false)
-  const [fileSelectorOpen, setFileSelectorOpen] = useState(false)
   const [fabVisible, setFabVisible] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
@@ -38,12 +35,6 @@ export default function Home() {
       setLoading(false)
     })
   }, [appListManager])
-
-  const handleImport = async (content: string | null) => {
-    setFileSelectorOpen(false)
-    await NukeConfig.handleImport(content, appListManager, showSnackBar)
-    setApps(appListManager.systemAppList)
-  }
 
   const handleFabVisibilityChange = useCallback((visible: boolean) => {
     setFabVisible(visible)
@@ -134,7 +125,6 @@ export default function Home() {
         variant="primary"
         onVisibilityChange={handleFabVisibilityChange}
       />
-      <FileSelector open={fileSelectorOpen} fileType="json" mode="content" onSelect={handleImport} />
       <SnackBar state={snackBarState} onHide={hideSnackBar} fabVisible={fabVisible} />
     </>
   )
