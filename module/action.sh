@@ -26,7 +26,7 @@ download() {
         if command -v curl >/dev/null 2>&1; then
             timeout 10 curl -Ls "$1" && return 0
         elif command -v busybox >/dev/null 2>&1; then
-            timeout 10 busybox wget --no-check-certificate -qO- "$1" && return 0
+            timeout 10 busybox wget -qO- "$1" && return 0
         fi
         echo "⚠️ Download failed, retrying ($attempt/3)..." >&2
         sleep 3
