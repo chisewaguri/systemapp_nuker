@@ -53,26 +53,6 @@ export class File {
     if (result.errno !== 0) throw new Error(`File.write failed (${result.errno}): ${result.stderr}`)
   }
 
-  static async move(src: string, dst: string): Promise<void> {
-    const result = await exec(`mv -f ${shellQuote(src)} ${shellQuote(dst)}`)
-    if (result.errno !== 0) throw new Error(`File.move failed (${result.errno}): ${result.stderr}`)
-  }
-
-  static async copy(src: string, dst: string): Promise<void> {
-    const result = await exec(`cp -rf ${shellQuote(src)} ${shellQuote(dst)}`)
-    if (result.errno !== 0) throw new Error(`File.copy failed (${result.errno}): ${result.stderr}`)
-  }
-
-  static async delete(path: string): Promise<void> {
-    const result = await exec(`rm -rf ${shellQuote(path)}`)
-    if (result.errno !== 0) throw new Error(`File.delete failed (${result.errno}): ${result.stderr}`)
-  }
-
-  static async createFile(path: string): Promise<void> {
-    const result = await exec(`touch ${shellQuote(path)}`)
-    if (result.errno !== 0) throw new Error(`File.createFile failed (${result.errno}): ${result.stderr}`)
-  }
-
   static async createDirectory(dir: string): Promise<void> {
     const result = await exec(`mkdir -p ${shellQuote(dir)}`)
     if (result.errno !== 0) throw new Error(`File.createDirectory failed (${result.errno}): ${result.stderr}`)

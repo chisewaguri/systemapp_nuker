@@ -61,12 +61,6 @@ export class NukeConfig {
     }
   }
 
-  static import(
-    onSelect: (open: boolean) => void
-  ): void {
-    onSelect(true)
-  }
-
   static async handleImport(
     content: string | null,
     appList: AppList,
