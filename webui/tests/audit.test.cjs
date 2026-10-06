@@ -51,10 +51,10 @@ async function applyPage(page, apps, selected) {
   const source = fs.readFileSync(path.join(root, `src/pages/${page}.tsx`), 'utf8')
   const body = source.split('const handleFabClick = useCallback(async () => {')[1]
     .split('}, [appListManager, showSnackBar, t])')[0]
-  const run = new Function('appListManager', 'appListRef', 'runMutation', 'showSnackBar', 't', 'setApps', 'Cli', 'setLoadFailed', 'saveIcons',
+  const run = new Function('appListManager', 'appListRef', 'runMutation', 'showSnackBar', 't', 'setApps', 'Cli', 'setLoadFailed', 'saveIcons', 'whiteoutManager',
     `return (async () => {${body}})()`)
   await run(apps, { current: { getSelectedPackages: () => selected } }, async task => { await task(); return true },
-    () => {}, key => key, () => {}, { nuke: async () => true }, () => {}, async () => {})
+    () => {}, key => key, () => {}, { nuke: async () => true }, () => {}, async () => {}, { refresh: async () => {} })
 }
 
 test('Home can remove an app that is pending restoration', async () => {

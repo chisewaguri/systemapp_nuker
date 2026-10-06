@@ -4,6 +4,7 @@ import { File } from './File'
 import AppList from './AppList'
 import { Cli } from './Cli'
 import { runMutation } from './mutationLock'
+import { whiteoutManager } from './Whiteout'
 import type { useSnackBar } from '../components/SnackBar'
 
 interface NukeConfigData {
@@ -112,7 +113,7 @@ export class NukeConfig {
 
       snackBar(t('nuke_config.import_success', { count: importedCount }))
       await Cli.nuke(snackBar)
-      await appList.refresh().catch(() => snackBar(t('global.read_error'), false))
+      await Promise.all([appList.refresh(), whiteoutManager.refresh()]).catch(() => snackBar(t('global.read_error'), false))
     })
     if (!started) snackBar(t('global.processing'), true, 3000)
   }

@@ -7,6 +7,7 @@ import WhiteoutList, { type WhiteoutListHandle } from '../components/WhiteoutLis
 import SnackBar, { useSnackBar } from '../components/SnackBar'
 import FileSelector from '../lib/FileSelector'
 import { whiteoutManager } from '../lib/Whiteout'
+import { useAppList } from '../lib/AppListContext'
 import { Cli } from '../lib/Cli'
 import { useHistory } from '../hooks/useHistory'
 import { runMutation } from '../lib/mutationLock'
@@ -15,6 +16,7 @@ import LoadError from '../components/LoadError'
 export default function WhiteoutPage() {
   const { t } = useTranslation()
   const snackBar = useSnackBar()
+  const appList = useAppList()
   const [whiteouts, setWhiteouts] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [loadFailed, setLoadFailed] = useState(false)
@@ -85,7 +87,7 @@ export default function WhiteoutPage() {
       } else {
         // A failed nuke rolls the lists back on disk, so reload either way.
         await Cli.nuke(snackBar.show)
-        await whiteoutManager.refresh().catch(() => {
+        await Promise.all([whiteoutManager.refresh(), appList.refresh()]).catch(() => {
           setLoadFailed(true)
           snackBar.show(t('global.read_error'), false)
         })

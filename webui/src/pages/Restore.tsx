@@ -6,6 +6,7 @@ import { removalCounts } from '../lib/uad'
 import AppList, { type AppListHandle } from '../components/AppList'
 import { type AppInfo } from '../lib/AppList'
 import { useAppList } from '../lib/AppListContext'
+import { whiteoutManager } from '../lib/Whiteout'
 import { Cli } from '../lib/Cli'
 import SnackBar, { useSnackBar } from '../components/SnackBar'
 import Fab from '../components/Fab'
@@ -63,7 +64,7 @@ export default function Restore() {
       } else {
         // A failed nuke rolls the lists back on disk, so reload either way.
         await Cli.nuke(showSnackBar)
-        await appListManager.refresh()
+        await Promise.all([appListManager.refresh(), whiteoutManager.refresh()])
           .then(() => setApps(appListManager.nukedAppList))
           .catch(() => {
             setLoadFailed(true)
