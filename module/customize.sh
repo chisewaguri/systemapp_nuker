@@ -19,7 +19,7 @@ disable_only_mode=false
 
 # set config.sh value
 set_config() {
-    sed -i "s/$1=.*/$1=$2/" "$NEW_CONFIG" || abort "Failed to update config"
+    sed -i "s/^$1=.*/$1=$2/" "$NEW_CONFIG" || abort "Failed to update config"
 }
 
 # === MAIN SCRIPT ===

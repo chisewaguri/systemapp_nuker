@@ -13,7 +13,7 @@ BOOTCOUNT=0
 
 # set config.sh value
 set_config() {
-    sed -i "s/$1=.*/$1=$2/" "$PERSIST_DIR/config.sh"
+    sed -i "s/^$1=.*/$1=$2/" "$PERSIST_DIR/config.sh"
 }
 
 # reset after bootloop protection
