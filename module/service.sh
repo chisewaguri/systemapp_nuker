@@ -123,6 +123,15 @@ if [ -s "$REMOVE_LIST.old" ]; then
     done < "$REMOVE_LIST.old"
 fi
 
+# apps pm uninstalled before this boot that were restored before it
+PM_UNINSTALLED="$PERSIST_DIR/pm_uninstalled.txt"
+if [ -f "$PM_UNINSTALLED" ]; then
+    for pkg in $(cat "$PM_UNINSTALLED"); do
+        awk -v pkg="$pkg" '$1 == pkg { found=1 } END { exit !found }' "$APPLIED" && continue
+        pm install-existing "$pkg" </dev/null >/dev/null 2>&1
+    done
+fi
+
 # apps with no saved path have no whiteout, so they are uninstalled in every mode
 FAILED_UNINSTALLS="$PERSIST_DIR/uninstall_failed.tmp"
 rm -f "$FAILED_UNINSTALLS"
@@ -157,7 +166,7 @@ if [ -s "$SNAPSHOT" ] && [ "$(tail -c 1 "$SNAPSHOT" | wc -l)" -eq 0 ]; then
 fi
 [ ! -f "$FAILED_RESTORES" ] || cat "$FAILED_RESTORES" >> "$SNAPSHOT" || { rm -f "$SNAPSHOT"; exit 1; }
 mv -f "$SNAPSHOT" "$REMOVE_LIST.old" || { rm -f "$SNAPSHOT"; exit 1; }
-rm -f "$FAILED_RESTORES" "$FAILED_UNINSTALLS" "$APPLIED"
+rm -f "$FAILED_RESTORES" "$FAILED_UNINSTALLS" "$APPLIED" "$PM_UNINSTALLED"
 [ -f "$RAW_LIST" ] || touch "$RAW_LIST" || exit 1
 RAW_SNAPSHOT="$RAW_LIST.old.new.$$"
 cp -f "$RAW_LIST" "$RAW_SNAPSHOT" || { rm -f "$RAW_SNAPSHOT"; exit 1; }
