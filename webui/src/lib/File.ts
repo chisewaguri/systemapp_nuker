@@ -39,7 +39,9 @@ export class File {
       # and put the original back if that write fails.
       if [ $? -ne 0 ]; then
         rm -f "$tmp" 2>/dev/null
-        old=$(cat "$target" 2>/dev/null; echo x)
+        if [ -e "$target" ]; then
+          old=$(cat "$target" && echo x) || exit 1
+        fi
         printf '%s\\n' "$content" > "$target" && exit
         [ -e "$target" ] && printf '%s' "\${old%x}" > "$target"
         exit 1
