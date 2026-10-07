@@ -36,25 +36,7 @@ mv -f "$MODPATH/config.sh" "$NEW_CONFIG" || abort "Failed to stage config"
 # set permissions for config
 set_perm "$NEW_CONFIG" 0 2000 0755 || abort "Failed to set config permissions"
 
-# display loading animation for compatible environments
-if [ "$MMRL" = "true" ] || { [ "$KSU" = "true" ] && [ "$KSU_VER_CODE" -ge 11998 ]; } ||
-    { [ "$KSU_NEXT" = "true" ] && [ "$KSU_VER_CODE" -ge 12144 ]; } ||
-    { [ "$APATCH" = "true" ] && [ "$APATCH_VER_CODE" -ge 11022 ]; }; then
-        clear
-        echo "[*] Installing System App Nuker... Please wait."
-        sleep 0.5
-        
-        for _ in $(seq 1 3); do
-            for symbol in '-' '\' '|' '/'; do
-                echo "[$symbol] Initializing..."
-                sleep 0.1
-                clear
-            done
-        done
-else
-    echo "[*] Initializing System App Nuker..."
-    sleep 1.5 # sleep a bit to make it look like something is happening!!
-fi
+echo "[*] Installing System App Nuker..."
 
 # set permissions for nuke script
 set_perm "$MODPATH/nuke.sh" 0 2000 0755
