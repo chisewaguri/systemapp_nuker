@@ -65,17 +65,6 @@ get_webui() {
     am start -n "io.github.a13e300.ksuwebui/.WebUIActivity" -e id "system_app_nuker"
 }
 
-# 50% chance to open rickroll on April 1st
-[ "$(date +"%d%m")" = "0104" ] && (
-    sleep 5
-    [ $((RANDOM % 2)) -eq 0 ] && \
-        if pm path tv.danmaku.bili > /dev/null 2>&1; then
- 			am start -a android.intent.action.VIEW -d "https://b23.tv/Qhk2xvo"
-        else
- 	        am start -a android.intent.action.VIEW -d "https://youtu.be/dQw4w9WgXcQ"
-        fi
-) &
-
 # ===== Main Script =====
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "🔍 Checking for WebUI apps..."
