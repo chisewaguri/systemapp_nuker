@@ -90,6 +90,23 @@ is_apk_path() {
     esac
 }
 
+# sets package_name, saved_path and label from a "<pkg> <path> <label>" line.
+# lines from before 2.1 have no path column, so everything after pkg is label.
+# old versions could save a bad path, keep it out of the label.
+parse_list_line() {
+    package_name=$(echo "$1" | awk '{print $1}')
+    saved_path=$(echo "$1" | awk '{print $2}')
+    if is_apk_path "$saved_path"; then
+        label=$(echo "$1" | sed 's/^[^ ]* [^ ]* *//')
+    elif echo "$saved_path" | grep -q '^/'; then
+        label=$(echo "$1" | sed 's/^[^ ]* [^ ]* *//')
+        saved_path=""
+    else
+        label=$(echo "$1" | sed 's/^[^ ]* *//')
+        saved_path=""
+    fi
+}
+
 get_apk_path() {
     pm path "$1" </dev/null 2>/dev/null |
         sed -n 's|^package:\(/.*\.apk\)$|\1|p' |
@@ -299,18 +316,7 @@ prepare_nuke_list() {
             ""|\#*) echo "$line" || { rm -f "$list_tmp"; return 1; }; continue ;;
         esac
 
-        package_name=$(echo "$line" | awk '{print $1}')
-        saved_path=$(echo "$line" | awk '{print $2}')
-        if is_apk_path "$saved_path"; then
-            label=$(echo "$line" | sed 's/^[^ ]* [^ ]* *//')
-        elif echo "$saved_path" | grep -q '^/'; then
-            # old versions could save a bad path, keep it out of the label
-            label=$(echo "$line" | sed 's/^[^ ]* [^ ]* *//')
-            saved_path=""
-        else
-            label=$(echo "$line" | sed 's/^[^ ]* *//')
-            saved_path=""
-        fi
+        parse_list_line "$line"
         [ -n "$saved_path" ] || saved_path=$(old_apk_path "$package_name")
         apk_path=$(get_apk_path "$package_name")
         factory_path=""
@@ -398,19 +404,7 @@ nuke_system_apps() {
             case "$line" in
                 ""|\#*) echo "$line" || { rm -f "$list_tmp"; return 1; }; continue ;;
             esac
-            package_name=$(echo "$line" | awk '{print $1}')
-            saved_path=$(echo "$line" | awk '{print $2}')
-            if is_apk_path "$saved_path"; then
-                # drop pkg and path, the rest is label
-                label=$(echo "$line" | sed 's/^[^ ]* [^ ]* *//')
-            elif echo "$saved_path" | grep -q '^/'; then
-                label=$(echo "$line" | sed 's/^[^ ]* [^ ]* *//')
-                saved_path=""
-            else
-                # no path column yet, everything after pkg is label
-                label=$(echo "$line" | sed 's/^[^ ]* *//')
-                saved_path=""
-            fi
+            parse_list_line "$line"
             apk_path=$(get_apk_path "$package_name")
             if echo "$apk_path" | grep -q '^/data/app'; then
                 factory_path=$(get_factory_apk_path "$package_name")
