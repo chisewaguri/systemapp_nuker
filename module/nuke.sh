@@ -107,6 +107,17 @@ parse_list_line() {
     fi
 }
 
+# only an app's own folder under app/ or priv-app/ is hidden whole. apks that sit
+# in a shared folder like overlay/ or framework/ are hidden one file at a time,
+# or every other apk there would vanish too.
+whiteout_target() {
+    dir="${1%/*}"
+    case "${dir%/*}" in
+        */app|*/priv-app) echo "$dir" ;;
+        *) echo "$1" ;;
+    esac
+}
+
 get_apk_path() {
     pm path "$1" </dev/null 2>/dev/null |
         sed -n 's|^package:\(/.*\.apk\)$|\1|p' |
@@ -177,7 +188,7 @@ whiteout_has_saved_path() {
         esac
         saved_path=$(echo "$line" | awk '{print $2}')
         is_apk_path "$saved_path" || continue
-        [ "$(normalize_whiteout_path "$(dirname "$saved_path")")" = "$target" ] && return 0
+        [ "$(normalize_whiteout_path "$(whiteout_target "$saved_path")")" = "$target" ] && return 0
     done < "$REMOVE_LIST"
     return 1
 }
@@ -218,7 +229,7 @@ whiteout_was_restored() {
         old_package_name=$(echo "$old_line" | awk '{print $1}')
         old_saved_path=$(echo "$old_line" | awk '{print $2}')
         is_apk_path "$old_saved_path" || continue
-        [ "$(normalize_whiteout_path "$(dirname "$old_saved_path")")" = "$restore_target" ] || continue
+        [ "$(normalize_whiteout_path "$(whiteout_target "$old_saved_path")")" = "$restore_target" ] || continue
         awk -v pkg="$old_package_name" '$1 == pkg { found=1 } END { exit !found }' "$REMOVE_LIST" 2>/dev/null || return 0
     done < "$REMOVE_LIST.old"
     return 1
@@ -244,7 +255,7 @@ nuke_saved_apps() {
         esac
         package_name=$(echo "$line" | awk '{print $1}')
         saved_path=$(echo "$line" | awk '{print $2}')
-        is_apk_path "$saved_path" && { whiteout_create "$(dirname "$saved_path")" > /dev/null || return 1; }
+        is_apk_path "$saved_path" && { whiteout_create "$(whiteout_target "$saved_path")" > /dev/null || return 1; }
         # with the system apk hidden, a /data/app update is a plain user app
         if ! is_apk_path "$saved_path" || get_apk_path "$package_name" | grep -q '^/data/app'; then
             uninstall_for_user "$package_name" || return 1
@@ -416,7 +427,7 @@ nuke_system_apps() {
             fi
             [ -n "$apk_path" ] || apk_path="$saved_path"
             if [ "$apk_path" != "" ]; then
-                if ! whiteout_create "$(dirname "$apk_path")" > /dev/null; then
+                if ! whiteout_create "$(whiteout_target "$apk_path")" > /dev/null; then
                     rm -f "$list_tmp"
                     return 1
                 fi

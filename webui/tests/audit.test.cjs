@@ -139,6 +139,21 @@ test('list lines split into package, system apk path and label', () => {
     assert.equal(result.stdout.trim(), expected, line)
   }
 })
+test('whiteouts hide an app folder only under app or priv-app', () => {
+  const source = fs.readFileSync(path.join(root, '../module/nuke.sh'), 'utf8')
+  const fn = source.match(/whiteout_target\(\) \{[\s\S]*?\n\}/)[0]
+  for (const [apk, expected] of [
+    ['/system/app/Foo/Foo.apk', '/system/app/Foo'],
+    ['/product/priv-app/Bar/Bar.apk', '/product/priv-app/Bar'],
+    ['/product/overlay/Theme.apk', '/product/overlay/Theme.apk'],
+    ['/system/framework/framework-res.apk', '/system/framework/framework-res.apk'],
+    ['/vendor/overlay/sub/Vendor.apk', '/vendor/overlay/sub/Vendor.apk'],
+  ]) {
+    const result = spawnSync(shell, ['-c', `${fn}\nwhiteout_target '${apk}'`], { encoding: 'utf8' })
+    if (result.error) throw result.error
+    assert.equal(result.stdout.trim(), expected, apk)
+  }
+})
 test('cached apk paths match the exact package and skip /data copies', t => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-cache-test-'))
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
