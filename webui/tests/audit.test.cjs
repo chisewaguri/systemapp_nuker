@@ -124,6 +124,20 @@ test('raw whiteouts reject data paths before filesystem operations and preserve 
     if (!rejected) assert.ok(result.stdout.includes('/fixture' + (input.startsWith('/system/') ? input : '/system' + input)))
   }
 })
+test('list lines split into package, system apk path and label', () => {
+  const source = fs.readFileSync(path.join(root, '../module/nuke.sh'), 'utf8')
+  const fns = ['is_apk_path', 'parse_list_line'].map(name => source.match(new RegExp(`${name}\\(\\) \\{[\\s\\S]*?\\n\\}`))[0]).join('\n')
+  for (const [line, expected] of [
+    ['com.a /system/app/A/A.apk My App', 'com.a|/system/app/A/A.apk|My App'],
+    ['com.b  Label B', 'com.b||Label B'],
+    ['com.c Old Label', 'com.c||Old Label'],
+    ['com.d /data/app/x/base.apk D', 'com.d||D'],
+  ]) {
+    const result = spawnSync(shell, ['-c', `${fns}\nparse_list_line '${line}'; echo "$package_name|$saved_path|$label"`], { encoding: 'utf8' })
+    if (result.error) throw result.error
+    assert.equal(result.stdout.trim(), expected, line)
+  }
+})
 test('cached apk paths match the exact package and skip /data copies', t => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-cache-test-'))
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
