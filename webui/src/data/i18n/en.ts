@@ -25,6 +25,10 @@ const en = {
     title: "System App Nuker",
     empty: "No system apps found",
     apply: "Apply app removals",
+    risky_title: "Remove risky apps?",
+    risky_message_one: "{{count}} selected app is rated risky to remove and may break your device.",
+    risky_message_other: "{{count}} selected apps are rated risky to remove and may break your device.",
+    risky_confirm: "Remove anyway",
   },
   restore: {
     title: "Restore",
