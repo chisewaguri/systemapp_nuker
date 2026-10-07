@@ -5,9 +5,10 @@
 # this is modified from mountify's whiteout creator
 # No warranty.
 PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
-MODDIR="/data/adb/modules/system_app_nuker"
-MODULE_UPDATE_DIR="/data/adb/modules_update/system_app_nuker"
-PERSIST_DIR="/data/adb/system_app_nuker"
+# tests run the script against a fake /data/adb under SAN_TEST_ROOT
+MODDIR="$SAN_TEST_ROOT/data/adb/modules/system_app_nuker"
+MODULE_UPDATE_DIR="$SAN_TEST_ROOT/data/adb/modules_update/system_app_nuker"
+PERSIST_DIR="$SAN_TEST_ROOT/data/adb/system_app_nuker"
 # nuke_list.txt is "<pkg> <path> <label>". pm path cant see nuked apps
 # (theyre hidden by whiteouts), so the saved path is reused when pm fails
 REMOVE_LIST="${REMOVE_LIST:-$PERSIST_DIR/nuke_list.txt}"

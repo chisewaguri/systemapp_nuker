@@ -154,6 +154,36 @@ test('whiteouts hide an app folder only under app or priv-app', () => {
     assert.equal(result.stdout.trim(), expected, apk)
   }
 })
+test('a webui nuke whiteouts app folders and lone overlay apks, records paths and uninstalls for user 0', t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-flow-test-')).replace(/\\/g, '/')
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+  const persist = `${dir}/data/adb/system_app_nuker`
+  fs.mkdirSync(`${dir}/bin`)
+  fs.mkdirSync(persist, { recursive: true })
+  fs.mkdirSync(`${dir}/data/adb/modules/system_app_nuker`, { recursive: true })
+  fs.writeFileSync(`${dir}/data/adb/modules/system_app_nuker/nuke.sh`, '')
+  fs.writeFileSync(`${persist}/nuke_list.txt`, 'com.a  App A\ncom.ov  Overlay')
+  fs.writeFileSync(`${dir}/bin/pm`, `#!/bin/sh
+case "$1 $2" in
+  "list packages") case "$*" in *factory-only*) ;; *-s*) printf 'package:com.a\\npackage:com.ov\\n' ;; *) echo "package:$3" ;; esac ;;
+  "path com.a") echo package:/system/app/A/A.apk ;;
+  "path com.ov") echo package:/product/overlay/Ov.apk ;;
+  "uninstall -k") echo "$5" >> "${dir}/uninstalled" ;;
+esac
+`)
+  fs.writeFileSync(`${dir}/bin/busybox`, '#!/bin/sh\n[ "$1" = mknod ] && : > "$2"\nexit 0\n')
+  fs.chmodSync(`${dir}/bin/pm`, 0o755)
+  fs.chmodSync(`${dir}/bin/busybox`, 0o755)
+  const script = path.join(root, '../module/nuke.sh').replace(/\\/g, '/')
+  const result = spawnSync(shell, ['-c', `PATH="$(${process.platform === 'win32' ? `cygpath -u '${dir}/bin'` : `echo '${dir}/bin'`}):$PATH" SAN_TEST_ROOT="${dir}" DUMMYZIP=true sh "${script}"`], { encoding: 'utf8' })
+  if (result.error) throw result.error
+  assert.equal(result.status, 0, result.stderr)
+  const update = `${dir}/data/adb/modules_update/system_app_nuker`
+  assert.ok(fs.statSync(`${update}/system/app/A`).isFile())
+  assert.ok(fs.statSync(`${update}/system/product/overlay/Ov.apk`).isFile())
+  assert.equal(fs.readFileSync(`${persist}/nuke_list.txt`, 'utf8'), 'com.a /system/app/A/A.apk App A\ncom.ov /product/overlay/Ov.apk Overlay\n')
+  assert.equal(fs.readFileSync(`${dir}/uninstalled`, 'utf8'), 'com.a\ncom.ov\n')
+})
 test('cached apk paths match the exact package and skip /data copies', t => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-cache-test-'))
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
