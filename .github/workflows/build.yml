@@ -56,6 +56,9 @@ jobs:
         echo "ZIP_NAME=$ZIP_NAME" >> $GITHUB_ENV
         echo "RELEASE_ZIP_NAME=$RELEASE_ZIP_NAME" >> $GITHUB_ENV
 
+    - name: Check module scripts
+      run: shellcheck -s sh -S error module/*.sh module/dummy_zip/customize.sh
+
     - name: Setup pnpm
       uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
       with:
