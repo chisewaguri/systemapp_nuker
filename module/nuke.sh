@@ -310,6 +310,7 @@ recover_legacy_paths() {
 prepare_nuke_list() {
     [ -s "$REMOVE_LIST" ] || return 0
     list_tmp="$REMOVE_LIST.tmp.$$"
+    system_pkgs=$(pm list packages -s </dev/null)
 
     while IFS= read -r line || [ -n "$line" ]; do
         case "$line" in
@@ -324,7 +325,7 @@ prepare_nuke_list() {
             factory_path=$(get_factory_apk_path "$package_name")
             is_apk_path "$factory_path" && saved_path="$factory_path"
         fi
-        if echo "$apk_path" | grep -q '^/data/app' && pm list packages -s </dev/null | grep -qx "package:$package_name"; then
+        if echo "$apk_path" | grep -q '^/data/app' && echo "$system_pkgs" | grep -qx "package:$package_name"; then
             if [ "$update" = true ]; then
                 pm uninstall-system-updates "$package_name" </dev/null >/dev/null 2>&1 || true
                 apk_path=$(get_apk_path "$package_name")
@@ -378,9 +379,10 @@ nuke_system_apps() {
     list_tmp="$REMOVE_LIST.tmp.$$"
 
     # remove any updates for the apps being nuked
+    system_pkgs=$(pm list packages -s </dev/null)
     for package_name in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
         # check if it's a system app that has been updated
-        if pm list packages -s </dev/null | grep -qx "package:$package_name" && get_apk_path "$package_name" | grep -q "/data/app"; then
+        if echo "$system_pkgs" | grep -qx "package:$package_name" && get_apk_path "$package_name" | grep -q "/data/app"; then
             pm uninstall-system-updates "$package_name" </dev/null >/dev/null 2>&1 || true
         fi
     done
