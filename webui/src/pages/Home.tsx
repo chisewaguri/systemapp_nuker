@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import Header from '../components/Header'
 import SearchBar from '../components/SearchBar'
-import { removalCounts } from '../lib/uad'
+import { getUad, removalCounts } from '../lib/uad'
 import AppList, { type AppListHandle } from '../components/AppList'
 import { type AppInfo } from '../lib/AppList'
 import { useAppList } from '../lib/AppListContext'
@@ -25,6 +25,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategories, setSelectedCategories] = useState<string[]>([])
   const appListRef = useRef<AppListHandle>(null)
+  const [risky, setRisky] = useState<AppInfo[]>([])
 
   useEffect(() => {
     appListManager.waitForReady().then(() => {
@@ -40,7 +41,7 @@ export default function Home() {
     setFabVisible(visible)
   }, [])
 
-  const handleFabClick = useCallback(async () => {
+  const applyNuke = useCallback(async () => {
     const started = await runMutation(async () => {
       const selected = appListRef.current?.getSelectedPackages() ?? []
       const currentApps = appListManager.systemAppList
@@ -76,6 +77,14 @@ export default function Home() {
     })
     if (!started) showSnackBar(t('global.processing'), true, 3000)
   }, [appListManager, showSnackBar, t])
+
+  const handleFabClick = useCallback(() => {
+    const selected = appListRef.current?.getSelectedPackages() ?? []
+    const flagged = appListManager.systemAppList.filter(app =>
+      selected.includes(app.packageName) && ['expert', 'unsafe'].includes(getUad(app.packageName).removal))
+    if (flagged.length > 0) setRisky(flagged)
+    else applyNuke()
+  }, [appListManager, applyNuke])
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories(prev =>
@@ -125,6 +134,19 @@ export default function Home() {
         variant="primary"
         onVisibilityChange={handleFabVisibilityChange}
       />
+      <md-dialog open={risky.length > 0} onClosed={() => setRisky([])}>
+        <div slot="headline">{t('home.risky_title')}</div>
+        <div slot="content">
+          {t('home.risky_message', { count: risky.length })}
+          <ul className="mt-2 list-disc pl-5">
+            {risky.map(app => <li key={app.packageName}>{app.appLabel} ({t(`removal.${getUad(app.packageName).removal}`)})</li>)}
+          </ul>
+        </div>
+        <div slot="actions">
+          <md-text-button onClick={() => setRisky([])}>{t('whiteout.cancel')}</md-text-button>
+          <md-filled-button onClick={() => { setRisky([]); applyNuke() }}>{t('home.risky_confirm')}</md-filled-button>
+        </div>
+      </md-dialog>
       <SnackBar state={snackBarState} onHide={hideSnackBar} fabVisible={fabVisible} />
     </>
   )

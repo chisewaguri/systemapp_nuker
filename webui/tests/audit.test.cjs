@@ -49,7 +49,8 @@ async function appsFixture(infos) {
 
 async function applyPage(page, apps, selected) {
   const source = fs.readFileSync(path.join(root, `src/pages/${page}.tsx`), 'utf8')
-  const body = source.split('const handleFabClick = useCallback(async () => {')[1]
+  const handler = page === 'Home' ? 'applyNuke' : 'handleFabClick'
+  const body = source.split(`const ${handler} = useCallback(async () => {`)[1]
     .split('}, [appListManager, showSnackBar, t])')[0]
   const run = new Function('appListManager', 'appListRef', 'runMutation', 'showSnackBar', 't', 'setApps', 'Cli', 'setLoadFailed', 'saveIcons', 'whiteoutManager',
     `return (async () => {${body}})()`)
