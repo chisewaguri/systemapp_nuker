@@ -184,6 +184,48 @@ esac
   assert.equal(fs.readFileSync(`${persist}/nuke_list.txt`, 'utf8'), 'com.a /system/app/A/A.apk App A\ncom.ov /product/overlay/Ov.apk Overlay\n')
   assert.equal(fs.readFileSync(`${dir}/uninstalled`, 'utf8'), 'com.a\ncom.ov\n')
 })
+test('a bootloop first rolls back to the last good list, then wipes everything if it loops again', t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-loop-test-')).replace(/\\/g, '/')
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+  const persist = `${dir}/data/adb/system_app_nuker`
+  const mod = `${dir}/data/adb/modules/system_app_nuker`
+  for (const d of [`${dir}/bin`, persist, `${mod}/system/app/Old`, `${mod}/system/app/New`, `${mod}/system/product/overlay`]) fs.mkdirSync(d, { recursive: true })
+  fs.copyFileSync(path.join(root, '../module/post-fs-data.sh'), `${mod}/post-fs-data.sh`)
+  fs.writeFileSync(`${mod}/module.prop`, 'description=x\n')
+  fs.writeFileSync(`${persist}/nuke_list.txt.old`, 'com.old /system/app/Old/Old.apk Old\n')
+  fs.writeFileSync(`${persist}/nuke_list.txt`, 'com.old /system/app/Old/Old.apk Old\ncom.new /system/app/New/New.apk New\ncom.ov /product/overlay/Ov.apk Ov\n')
+  fs.writeFileSync(`${persist}/raw_whiteouts.txt`, '/system/media/bootanim.zip\n')
+  // char devices cant be made here, so find reports marked files as whiteouts
+  for (const w of ['system/app/Old/Old.apk.w', 'system/app/New/New.apk.w', 'system/product/overlay/Ov.apk.w']) fs.writeFileSync(`${mod}/${w}`, '')
+  fs.writeFileSync(`${dir}/bin/find`, '#!/bin/sh\n/usr/bin/find "$1" -name "*.w" | sed "s/\\.w$//; s|/[^/]*\\.apk$||; s|/Ov$|/Ov.apk|"\n')
+  fs.writeFileSync(`${dir}/bin/rm`, `#!/bin/sh\nfor a; do case "$a" in -*) ;; *) /usr/bin/rm -rf "$a" "$a".w "$a"/*.apk.w ;; esac; done\n`)
+  for (const name of ['stop', 'reboot']) fs.writeFileSync(`${dir}/bin/${name}`, `#!/bin/sh\necho ${name} >> "${dir}/calls"\n`)
+  for (const name of ['find', 'rm', 'stop', 'reboot']) fs.chmodSync(`${dir}/bin/${name}`, 0o755)
+  const bin = process.platform === 'win32' ? `$(cygpath -u '${dir}/bin')` : `${dir}/bin`
+  const boot = () => {
+    const result = spawnSync(shell, ['-c', `PATH="${bin}:$PATH" SAN_TEST_ROOT="${dir}" sh "${mod}/post-fs-data.sh"`], { encoding: 'utf8' })
+    if (result.error) throw result.error
+    return result
+  }
+
+  fs.writeFileSync(`${persist}/count.sh`, 'BOOTCOUNT=1\n')
+  boot()
+  assert.ok(fs.existsSync(`${mod}/system/app/Old/Old.apk.w`), 'last good whiteout kept')
+  assert.ok(!fs.existsSync(`${mod}/system/app/New/New.apk.w`), 'new app whiteout dropped')
+  assert.ok(!fs.existsSync(`${mod}/system/product/overlay/Ov.apk.w`), 'new overlay whiteout dropped')
+  assert.equal(fs.readFileSync(`${persist}/nuke_list.txt`, 'utf8'), 'com.old /system/app/Old/Old.apk Old\n')
+  assert.ok(fs.readFileSync(`${persist}/nuke_list.txt.bak`, 'utf8').includes('com.new'))
+  assert.equal(fs.readFileSync(`${persist}/raw_whiteouts.txt`, 'utf8'), '')
+  assert.equal(fs.readFileSync(`${persist}/count.sh`, 'utf8').trim(), 'BOOTCOUNT=0')
+  assert.ok(!fs.existsSync(`${mod}/disable`))
+
+  fs.writeFileSync(`${persist}/count.sh`, 'BOOTCOUNT=1\n')
+  boot()
+  assert.ok(!fs.existsSync(`${mod}/system`), 'second loop wipes every whiteout')
+  assert.ok(fs.existsSync(`${mod}/disable`))
+  assert.equal(fs.readFileSync(`${persist}/count.sh`, 'utf8').trim(), 'BOOTCOUNT=-1')
+  assert.equal(fs.readFileSync(`${dir}/calls`, 'utf8'), 'stop\nreboot\nstop\nreboot\n')
+})
 test('cached apk paths match the exact package and skip /data copies', t => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-cache-test-'))
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
