@@ -1,7 +1,7 @@
 #!/bin/sh
 PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
 MODDIR="${0%/*}"
-PERSIST_DIR="/data/adb/system_app_nuker"
+PERSIST_DIR="$SAN_TEST_ROOT/data/adb/system_app_nuker"
 
 # import config
 mounting_mode=0
@@ -25,11 +25,9 @@ BOOTCOUNT=$(( BOOTCOUNT + 1))
 
 # pm uninstall --user 0 only writes inst="false" into package-restrictions,
 # and pm cant run while system_server is looping, so undo it in the file.
-# .bak is read because a retry runs after the list was moved there.
+# the packages to repair come in $pkgs.
 reinstall_packages() {
     failed=0
-    pkgs=$(cat "$PERSIST_DIR"/nuke_list.txt "$PERSIST_DIR"/nuke_list.txt.old "$PERSIST_DIR"/nuke_list.txt.bak 2>/dev/null |
-        grep -Ev "^$|^#" | awk '{print $1}' | tr '\n' ' ')
     [ -n "$pkgs" ] || return 0
     for xml in "$@"; do
         [ -f "$xml" ] || continue
@@ -63,11 +61,67 @@ reinstall_packages() {
     return $failed
 }
 
-if [ $BOOTCOUNT -gt 1 ]; then # on 2nd post-fs-data without reaching service
+# apps and raw paths added since the last boot that reached service
+added_pkgs() {
+    awk 'NR == FNR { if (!/^$|^#/) old[$1] = 1; next } !/^$|^#/ && !($1 in old) { printf "%s ", $1 }' \
+        "$PERSIST_DIR/nuke_list.txt.old" "$PERSIST_DIR/nuke_list.txt" 2>/dev/null
+}
+# a missing snapshot counts as empty, so every raw path is new
+added_raw() {
+    { cat "$PERSIST_DIR/raw_whiteouts.txt.old" 2>/dev/null; echo "#san-split"; cat "$PERSIST_DIR/raw_whiteouts.txt" 2>/dev/null; } |
+        awk '$0 == "#san-split" { new = 1; next } !new { old[$0] = 1; next } !/^$|^#/ && !($0 in old)'
+}
+
+# whiteouts of the last good boot, named the way nuke.sh names them: an app
+# folder under app/ or priv-app/, a lone apk elsewhere, or a raw path
+good_whiteouts() {
+    {
+        awk '!/^$|^#/ && $2 ~ /^\/.*\.apk$/ && $2 !~ /^\/data\// {
+            dir = $2; sub(/\/[^\/]*$/, "", dir)
+            parent = dir; sub(/\/[^\/]*$/, "", parent)
+            print (parent ~ /\/(app|priv-app)$/) ? dir : $2
+        }' "$PERSIST_DIR/nuke_list.txt.old"
+        grep -Ev '^$|^#' "$PERSIST_DIR/raw_whiteouts.txt.old" 2>/dev/null
+    } | sed 's|^/system/||; s|^/||; s|^|/system/|'
+}
+
+# first try keeping the last good setup and dropping only what was added since.
+# if that still loops, nothing is left to drop and the full wipe below runs.
+if [ $BOOTCOUNT -gt 1 ] && [ -f "$PERSIST_DIR/nuke_list.txt.old" ] &&
+    { [ -n "$(added_pkgs)" ] || [ -n "$(added_raw)" ]; }; then
+    pkgs=$(added_pkgs)
+    xml=$SAN_TEST_ROOT/data/system/users/0/package-restrictions
+    reinstall_packages "$xml.xml" "$xml-backup.xml" "$xml.xml.fallback" "$xml.xml.reservecopy"
+
+    good=$(good_whiteouts)
+    find "$MODDIR" -type c 2>/dev/null | while IFS= read -r whiteout; do
+        target=${whiteout#"$MODDIR"}
+        case "$target" in /system/*) ;; *) target="/system$target" ;; esac
+        echo "$good" | grep -qxF "$target" || rm -f "$whiteout"
+    done
+
+    mv -f "$PERSIST_DIR/nuke_list.txt" "$PERSIST_DIR/nuke_list.txt.bak"
+    cp -f "$PERSIST_DIR/nuke_list.txt.old" "$PERSIST_DIR/nuke_list.txt"
+    if [ -n "$(added_raw)" ]; then
+        mv -f "$PERSIST_DIR/raw_whiteouts.txt" "$PERSIST_DIR/raw_whiteouts.txt.bak"
+        cp -f "$PERSIST_DIR/raw_whiteouts.txt.old" "$PERSIST_DIR/raw_whiteouts.txt" 2>/dev/null ||
+            : > "$PERSIST_DIR/raw_whiteouts.txt"
+    fi
+
+    string="description=bootloop protection triggered. rolled back to the last working app list."
+    sed -i "s/^description=.*/$string/g" "$MODDIR/module.prop"
+
+    echo "BOOTCOUNT=0" > "$PERSIST_DIR/count.sh"
+    stop; reboot
+    exit 0
+elif [ $BOOTCOUNT -gt 1 ]; then # on 2nd post-fs-data without reaching service
     # system_server can read any of these copies. If the repair fails, keep
     # the module enabled so the next loop retries. With the whiteouts below
     # deleted, an enabled module hides nothing.
-    xml=/data/system/users/0/package-restrictions
+    # .bak is read because a retry runs after the list was moved there
+    pkgs=$(cat "$PERSIST_DIR"/nuke_list.txt "$PERSIST_DIR"/nuke_list.txt.old "$PERSIST_DIR"/nuke_list.txt.bak 2>/dev/null |
+        grep -Ev "^$|^#" | awk '{print $1}' | tr '\n' ' ')
+    xml=$SAN_TEST_ROOT/data/system/users/0/package-restrictions
     reinstall_packages "$xml.xml" "$xml-backup.xml" "$xml.xml.fallback" "$xml.xml.reservecopy" && touch $MODDIR/disable
 
     # remove whiteouts
