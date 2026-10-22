@@ -36,6 +36,12 @@ async function listSystemPackages(): Promise<string[]> {
   return stdout.split('\n').map(line => line.trim().replace(/^package:/, '')).filter(Boolean)
 }
 
+// pending apps first, then by the name shown in the list
+function byPendingThenLabel(a: AppInfo, b: AppInfo): number {
+  if (a.pending !== b.pending) return a.pending ? -1 : 1
+  return a.appLabel.localeCompare(b.appLabel, undefined, { sensitivity: 'base', numeric: true })
+}
+
 export default class AppList {
   #apps: AppInfo[] = []
   #nuking: NukeInfo[] = []
@@ -213,7 +219,7 @@ export default class AppList {
     const nukingPkgs = new Set(this.#nuking.map(app => app.packageName))
     return this.#apps
       .filter(app => !nukingPkgs.has(app.packageName))
-      .sort((a, b) => (a.pending === b.pending ? 0 : a.pending ? -1 : 1))
+      .sort(byPendingThenLabel)
   }
 
   /** Returns apps in the current nuke list. */
@@ -221,7 +227,7 @@ export default class AppList {
     const nukingPkgs = new Set(this.#nuking.map(app => app.packageName))
     return this.#apps
       .filter(app => nukingPkgs.has(app.packageName))
-      .sort((a, b) => (a.pending === b.pending ? 0 : a.pending ? -1 : 1))
+      .sort(byPendingThenLabel)
   }
 
   /** Pending nuked app list that will be nuked on next reboot. */

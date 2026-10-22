@@ -20,13 +20,13 @@ function load(relative, imports, globals = {}) {
   return module.exports
 }
 
-async function appsFixture(infos) {
+async function appsFixture(infos, extraPkgs = []) {
   const { parseNukeLine } = load('src/lib/nukeList.ts', {})
   const files = new Map([
     ['/persist/nuke_list.txt', 'com.pending  Pending'],
     ['/persist/nuke_list.txt.old', 'com.restore  Restore'],
   ])
-  const pkgs = ['com.pending', 'com.restore', 'com.installed']
+  const pkgs = ['com.pending', 'com.restore', 'com.installed', ...extraPkgs]
   const { default: AppList } = load('src/lib/AppList.ts', {
     'kernelsu-alt': {
       listPackages: async () => pkgs,
@@ -84,6 +84,17 @@ test('partial and reordered host metadata preserves each package and searchable 
   assert.deepEqual(new Set(all.map(app => app.packageName)), new Set(['com.pending', 'com.restore', 'com.installed']))
   assert.ok(all.every(app => typeof app.appLabel.toLowerCase() === 'string'))
   assert.equal(all.find(app => app.packageName === 'com.installed').appLabel, 'Installed')
+})
+
+test('app lists put pending apps first, then sort by app name', async () => {
+  const apps = await appsFixture([
+    { packageName: 'com.restore', appLabel: 'Zebra', isSystem: true },
+    { packageName: 'com.installed', appLabel: 'mango', isSystem: true },
+    { packageName: 'com.a', appLabel: 'Weather 10', isSystem: true },
+    { packageName: 'com.z', appLabel: 'apple', isSystem: true },
+    { packageName: 'com.m', appLabel: 'Weather 9', isSystem: true },
+  ], ['com.a', 'com.z', 'com.m'])
+  assert.deepEqual(apps.systemAppList.map(app => app.appLabel), ['Zebra', 'apple', 'mango', 'Weather 9', 'Weather 10'])
 })
 
 test('backup operations return failure when the host rejects execution', async () => {
