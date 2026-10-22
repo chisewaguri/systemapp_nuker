@@ -11,4 +11,8 @@ export DUMMYZIP=true
 # since atleast on ksu, kernelsu creates a new namespace for it it seems
 sh /data/adb/modules/system_app_nuker/nuke.sh || abort "Failed to rebuild module whiteouts"
 
+# let kernelsu swap the rebuilt module in without an update flag. older mountify
+# metainstall.sh does its own swap whenever it sees the request, so only ask ksud.
+[ "$KSU_HAS_HOT_INSTALL" = true ] && export MODULE_HOT_INSTALL_REQUEST=true
+
 # EOF

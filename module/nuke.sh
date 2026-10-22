@@ -484,7 +484,7 @@ install_dummy() {
     # verify installation
     if [ "$installed" = true ]; then
         # managers apply modules_update at boot without the update flag, and kernelsu
-        # will not open the webui while it exists
+        # will not open the webui while it exists. a hot install leaves none behind.
         rm -f "$MODDIR/update"
         return 0
     else

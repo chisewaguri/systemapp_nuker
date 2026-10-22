@@ -237,6 +237,16 @@ if [ "$ksu_is_metamodule" = true ] && [ "$mounting_mode" = "0" ]; then
     echo "[!]             Module WILL NOT be mounted. Please install a metamodule"
 fi
 
+# kernelsu swaps the whole module in after this script and leaves no update flag.
+# the new whiteouts still only mount on reboot. only ask when ksud says it can,
+# older mountify metainstall.sh does its own swap whenever it sees the request.
+if [ "$KSU_HAS_HOT_INSTALL" = true ]; then
+    export MODULE_HOT_INSTALL_REQUEST=true
+    echo "[✓] System App Nuker setup complete."
+    echo ""
+    return 0
+fi
+
 # swap the webui and scripts into the live module now so they work before the reboot.
 # whiteout trees and manager flags stay as they are, the new whiteouts apply on reboot.
 is_live_state() {
