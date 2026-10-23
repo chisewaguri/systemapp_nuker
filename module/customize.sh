@@ -54,7 +54,6 @@ set_config uninstall_only_mode $uninstall_only_mode
 # migrate old things
 migrated_list=""
 if [ -f "$PERSIST_DIR/nuke_list.json" ]; then
-    echo "[*] nuke_list.json found. Migrating..."
     # "<pkg> <path> <label>". json has the app_path, update needs it since
     # apps are still hidden by the old module's whiteouts
     migrated_list="$PERSIST_DIR/nuke_list.txt.new"
@@ -107,6 +106,8 @@ if [ "$nuke_status" -ne 0 ]; then
     rm -f "$migrated_list" "$NEW_CONFIG"
     abort "Failed to rebuild module whiteouts"
 fi
+# the spinner clears the screen, so report the migration after it
+[ -z "$migrated_list" ] || echo "[*] nuke_list.json found. Migrated to nuke_list.txt."
 
 # --- check for mountify requirements ---
 
