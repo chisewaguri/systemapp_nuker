@@ -60,7 +60,30 @@ Module scripts live in [module/](module/). Check them from the repository root:
 shellcheck -s sh -S error module/*.sh module/dummy_zip/customize.sh
 ```
 
-The WebUI test suite also exercises module scripts with simulated package-manager and filesystem operations. Real mounting, whiteouts and root-manager installation still need device testing. State which checks you ran and which device behavior you could not test.
+## Tests
+
+Tests live in [tests/](tests/), grouped by the code they exercise:
+
+- `tests/module/` covers installation, config migration, nuking and boot recovery.
+- `tests/webui/` covers app actions, file operations and UAD-ng integration.
+- `tests/helpers/` contains the shared shell selection and TypeScript loader.
+
+From the repository root, install the existing WebUI dependencies and run the full suite:
+
+```bash
+pnpm --dir webui install --frozen-lockfile
+pnpm --dir webui test
+```
+
+To run one suite directly:
+
+```bash
+node --test tests/module/installer.test.cjs
+```
+
+The tests use Node's built-in runner. CommonJS `.cjs` files load WebUI TypeScript through the shared helper, using TypeScript from `webui/node_modules`. There is no separate test dependency installation.
+
+Module tests run shell scripts with simulated package-manager and filesystem operations. They need a POSIX shell, available through Git Bash on Windows. Set `TEST_SHELL` to override the shell executable. Real mounting, whiteouts and root-manager installation still need device testing. State which checks you ran and which device behavior you could not test.
 
 ## Submitting changes
 
