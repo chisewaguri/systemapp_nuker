@@ -6,6 +6,7 @@ RAW_LIST="$PERSIST_DIR/raw_whiteouts.txt"
 # import config
 mounting_mode=0
 magic_mount=true
+nuke_mode=whiteout_uninstall
 [ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
 
 # === FUNCTIONS ===
@@ -126,16 +127,26 @@ fi
 # apps pm uninstalled before this boot that were restored before it
 PM_UNINSTALLED="$PERSIST_DIR/pm_uninstalled.txt"
 if [ -f "$PM_UNINSTALLED" ]; then
+    pending_restores="$PM_UNINSTALLED.new.$$"
+    : > "$pending_restores" || exit 1
     for pkg in $(cat "$PM_UNINSTALLED"); do
         awk -v pkg="$pkg" '$1 == pkg { found=1 } END { exit !found }' "$APPLIED" && continue
-        pm install-existing "$pkg" </dev/null >/dev/null 2>&1
+        pm install-existing "$pkg" </dev/null >/dev/null 2>&1 ||
+            echo "$pkg" >> "$pending_restores" || exit 1
     done
+    mv -f "$pending_restores" "$PM_UNINSTALLED" || exit 1
 fi
 
-# apps with no saved path have no whiteout, so they are uninstalled in every mode
+# pathless apps need uninstalling, except in whiteout-only mode
 FAILED_UNINSTALLS="$PERSIST_DIR/uninstall_failed.tmp"
 rm -f "$FAILED_UNINSTALLS"
-if [ "$uninstall_only_mode" = "true" ]; then
+if [ "$nuke_mode" = whiteout_only ]; then
+    to_uninstall=""
+    visible=$(pm list packages </dev/null) || exit 1
+    for pkg in $(grep -Ev "^$|^#" "$APPLIED" | awk '{print $1}'); do
+        echo "$visible" | grep -qx "package:$pkg" && echo "$pkg" >> "$FAILED_UNINSTALLS"
+    done
+elif [ "$nuke_mode" = uninstall_only ]; then
     to_uninstall=$(grep -Ev "^$|^#" "$APPLIED" | awk '{print $1}')
 else
     to_uninstall=$(grep -Ev "^$|^#" "$APPLIED" | awk '$2 !~ /^\/.*\.apk$/ || $2 ~ /^\/data\// {print $1}')
@@ -166,10 +177,16 @@ if [ -s "$SNAPSHOT" ] && [ "$(tail -c 1 "$SNAPSHOT" | wc -l)" -eq 0 ]; then
 fi
 [ ! -f "$FAILED_RESTORES" ] || cat "$FAILED_RESTORES" >> "$SNAPSHOT" || { rm -f "$SNAPSHOT"; exit 1; }
 mv -f "$SNAPSHOT" "$REMOVE_LIST.old" || { rm -f "$SNAPSHOT"; exit 1; }
-rm -f "$FAILED_RESTORES" "$FAILED_UNINSTALLS" "$APPLIED" "$PM_UNINSTALLED"
+rm -f "$FAILED_RESTORES" "$FAILED_UNINSTALLS" "$APPLIED"
+[ -s "$PM_UNINSTALLED" ] || rm -f "$PM_UNINSTALLED"
 [ -f "$RAW_LIST" ] || touch "$RAW_LIST" || exit 1
 RAW_SNAPSHOT="$RAW_LIST.old.new.$$"
 cp -f "$RAW_LIST" "$RAW_SNAPSHOT" || { rm -f "$RAW_SNAPSHOT"; exit 1; }
 mv -f "$RAW_SNAPSHOT" "$RAW_LIST.old" || { rm -f "$RAW_SNAPSHOT"; exit 1; }
+
+for list in "$REMOVE_LIST" "$RAW_LIST"; do
+    cp -f "$list.old" "$list.boot.new" && mv -f "$list.boot.new" "$list.boot" || exit 1
+    cp -f "$list.old" "$list.last.new" && mv -f "$list.last.new" "$list.last" || exit 1
+done
 
 # EOF

@@ -15,6 +15,7 @@ import WhiteoutIcon from '../assets/folder_off.svg?react'
 import { runMutation } from '../lib/mutationLock'
 import LoadError from '../components/LoadError'
 import CreditsDialog from '../components/dialog/CreditsDialog'
+import { isDev } from '../lib/utils'
 import { updateUad, uadReady, uadSource, type UadSource } from '../lib/uad'
 
 export default function Settings() {
@@ -26,6 +27,8 @@ export default function Settings() {
   const [items, setItems] = useState<ConfigLib['config']>([])
   const [fileSelectorOpen, setFileSelectorOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [lateLoaded, setLateLoaded] = useState<boolean | null>(null)
+  const [pendingMode, setPendingMode] = useState<string | null>(null)
   const [uad, setUad] = useState<UadSource>(uadSource)
   const [uadUpdating, setUadUpdating] = useState(false)
   const [creditsOpen, setCreditsOpen] = useState(false)
@@ -50,6 +53,11 @@ export default function Settings() {
       setConfig(cfg)
       setItems(cfg.config)
     }).catch(() => setLoadFailed(true))
+  }, [])
+
+  useEffect(() => {
+    if (isDev()) setLateLoaded(false)
+    else Cli.isLateLoaded().then(setLateLoaded).catch(() => setLateLoaded(null))
   }, [])
 
   const handleSave = async (key: string, value: string | boolean | number) => {
@@ -203,13 +211,40 @@ export default function Settings() {
     },
   ]
 
+  const hasMetamodule = items.some(item => item.key === 'mounting_mode' && item.value === 2)
+
   return (
     <>
       <Header title={t('settings.title')} />
       <div className="text-sm text-primary ps-8 pb-2">
         {t('settings.config')}
       </div>
-      <Config items={items} onSave={handleSave} disabled={saving} />
+      {lateLoaded !== false && (
+        <p className="px-8 pb-3 text-sm text-on-surface-variant">{t(lateLoaded === null ? 'config.late_load_unknown' : 'config.late_load_warning')}</p>
+      )}
+      {lateLoaded === true && !hasMetamodule && (
+        <p className="px-8 pb-3 text-sm text-on-surface-variant">{t('config.mounting_notice')}</p>
+      )}
+      <Config items={items} onSave={(key, value) => {
+        if (key === 'nuke_mode' && value !== 'whiteout_only' && lateLoaded !== false && typeof value === 'string') {
+          setItems([...config.config])
+          setPendingMode(value)
+        } else handleSave(key, value)
+      }} disabled={saving} />
+      {items.some(item => item.key === 'nuke_mode' && item.value === 'whiteout_only') && (
+        <p className="px-8 pb-3 text-sm text-on-surface-variant">{t('config.whiteout_notice')}</p>
+      )}
+      <md-dialog open={pendingMode !== null} onClosed={() => setPendingMode(null)}>
+        <div slot="headline">{t('config.late_load_confirm')}</div>
+        <div slot="content">{t('config.late_load_warning')}</div>
+        <div slot="actions">
+          <md-text-button onClick={() => setPendingMode(null)}>{t('whiteout.cancel')}</md-text-button>
+          <md-filled-button onClick={() => {
+            if (pendingMode !== null) handleSave('nuke_mode', pendingMode)
+            setPendingMode(null)
+          }}>{t('config.late_load_accept')}</md-filled-button>
+        </div>
+      </md-dialog>
       <div className="text-sm text-primary ps-8 pb-2">
         {t('settings.advanced')}
       </div>

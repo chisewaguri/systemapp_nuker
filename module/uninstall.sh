@@ -4,7 +4,10 @@ PERSIST_DIR="/data/adb/system_app_nuker"
 
 # pending (.txt) and bootloop backup (.bak) entries can be uninstalled too
 restore_success=true
-pkgs=$(cat "$PERSIST_DIR/nuke_list.txt.old" "$PERSIST_DIR/nuke_list.txt" "$PERSIST_DIR/nuke_list.txt.bak" 2>/dev/null |
+pkgs=$({ for list in nuke_list.txt.old nuke_list.txt nuke_list.txt.bak pm_uninstalled.txt; do
+    cat "$PERSIST_DIR/$list" 2>/dev/null
+    echo
+ done; } |
     grep -Ev "^$|^#" | awk '{print $1}' | sort -u)
 for pkg in $pkgs; do
     if ! pm path "$pkg" </dev/null >/dev/null 2>&1; then
