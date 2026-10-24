@@ -1,122 +1,69 @@
 # Contributing to System App Nuker
 
-## Adding App Categories
+## App descriptions and removal levels
 
-Thanks for helping keep the app list accurate and up-to-date!
+System App Nuker uses [UAD-ng's app list](https://github.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation) for descriptions and removal levels. Submit package additions, description fixes and removal-level changes upstream to UAD-ng, not to this repository. There is no local `category.ts` list anymore.
 
-Edit [webui/src/data/category.ts](webui/src/data/category.ts) — add the package name to the appropriate array:
+The WebUI shows UAD-ng's recommended, advanced, expert and unsafe levels. Missing packages or unrecognized levels appear as unknown. These labels are guidance, not a guarantee that removing an app is safe on every device.
 
-```ts
-export const essential: string[] = [
-  "com.android.settings",   // ← existing entry, example
-  "com.example.newapp",     // ← your addition
-];
+For problems with how System App Nuker loads or displays the list, open an issue here. Include the package name and what looks wrong.
+
+### Working on the UAD-ng integration
+
+- [webui/src/lib/uad.ts](webui/src/lib/uad.ts) loads the list and maps removal levels.
+- [webui/scripts/fetch-uad.cjs](webui/scripts/fetch-uad.cjs) downloads and trims the upstream list into `webui/public/uad.json` for bundling.
+- The WebUI prefers the copy downloaded through Settings, then the bundled copy. If neither is available, every app appears as unknown.
+
+To include the bundled list in a local build, run this from `webui/` before building:
+
+```bash
+node scripts/fetch-uad.cjs
 ```
 
-Pick the right array name: `essential`, `caution`, `safe`, `google`, or `unknown`.
+Do not edit or commit the generated `webui/public/uad.json`. CI fetches it before building. Release builds require the download to succeed. Other CI builds can continue without it.
 
-### Tips
+## WebUI development
 
-- Search the file to avoid duplicates
-- Describe your additions in the PR description
-
----
-
-## WebUI Development
-
-The WebUI is a [Vite](https://vite.dev) + [React](https://react.dev) + [TypeScript](https://www.typescriptlang.org/) project in [webui/](webui/).
-
-### Setup
+The [webui/](webui/) directory contains the Vite, React and TypeScript frontend.
 
 ```bash
 cd webui
 pnpm install --frozen-lockfile
-```
-
-### Dev server (local browser)
-
-```bash
 pnpm dev
 ```
 
-Opens a hot-reload dev server — the WebUI runs entirely in the browser. No device needed for UI work.
+The dev server uses mock device data for browser-based UI work. It does not test root commands, mounting or installation.
 
-### Production build
+Before submitting frontend changes, run:
 
 ```bash
+pnpm lint
+pnpm test
 pnpm build
 ```
 
-Output goes to `module/webroot/`. Always run `pnpm build` before submitting frontend changes.
+The build writes to `module/webroot/`. Do not commit the generated output.
 
-### Project structure
+### Config options
 
-```
-webui/
-├── src/
-│   ├── components/       # Reusable UI components
-│   │   └── dialog/       # Dialog components
-│   ├── data/
-│   │   ├── category.ts   # App categories
-│   │   ├── config.ts     # Mirrors module/config.sh (see below)
-│   │   └── i18n/         # Translation files
-│   ├── hooks/            # Custom React hooks
-│   ├── lib/              # Core logic (CLI bridge, app list handling, file ops)
-│   ├── pages/            # Route pages (Home, Restore, Settings, Whiteout)
-│   ├── assets/           # Icons
-│   ├── main.tsx          # Entry point
-│   └── theme.css         # Design tokens
-├── index.html
-├── vite.config.ts
-└── package.json
+[webui/src/data/config.ts](webui/src/data/config.ts) mirrors [module/config.sh](module/config.sh). When adding an option, add its default to both files, add its labels to [webui/src/data/i18n/en.ts](webui/src/data/i18n/en.ts), and check that [module/customize.sh](module/customize.sh) preserves existing settings during updates.
+
+### Translations
+
+Copy [webui/src/data/i18n/en.ts](webui/src/data/i18n/en.ts) into a new language file and translate its values. Register it in [webui/src/lib/i18n.ts](webui/src/lib/i18n.ts). The current language is set there with `lng`.
+
+## Module scripts
+
+Module scripts live in [module/](module/). Check them from the repository root:
+
+```bash
+shellcheck -s sh -S error module/*.sh module/dummy_zip/customize.sh
 ```
 
-### Config mapping
+The WebUI test suite also exercises module scripts with simulated package-manager and filesystem operations. Real mounting, whiteouts and root-manager installation still need device testing. State which checks you ran and which device behavior you could not test.
 
-[webui/src/data/config.ts](webui/src/data/config.ts) mirrors [module/config.sh](module/config.sh). Keys and default values are kept in sync between both files. When adding a new config option:
-1. Add the variable with its default to `module/config.sh`
-2. Add the corresponding entry to `webui/src/data/config.ts`
+## Submitting changes
 
-### Adding a translation
+Fork the repository, create a branch and submit a pull request. Explain what changes and how you tested it. Keep unrelated changes separate.
 
-1. Create a new file in [webui/src/data/i18n/](webui/src/data/i18n/), e.g. `zh.ts`
-2. Copy the structure from [webui/src/data/i18n/en.ts](webui/src/data/i18n/en.ts) and translate the values
-3. Register it in [webui/src/lib/i18n.ts](webui/src/lib/i18n.ts):
-
-```ts
-import zh from '../data/i18n/zh'
-
-resources: {
-  en: { translation: en },
-  zh: { translation: zh },  // ← add
-}
-```
-
----
-
-## Code Contributions
-
-- Use clear variable names
-- Comment complex operations
-
----
-
-## How to Submit Changes
-
-1. Fork the repository.
-2. Create a new branch.
-3. Make your changes:
-   - **WebUI frontend** → files under [webui/src/](webui/src/)
-   - **Module scripts** → files under [module/](module/)
-4. Submit a pull request.
-
----
-
-## Reporting Issues
-
-Include:
-- Device model
-- Android version
-- Root solution and version (Magisk/KernelSU/Apatch)
-- Steps to reproduce
-- Any error messages
+For bugs, use the issue template and include reproduction steps, your module and root-manager versions, your Android version and device, and any relevant logs or screenshots.
