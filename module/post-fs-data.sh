@@ -22,6 +22,10 @@ if [ $BOOTCOUNT -lt 0 ]; then
 fi
 
 BOOTCOUNT=$(( BOOTCOUNT + 1))
+BOOT_LIST="$PERSIST_DIR/nuke_list.txt.boot"
+BOOT_RAW="$PERSIST_DIR/raw_whiteouts.txt.boot"
+[ -f "$BOOT_LIST" ] || BOOT_LIST="$PERSIST_DIR/nuke_list.txt.old"
+[ -f "$BOOT_RAW" ] || BOOT_RAW="$PERSIST_DIR/raw_whiteouts.txt.old"
 
 # pm uninstall --user 0 only writes inst="false" into package-restrictions,
 # and pm cant run while system_server is looping, so undo it in the file.
@@ -63,12 +67,12 @@ reinstall_packages() {
 
 # apps and raw paths added since the last boot that reached service
 added_pkgs() {
-    awk 'NR == FNR { if (!/^$|^#/) old[$1] = 1; next } !/^$|^#/ && !($1 in old) { printf "%s ", $1 }' \
-        "$PERSIST_DIR/nuke_list.txt.old" "$PERSIST_DIR/nuke_list.txt" 2>/dev/null
+    { cat "$BOOT_LIST" 2>/dev/null; echo; echo "#san-split"; cat "$PERSIST_DIR/nuke_list.txt" 2>/dev/null; } |
+        awk '$0 == "#san-split" { new = 1; next } !new { old[$1] = 1; next } !/^$|^#/ && !($1 in old) { printf "%s ", $1 }'
 }
 # a missing snapshot counts as empty, so every raw path is new
 added_raw() {
-    { cat "$PERSIST_DIR/raw_whiteouts.txt.old" 2>/dev/null; echo "#san-split"; cat "$PERSIST_DIR/raw_whiteouts.txt" 2>/dev/null; } |
+    { cat "$BOOT_RAW" 2>/dev/null; echo; echo "#san-split"; cat "$PERSIST_DIR/raw_whiteouts.txt" 2>/dev/null; } |
         awk '$0 == "#san-split" { new = 1; next } !new { old[$0] = 1; next } !/^$|^#/ && !($0 in old)'
 }
 
@@ -80,14 +84,14 @@ good_whiteouts() {
             dir = $2; sub(/\/[^\/]*$/, "", dir)
             parent = dir; sub(/\/[^\/]*$/, "", parent)
             print (parent ~ /\/(app|priv-app)$/) ? dir : $2
-        }' "$PERSIST_DIR/nuke_list.txt.old"
-        grep -Ev '^$|^#' "$PERSIST_DIR/raw_whiteouts.txt.old" 2>/dev/null
+        }' "$BOOT_LIST"
+        grep -Ev '^$|^#' "$BOOT_RAW" 2>/dev/null
     } | sed 's|^/system/||; s|^/||; s|^|/system/|'
 }
 
 # first try keeping the last good setup and dropping only what was added since.
 # if that still loops, nothing is left to drop and the full wipe below runs.
-if [ $BOOTCOUNT -gt 1 ] && [ -f "$PERSIST_DIR/nuke_list.txt.old" ] &&
+if [ $BOOTCOUNT -gt 1 ] && [ -f "$BOOT_LIST" ] &&
     { [ -n "$(added_pkgs)" ] || [ -n "$(added_raw)" ]; }; then
     pkgs=$(added_pkgs)
     xml=$SAN_TEST_ROOT/data/system/users/0/package-restrictions
@@ -101,10 +105,10 @@ if [ $BOOTCOUNT -gt 1 ] && [ -f "$PERSIST_DIR/nuke_list.txt.old" ] &&
     done
 
     mv -f "$PERSIST_DIR/nuke_list.txt" "$PERSIST_DIR/nuke_list.txt.bak"
-    cp -f "$PERSIST_DIR/nuke_list.txt.old" "$PERSIST_DIR/nuke_list.txt"
+    cp -f "$BOOT_LIST" "$PERSIST_DIR/nuke_list.txt"
     if [ -n "$(added_raw)" ]; then
         mv -f "$PERSIST_DIR/raw_whiteouts.txt" "$PERSIST_DIR/raw_whiteouts.txt.bak"
-        cp -f "$PERSIST_DIR/raw_whiteouts.txt.old" "$PERSIST_DIR/raw_whiteouts.txt" 2>/dev/null ||
+        cp -f "$BOOT_RAW" "$PERSIST_DIR/raw_whiteouts.txt" 2>/dev/null ||
             : > "$PERSIST_DIR/raw_whiteouts.txt"
     fi
 
@@ -119,7 +123,7 @@ elif [ $BOOTCOUNT -gt 1 ]; then # on 2nd post-fs-data without reaching service
     # the module enabled so the next loop retries. With the whiteouts below
     # deleted, an enabled module hides nothing.
     # .bak is read because a retry runs after the list was moved there
-    pkgs=$(cat "$PERSIST_DIR"/nuke_list.txt "$PERSIST_DIR"/nuke_list.txt.old "$PERSIST_DIR"/nuke_list.txt.bak 2>/dev/null |
+    pkgs=$(cat "$PERSIST_DIR"/nuke_list.txt "$PERSIST_DIR"/nuke_list.txt.old "$BOOT_LIST" "$PERSIST_DIR"/nuke_list.txt.bak 2>/dev/null |
         grep -Ev "^$|^#" | awk '{print $1}' | tr '\n' ' ')
     xml=$SAN_TEST_ROOT/data/system/users/0/package-restrictions
     reinstall_packages "$xml.xml" "$xml-backup.xml" "$xml.xml.fallback" "$xml.xml.reservecopy" && touch $MODDIR/disable

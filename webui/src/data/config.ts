@@ -9,10 +9,11 @@ export interface ConfigItem {
 
 export const configItem: ConfigItem[] = [
     {
-        key: 'uninstall_only_mode',
-        value: false,
-        label: 'config.uninstall_only_mode',
-        description: 'config.uninstall_only_mode_desc',
+        key: 'nuke_mode',
+        value: 'whiteout_uninstall',
+        options: ['whiteout_only', 'whiteout_uninstall', 'uninstall_only'],
+        label: 'config.nuke_mode',
+        description: 'config.nuke_mode_desc',
     },
     {
         key: 'mounting_mode',

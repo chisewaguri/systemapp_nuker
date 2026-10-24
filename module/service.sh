@@ -6,6 +6,7 @@ RAW_LIST="$PERSIST_DIR/raw_whiteouts.txt"
 # import config
 mounting_mode=0
 magic_mount=true
+nuke_mode=whiteout_uninstall
 [ -f "$PERSIST_DIR/config.sh" ] && . $PERSIST_DIR/config.sh
 
 # === FUNCTIONS ===
@@ -132,10 +133,16 @@ if [ -f "$PM_UNINSTALLED" ]; then
     done
 fi
 
-# apps with no saved path have no whiteout, so they are uninstalled in every mode
+# pathless apps need uninstalling, except in whiteout-only mode
 FAILED_UNINSTALLS="$PERSIST_DIR/uninstall_failed.tmp"
 rm -f "$FAILED_UNINSTALLS"
-if [ "$uninstall_only_mode" = "true" ]; then
+if [ "$nuke_mode" = whiteout_only ]; then
+    to_uninstall=""
+    visible=$(pm list packages </dev/null) || exit 1
+    for pkg in $(grep -Ev "^$|^#" "$APPLIED" | awk '{print $1}'); do
+        echo "$visible" | grep -qx "package:$pkg" && echo "$pkg" >> "$FAILED_UNINSTALLS"
+    done
+elif [ "$nuke_mode" = uninstall_only ]; then
     to_uninstall=$(grep -Ev "^$|^#" "$APPLIED" | awk '{print $1}')
 else
     to_uninstall=$(grep -Ev "^$|^#" "$APPLIED" | awk '$2 !~ /^\/.*\.apk$/ || $2 ~ /^\/data\// {print $1}')
@@ -171,5 +178,10 @@ rm -f "$FAILED_RESTORES" "$FAILED_UNINSTALLS" "$APPLIED" "$PM_UNINSTALLED"
 RAW_SNAPSHOT="$RAW_LIST.old.new.$$"
 cp -f "$RAW_LIST" "$RAW_SNAPSHOT" || { rm -f "$RAW_SNAPSHOT"; exit 1; }
 mv -f "$RAW_SNAPSHOT" "$RAW_LIST.old" || { rm -f "$RAW_SNAPSHOT"; exit 1; }
+
+for list in "$REMOVE_LIST" "$RAW_LIST"; do
+    cp -f "$list.old" "$list.boot.new" && mv -f "$list.boot.new" "$list.boot" || exit 1
+    cp -f "$list.old" "$list.last.new" && mv -f "$list.last.new" "$list.last" || exit 1
+done
 
 # EOF

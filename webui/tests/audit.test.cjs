@@ -165,7 +165,8 @@ test('whiteouts hide an app folder only under app or priv-app', () => {
     assert.equal(result.stdout.trim(), expected, apk)
   }
 })
-test('a webui nuke whiteouts app folders and lone overlay apks, records paths and uninstalls for user 0', t => {
+for (const mode of ['whiteout_only', 'whiteout_uninstall', 'uninstall_only']) {
+test(`a webui nuke applies ${mode} without crossing mode boundaries`, t => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-flow-test-')).replace(/\\/g, '/')
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
   const persist = `${dir}/data/adb/system_app_nuker`
@@ -173,13 +174,15 @@ test('a webui nuke whiteouts app folders and lone overlay apks, records paths an
   fs.mkdirSync(persist, { recursive: true })
   fs.mkdirSync(`${dir}/data/adb/modules/system_app_nuker`, { recursive: true })
   fs.writeFileSync(`${dir}/data/adb/modules/system_app_nuker/nuke.sh`, '')
+  fs.writeFileSync(`${persist}/config.sh`, `nuke_mode=${mode}\n`)
   fs.writeFileSync(`${persist}/nuke_list.txt`, 'com.a  App A\ncom.ov  Overlay')
   fs.writeFileSync(`${dir}/bin/pm`, `#!/bin/sh
 case "$1 $2" in
-  "list packages") case "$*" in *factory-only*) ;; *-s*) printf 'package:com.a\\npackage:com.ov\\n' ;; *) echo "package:$3" ;; esac ;;
+  "list packages") case "$*" in *factory-only*) ;; *-s*) printf 'package:com.a\\npackage:com.ov\\n' ;; *) if [ ! -f "${dir}/uninstalled" ] || ! grep -qx "$3" "${dir}/uninstalled"; then echo "package:$3"; fi ;; esac ;;
   "path com.a") echo package:/system/app/A/A.apk ;;
   "path com.ov") echo package:/product/overlay/Ov.apk ;;
   "uninstall -k") echo "$5" >> "${dir}/uninstalled" ;;
+  "uninstall --user") echo "$4" >> "${dir}/uninstalled" ;;
 esac
 `)
   fs.writeFileSync(`${dir}/bin/busybox`, '#!/bin/sh\n[ "$1" = mknod ] && : > "$2"\nexit 0\n')
@@ -190,12 +193,19 @@ esac
   if (result.error) throw result.error
   assert.equal(result.status, 0, result.stderr)
   const update = `${dir}/data/adb/modules_update/system_app_nuker`
-  assert.ok(fs.statSync(`${update}/system/app/A`).isFile())
-  assert.ok(fs.statSync(`${update}/system/product/overlay/Ov.apk`).isFile())
-  assert.equal(fs.readFileSync(`${persist}/nuke_list.txt`, 'utf8'), 'com.a /system/app/A/A.apk App A\ncom.ov /product/overlay/Ov.apk Overlay\n')
-  assert.equal(fs.readFileSync(`${dir}/uninstalled`, 'utf8'), 'com.a\ncom.ov\n')
+  if (mode !== 'uninstall_only') {
+    assert.ok(fs.statSync(`${update}/system/app/A`).isFile())
+    assert.ok(fs.statSync(`${update}/system/product/overlay/Ov.apk`).isFile())
+    assert.equal(fs.readFileSync(`${persist}/nuke_list.txt`, 'utf8'), 'com.a /system/app/A/A.apk App A\ncom.ov /product/overlay/Ov.apk Overlay\n')
+  } else {
+    assert.ok(!fs.existsSync(`${update}/system/app/A`))
+  }
+  if (mode === 'whiteout_only') assert.ok(!fs.existsSync(`${dir}/uninstalled`))
+  else assert.equal(fs.readFileSync(`${dir}/uninstalled`, 'utf8'), 'com.a\ncom.ov\n')
 })
-test('a bootloop first rolls back to the last good list, then wipes everything if it loops again', t => {
+}
+for (const bootBaseline of [null, '', 'com.old /system/app/Old/Old.apk Old']) {
+test(`a bootloop rolls back then wipes on another loop, with ${bootBaseline === null ? 'legacy' : bootBaseline ? 'distinct' : 'empty'} baseline`, t => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-loop-test-')).replace(/\\/g, '/')
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
   const persist = `${dir}/data/adb/system_app_nuker`
@@ -205,6 +215,11 @@ test('a bootloop first rolls back to the last good list, then wipes everything i
   fs.writeFileSync(`${mod}/module.prop`, 'description=x\n')
   fs.writeFileSync(`${persist}/nuke_list.txt.old`, 'com.old /system/app/Old/Old.apk Old\n')
   fs.writeFileSync(`${persist}/nuke_list.txt`, 'com.old /system/app/Old/Old.apk Old\ncom.new /system/app/New/New.apk New\ncom.ov /product/overlay/Ov.apk Ov\n')
+  if (bootBaseline !== null) {
+    fs.writeFileSync(`${persist}/nuke_list.txt.boot`, bootBaseline)
+    fs.writeFileSync(`${persist}/raw_whiteouts.txt.boot`, '')
+    fs.copyFileSync(`${persist}/nuke_list.txt`, `${persist}/nuke_list.txt.old`)
+  }
   fs.writeFileSync(`${persist}/raw_whiteouts.txt`, '/system/media/bootanim.zip\n')
   // char devices cant be made here, so find reports marked files as whiteouts
   for (const w of ['system/app/Old/Old.apk.w', 'system/app/New/New.apk.w', 'system/product/overlay/Ov.apk.w']) fs.writeFileSync(`${mod}/${w}`, '')
@@ -221,10 +236,10 @@ test('a bootloop first rolls back to the last good list, then wipes everything i
 
   fs.writeFileSync(`${persist}/count.sh`, 'BOOTCOUNT=1\n')
   boot()
-  assert.ok(fs.existsSync(`${mod}/system/app/Old/Old.apk.w`), 'last good whiteout kept')
+  assert.equal(fs.existsSync(`${mod}/system/app/Old/Old.apk.w`), bootBaseline !== '', 'only last good whiteouts kept')
   assert.ok(!fs.existsSync(`${mod}/system/app/New/New.apk.w`), 'new app whiteout dropped')
   assert.ok(!fs.existsSync(`${mod}/system/product/overlay/Ov.apk.w`), 'new overlay whiteout dropped')
-  assert.equal(fs.readFileSync(`${persist}/nuke_list.txt`, 'utf8'), 'com.old /system/app/Old/Old.apk Old\n')
+  assert.equal(fs.readFileSync(`${persist}/nuke_list.txt`, 'utf8'), bootBaseline ?? 'com.old /system/app/Old/Old.apk Old\n')
   assert.ok(fs.readFileSync(`${persist}/nuke_list.txt.bak`, 'utf8').includes('com.new'))
   assert.equal(fs.readFileSync(`${persist}/raw_whiteouts.txt`, 'utf8'), '')
   assert.equal(fs.readFileSync(`${persist}/count.sh`, 'utf8').trim(), 'BOOTCOUNT=0')
@@ -237,6 +252,55 @@ test('a bootloop first rolls back to the last good list, then wipes everything i
   assert.equal(fs.readFileSync(`${persist}/count.sh`, 'utf8').trim(), 'BOOTCOUNT=-1')
   assert.equal(fs.readFileSync(`${dir}/calls`, 'utf8'), 'stop\nreboot\nstop\nreboot\n')
 })
+}
+for (const baseline of ['', 'com.boot /system/app/Boot/Boot.apk Boot\n']) {
+  test(`failed repeated webui nukes restore successful state with ${baseline ? 'populated' : 'empty'} boot baseline`, t => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-transaction-')).replace(/\\/g, '/')
+    t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+    const source = fs.readFileSync(path.join(root, '../module/nuke.sh'), 'utf8')
+    const replace = source.match(/replace_file\(\) \{[\s\S]*?\n\}/)[0]
+    const transaction = source.split('# lets have customize.sh of dummy.zip call us.')[1].split('\nif [ "$update" = true ]; then')[0]
+    const persist = `${dir}/persist`
+    const staged = `${dir}/modules_update/module`
+    fs.mkdirSync(persist)
+    fs.writeFileSync(`${persist}/nuke_list.txt.old`, baseline)
+    fs.writeFileSync(`${persist}/raw_whiteouts.txt.old`, '')
+    const run = fail => {
+      const result = spawnSync(shell, ['-c', `
+PERSIST_DIR='${persist}'
+REMOVE_LIST="$PERSIST_DIR/nuke_list.txt"
+MODULE_UPDATE_DIR='${staged}'
+update=false
+${replace}
+prepare_nuke_list() { return 0; }
+reinstall_unlisted() { return 0; }
+install_dummy() {
+  [ "$(cat "$REMOVE_LIST.last")" = "$(cat "$REMOVE_LIST")" ] || exit 99
+  rm -rf "$MODULE_UPDATE_DIR"
+  ${fail ? 'return 1' : 'mkdir -p "$MODULE_UPDATE_DIR/system/app"; echo staged > "$MODULE_UPDATE_DIR/system/app/whiteout"'}
+}
+${transaction}`], { encoding: 'utf8' })
+      if (result.error) throw result.error
+      assert.equal(result.status, fail ? 1 : 0, result.stderr)
+    }
+    for (const selected of ['first', 'second']) {
+      fs.writeFileSync(`${persist}/nuke_list.txt`, selected)
+      fs.writeFileSync(`${persist}/raw_whiteouts.txt`, `/system/${selected}`)
+      run(false)
+      fs.writeFileSync(`${persist}/nuke_list.txt.old`, 'UI applied state')
+      for (let attempt = 0; attempt < 2; attempt++) {
+        fs.writeFileSync(`${persist}/nuke_list.txt`, 'pending user edits')
+        fs.writeFileSync(`${persist}/raw_whiteouts.txt`, '/system/pending')
+        run(true)
+        assert.equal(fs.readFileSync(`${persist}/nuke_list.txt`, 'utf8'), selected)
+        assert.equal(fs.readFileSync(`${persist}/raw_whiteouts.txt`, 'utf8'), `/system/${selected}`)
+        assert.equal(fs.readFileSync(`${staged}/system/app/whiteout`, 'utf8'), 'staged\n')
+        assert.equal(fs.readFileSync(`${persist}/nuke_list.txt.boot`, 'utf8'), baseline)
+      }
+    }
+  })
+}
+
 test('cached apk paths match the exact package and skip /data copies', t => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-cache-test-'))
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
@@ -508,4 +572,190 @@ test('icon cache saves at nuke time and serves only data image urls back', async
 
   files.set('/persist/icons/com.bad', 'javascript:alert(1)')
   assert.equal(await savedIcon('com.bad'), null)
+})
+
+for (const context of ['dummy', 'update']) {
+  test(`whiteout only leaves updated and pathless apps untouched during ${context}`, t => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-mode-')).replace(/\\/g, '/')
+    t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+    const persist = `${dir}/data/adb/system_app_nuker`
+    const mod = `${dir}/data/adb/modules/system_app_nuker`
+    for (const d of [`${dir}/bin`, persist, mod]) fs.mkdirSync(d, { recursive: true })
+    fs.writeFileSync(`${mod}/nuke.sh`, '')
+    fs.writeFileSync(`${persist}/config.sh`, 'nuke_mode=whiteout_only\n')
+    fs.writeFileSync(`${persist}/nuke_list.txt`, 'com.updated  Updated\ncom.legacy  Legacy')
+    fs.writeFileSync(`${dir}/bin/pm`, `#!/bin/sh
+case "$1 $2" in
+  "list packages") case "$*" in *factory-only*) echo 'package:/system/app/Updated/Updated.apk=com.updated' ;; *) echo package:com.updated ;; esac ;;
+  "path com.updated") echo package:/data/app/updated/base.apk ;;
+  uninstall*|enable*|install-existing*) echo "$*" >> "${dir}/mutations"; exit 1 ;;
+esac
+`)
+    fs.writeFileSync(`${dir}/bin/busybox`, '#!/bin/sh\n[ "$1" = mknod ] && : > "$2"\nexit 0\n')
+    for (const f of ['pm', 'busybox']) fs.chmodSync(`${dir}/bin/${f}`, 0o755)
+    const bin = process.platform === 'win32' ? `$(cygpath -u '${dir}/bin')` : `${dir}/bin`
+    const script = path.join(root, '../module/nuke.sh').replace(/\\/g, '/')
+    const result = spawnSync(shell, ['-c', `PATH="${bin}:$PATH" SAN_TEST_ROOT="${dir}" ${context === 'dummy' ? 'DUMMYZIP=true' : ''} sh "${script}" ${context === 'update' ? 'update' : ''}`], { encoding: 'utf8' })
+    assert.equal(result.status, 0, result.stderr)
+    assert.ok(!fs.existsSync(`${dir}/mutations`))
+    assert.ok(fs.existsSync(`${dir}/data/adb/modules_update/system_app_nuker/system/app/Updated`))
+    assert.match(fs.readFileSync(`${persist}/nuke_list.txt`, 'utf8'), /com.updated \/system\/app\/Updated\/Updated.apk Updated/)
+  })
+}
+
+test('installer migrates old modes and defaults late-load to whiteout only with a metamodule', () => {
+  const source = fs.readFileSync(path.join(root, '../module/customize.sh'), 'utf8')
+  const migration = source.slice(source.indexOf('if [ -z "$nuke_mode" ]'), source.indexOf('set_config nuke_mode'))
+  for (const [env, expected] of [
+    ['', 'whiteout_uninstall'],
+    ['mounting_mode=2;', 'whiteout_uninstall'],
+    ['uninstall_only_mode=true;', 'uninstall_only'],
+    ['disable_only_mode=true;', 'uninstall_only'],
+    ['KSU_LATE_LOAD=1; mounting_mode=2;', 'whiteout_only'],
+    [`OLD_CONFIG='${root}/../module/config.sh'; KSU_LATE_LOAD=1; mounting_mode=2; uninstall_only_mode=true;`, 'uninstall_only'],
+    [`OLD_CONFIG='${root}/../module/config.sh'; KSU_LATE_LOAD=1; mounting_mode=2; uninstall_only_mode=false;`, 'whiteout_uninstall'],
+    [`OLD_CONFIG='${root}/../module/config.sh'; KSU_LATE_LOAD=1; mounting_mode=2; disable_only_mode=true;`, 'uninstall_only'],
+    ['KSU_LATE_LOAD=1; mounting_mode=2; nuke_mode=uninstall_only;', 'uninstall_only'],
+    ['KSU_LATE_LOAD=1; mounting_mode=1;', 'whiteout_uninstall'],
+    ['KSU_LATE_LOAD=1; mounting_mode=0; uninstall_only_mode=true;', 'uninstall_only'],
+    ...['whiteout_only', 'whiteout_uninstall', 'uninstall_only'].flatMap(mode =>
+      [0, 1, 2].flatMap(mounting => [0, 1].map(late => [
+        `nuke_mode=${mode}; mounting_mode=${mounting}; KSU_LATE_LOAD=${late};`, mode,
+      ]))),
+  ]) {
+    const result = spawnSync(shell, ['-c', `${env} ${migration}
+echo "$nuke_mode"`], { encoding: 'utf8' })
+    assert.equal(result.status, 0, result.stderr)
+    assert.equal(result.stdout.trim(), expected)
+  }
+})
+
+test('installer upgrades legacy configs and lists without losing saved state', async t => {
+  const installer = fs.readFileSync(path.join(root, '../module/customize.sh'), 'utf8')
+  const template = fs.readFileSync(path.join(root, '../module/config.sh'), 'utf8')
+  for (const [oldConfig, late, metamodule, expected, fail] of [
+    ['', false, false, 'whiteout_uninstall', false],
+    ['uninstall_only_mode=false', false, false, 'whiteout_uninstall', false],
+    ['uninstall_only_mode=true', false, false, 'uninstall_only', false],
+    ['disable_only_mode=true', false, false, 'uninstall_only', false],
+    [null, true, true, 'whiteout_only', false],
+    ['', true, true, 'whiteout_uninstall', false],
+    ['uninstall_only_mode=false', true, true, 'whiteout_uninstall', false],
+    ['uninstall_only_mode=true', true, true, 'uninstall_only', false],
+    ['disable_only_mode=true', true, true, 'uninstall_only', false],
+    ['uninstall_only_mode=true', true, false, 'uninstall_only', false],
+    ...['whiteout_only', 'whiteout_uninstall', 'uninstall_only'].map(mode =>
+      [`nuke_mode=${mode}`, true, true, mode, false]),
+    ['uninstall_only_mode=true', false, false, 'uninstall_only', true],
+  ]) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-upgrade-')).replaceAll(String.fromCharCode(92), '/')
+    t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+    const persist = `${dir}/data/adb/system_app_nuker`
+    const mod = `${dir}/module`
+    for (const d of [persist, mod, `${dir}/bin`, `${dir}/mnt`, `${dir}/tmp`]) fs.mkdirSync(d, { recursive: true })
+    if (metamodule) {
+      fs.mkdirSync(`${dir}/data/adb/metamodule`)
+      fs.writeFileSync(`${dir}/data/adb/metamodule/module.prop`, 'id=test')
+    }
+    const json = JSON.stringify([{ package_name: 'com.saved', app_path: '/system/app/Saved/Saved.apk', app_name: 'Saved app' }], null, 2)
+    fs.writeFileSync(`${persist}/nuke_list.json`, json)
+    if (oldConfig !== null) fs.writeFileSync(`${persist}/config.sh`, oldConfig)
+    fs.writeFileSync(`${persist}/nuke_list.txt.boot`, 'known good')
+    fs.writeFileSync(`${mod}/nuke.sh`, `#!/bin/sh
+cat "$CONFIG_FILE" > "${dir}/seen-config"
+cat "$REMOVE_LIST" > "${dir}/seen-list"
+exit ${fail ? 1 : 0}
+`)
+    for (const command of ['busybox', 'sleep', 'clear']) {
+      fs.writeFileSync(`${dir}/bin/${command}`, '#!/bin/sh\nexit 0\n')
+      fs.chmodSync(`${dir}/bin/${command}`, 0o755)
+    }
+    fs.writeFileSync(`${dir}/installer.sh`, installer.replaceAll('/data/adb', `${dir}/data/adb`).replaceAll('/mnt', `${dir}/mnt`))
+    const bin = process.platform === 'win32' ? `$(cygpath -u '${dir}/bin')` : `${dir}/bin`
+    const run = () => {
+      fs.writeFileSync(`${mod}/config.sh`, template)
+      return spawnSync(shell, ['-c', `
+PATH="${bin}:$PATH"
+export PATH TMPDIR='${dir}/tmp' MODPATH='${mod}' KSU=true KSU_VER_CODE=30000 KSU_LATE_LOAD=${late ? 1 : 0} KSU_HAS_HOT_INSTALL=true
+abort() { echo "$*" >&2; exit 1; }
+set_perm() { return 0; }
+. '${dir}/installer.sh'
+`], { encoding: 'utf8' })
+    }
+    const result = run()
+    assert.equal(result.status, fail ? 1 : 0, result.stderr)
+    assert.match(fs.readFileSync(`${dir}/seen-config`, 'utf8'), new RegExp(`^nuke_mode=${expected}$`, 'm'))
+    assert.equal(fs.readFileSync(`${dir}/seen-list`, 'utf8'), 'com.saved /system/app/Saved/Saved.apk Saved app\n')
+    assert.equal(fs.readFileSync(`${persist}/nuke_list.txt.boot`, 'utf8'), 'known good')
+    if (fail) {
+      assert.equal(fs.readFileSync(`${persist}/config.sh`, 'utf8'), oldConfig)
+      assert.equal(fs.readFileSync(`${persist}/nuke_list.json`, 'utf8'), json)
+      assert.ok(!fs.existsSync(`${persist}/nuke_list.txt`))
+    } else {
+      assert.ok(!fs.existsSync(`${persist}/nuke_list.json`))
+      const saved = fs.readFileSync(`${persist}/config.sh`, 'utf8')
+      const { default: Config } = load('src/lib/Config.ts', {
+        '../constant': { PERSIST_DIR: persist },
+        './File': { File: { read: async () => saved } },
+        '../data/config': load('src/data/config.ts', {}),
+        './utils': { isDev: () => false },
+      })
+      const config = new Config()
+      await config.read()
+      assert.equal(config.config.find(item => item.key === 'nuke_mode').value, expected)
+      assert.equal(run().status, 0)
+      assert.equal(fs.readFileSync(`${persist}/config.sh`, 'utf8'), saved)
+      assert.equal(fs.readFileSync(`${persist}/nuke_list.txt`, 'utf8'), 'com.saved /system/app/Saved/Saved.apk Saved app\n')
+    }
+  }
+})
+
+test('successful boot refreshes rollback snapshots without recording visible whiteout-only apps', t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'san-service-')).replaceAll(String.fromCharCode(92), '/')
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+  const persist = `${dir}/persist`
+  const mod = `${dir}/module`
+  for (const d of [persist, mod, `${dir}/bin`]) fs.mkdirSync(d)
+  fs.writeFileSync(`${mod}/module.prop`, 'description=test')
+  fs.writeFileSync(`${persist}/config.sh`, 'nuke_mode=whiteout_only')
+  fs.writeFileSync(`${persist}/nuke_list.txt`, `com.hidden /system/app/Hidden/Hidden.apk Hidden
+com.updated /system/app/Updated/Updated.apk Updated
+com.pathless  Pathless
+`)
+  fs.writeFileSync(`${persist}/nuke_list.txt.old`, '')
+  fs.writeFileSync(`${persist}/raw_whiteouts.txt`, '/system/media/test')
+  fs.writeFileSync(`${dir}/bin/getprop`, `#!/bin/sh
+echo 1`)
+  fs.writeFileSync(`${dir}/bin/pm`, `#!/bin/sh
+case "$1 $2" in
+  "list packages") printf 'package:com.updated\npackage:com.pathless\n' ;;
+  *) echo "$*" >> "${dir}/mutations" ;;
+esac
+`)
+  for (const f of ['pm', 'getprop']) fs.chmodSync(`${dir}/bin/${f}`, 0o755)
+  const source = fs.readFileSync(path.join(root, '../module/service.sh'), 'utf8')
+    .replace('MODDIR="/data/adb/modules/system_app_nuker"', `MODDIR="${mod}"`)
+    .replace('PERSIST_DIR="/data/adb/system_app_nuker"', `PERSIST_DIR="${persist}"`)
+    .replace('update_description' + String.fromCharCode(10), '')
+  fs.writeFileSync(`${dir}/service.sh`, source)
+  const bin = process.platform === 'win32' ? `$(cygpath -u '${dir}/bin')` : `${dir}/bin`
+  const result = spawnSync(shell, ['-c', `PATH="${bin}:$PATH" sh "${dir}/service.sh"`], { encoding: 'utf8' })
+  assert.equal(result.status, 0, result.stderr)
+  assert.ok(!fs.existsSync(`${dir}/mutations`))
+  for (const suffix of ['old', 'boot', 'last']) {
+    assert.equal(fs.readFileSync(`${persist}/nuke_list.txt.${suffix}`, 'utf8'), `com.hidden /system/app/Hidden/Hidden.apk Hidden
+`)
+    assert.equal(fs.readFileSync(`${persist}/raw_whiteouts.txt.${suffix}`, 'utf8'), '/system/media/test')
+  }
+})
+
+test('late-load detection distinguishes normal boot from a failed query', async () => {
+  for (const [errno, stdout, expected] of [[0, 'late_load: true', true], [0, 'late_load: false', false], [0, '', false], [1, '', null]]) {
+    const { Cli } = load('src/lib/Cli.ts', {
+      'kernelsu-alt': { exec: async () => ({ errno, stdout, stderr: '' }) },
+      './File': {}, './shell': {}, 'i18next': {}, '../constant': {},
+    })
+    if (expected === null) await assert.rejects(Cli.isLateLoaded(), /Could not read/)
+    else assert.equal(await Cli.isLateLoaded(), expected)
+  }
 })

@@ -1,7 +1,7 @@
-# uninstall only mode
-# if this is enabled, whiteouts for apps would not be created
-# do pm uninstall --user 0 only without creating whiteouts
-uninstall_only_mode=false
+# whiteout_only never uninstalls apps or their updates
+# whiteout_uninstall hides apps at boot and uninstalls them immediately
+# uninstall_only skips app whiteouts
+nuke_mode=whiteout_uninstall
 
 # --- mounting mode ---
 # 0 = default/legacy; manager will handle this module's mounting

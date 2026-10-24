@@ -15,9 +15,13 @@ REMOVE_LIST="${REMOVE_LIST:-$PERSIST_DIR/nuke_list.txt}"
 PM_UNINSTALLED="$PERSIST_DIR/pm_uninstalled.txt"
 
 # import config
-uninstall_only_mode="false"
+nuke_mode=whiteout_uninstall
 CONFIG_FILE="${CONFIG_FILE:-$PERSIST_DIR/config.sh}"
 [ -f "$CONFIG_FILE" ] && . "$CONFIG_FILE"
+case "$nuke_mode" in
+    whiteout_only|whiteout_uninstall|uninstall_only) ;;
+    *) echo "invalid nuke mode: $nuke_mode" >&2; exit 1 ;;
+esac
 
 # special dirs
 # handle this properly so this script can be used standalone
@@ -144,6 +148,7 @@ old_apk_path() {
 }
 
 uninstall_for_user() {
+    [ "$nuke_mode" = whiteout_only ] && return 0
     package_name="$1"
     pm list packages "$package_name" </dev/null 2>/dev/null | grep -qx "package:$package_name" || return 0
     pm uninstall --user 0 "$package_name" </dev/null >/dev/null 2>&1
@@ -162,6 +167,7 @@ reinstall_unlisted() {
 # uninstall listed apps for user 0 so they disappear before the reboot. -k keeps their
 # data, like a whiteout does. the whiteout takes over at boot.
 pm_uninstall_listed() {
+    [ "$nuke_mode" = whiteout_uninstall ] || return 0
     for pkg in $(grep -Ev "^$|^#" "$REMOVE_LIST" 2>/dev/null | awk '{print $1}'); do
         pm list packages "$pkg" </dev/null 2>/dev/null | grep -qx "package:$pkg" || continue
         pm uninstall -k --user 0 "$pkg" </dev/null >/dev/null 2>&1 && echo "$pkg" >> "$PM_UNINSTALLED"
@@ -338,7 +344,7 @@ prepare_nuke_list() {
             is_apk_path "$factory_path" && saved_path="$factory_path"
         fi
         if echo "$apk_path" | grep -q '^/data/app' && echo "$system_pkgs" | grep -qx "package:$package_name"; then
-            if [ "$update" = true ]; then
+            if [ "$update" = true ] && [ "$nuke_mode" != whiteout_only ]; then
                 pm uninstall-system-updates "$package_name" </dev/null >/dev/null 2>&1 || true
                 apk_path=$(get_apk_path "$package_name")
                 if echo "$apk_path" | grep -q '^/data/app'; then
@@ -394,12 +400,12 @@ nuke_system_apps() {
     system_pkgs=$(pm list packages -s </dev/null)
     for package_name in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
         # check if it's a system app that has been updated
-        if echo "$system_pkgs" | grep -qx "package:$package_name" && get_apk_path "$package_name" | grep -q "/data/app"; then
+        if [ "$nuke_mode" != whiteout_only ] && echo "$system_pkgs" | grep -qx "package:$package_name" && get_apk_path "$package_name" | grep -q "/data/app"; then
             pm uninstall-system-updates "$package_name" </dev/null >/dev/null 2>&1 || true
         fi
     done
 
-    if [ "$uninstall_only_mode" = "true" ]; then
+    if [ "$nuke_mode" = uninstall_only ]; then
         for package_name in $(grep -Ev "^$|^#" "$REMOVE_LIST" | awk '{print $1}'); do
             pm uninstall --user 0 "$package_name" </dev/null >/dev/null 2>&1
             # already uninstalled apps fail too, so check the result instead
@@ -433,6 +439,8 @@ nuke_system_apps() {
                     return 1
                 fi
                 ls "$MODULE_UPDATE_DIR$apk_path" 2>/dev/null
+            elif [ "$nuke_mode" = whiteout_only ]; then
+                echo "no system APK path for $package_name, left visible" >&2
             elif ! uninstall_for_user "$package_name"; then
                 echo "cant uninstall $package_name" >&2
                 rm -f "$list_tmp"
@@ -443,7 +451,7 @@ nuke_system_apps() {
         mv -f "$list_tmp" "$REMOVE_LIST" || { rm -f "$list_tmp"; return 1; }
     fi
 
-    # when uninstall_only_mode=true and restore_success=false means user has enabled uninstall only mode
+    # when nuke_mode=uninstall_only and restore_success=false means user has enabled uninstall only mode
     #but the last nuked app doens't exist yet
     # this means a reboot is required to restore first then only pm install-existing can work immediately
     # showing "Uninstall only mode detected" to stdout allows webui to skip the reboot button
@@ -454,7 +462,7 @@ nuke_system_apps() {
             pm enable "$pkg" </dev/null >/dev/null 2>&1 || restore_success="false"
         done
     fi
-    if [ "$uninstall_only_mode" = "true" ] && [ "$restore_success" = "true" ]; then
+    if [ "$nuke_mode" = uninstall_only ] && [ "$restore_success" = "true" ]; then
         echo "[-] Uninstall only mode detected"
         [ ! -f "$REMOVE_LIST" ] || replace_file "$REMOVE_LIST" "$REMOVE_LIST.old" || return 1
     fi
@@ -497,11 +505,42 @@ install_dummy() {
 
 # lets have customize.sh of dummy.zip call us.
 if [ ! "$DUMMYZIP" = "true" ] && [ ! "$update" = true ]; then
-    if prepare_nuke_list && install_dummy; then
+    for list in "$REMOVE_LIST" "$PERSIST_DIR/raw_whiteouts.txt"; do
+        [ -f "$list.boot" ] || replace_file "$list.old" "$list.boot" || exit 1
+        [ -f "$list.last" ] || replace_file "$list.old" "$list.last" || exit 1
+        replace_file "$list.last" "$list.last.rollback" || exit 1
+        replace_file "$list.old" "$list.old.rollback" || exit 1
+    done
+    staged_backup="$PERSIST_DIR/staged_rollback"
+    rm -rf "$staged_backup"
+    if [ -d "$MODULE_UPDATE_DIR" ]; then
+        mv "$MODULE_UPDATE_DIR" "$staged_backup" || exit 1
+        if ! mkdir -p "$MODULE_UPDATE_DIR" || ! cp -a "$staged_backup/." "$MODULE_UPDATE_DIR/"; then
+            rm -rf "$MODULE_UPDATE_DIR"
+            mv "$staged_backup" "$MODULE_UPDATE_DIR"
+            exit 1
+        fi
+    fi
+    # publish snapshots before ksud can swap the module, so no fallible state
+    # writes after a successful hot install can trigger a false rollback.
+    if prepare_nuke_list &&
+        replace_file "$REMOVE_LIST" "$REMOVE_LIST.last" &&
+        replace_file "$PERSIST_DIR/raw_whiteouts.txt" "$PERSIST_DIR/raw_whiteouts.txt.last" &&
+        install_dummy; then
+        rm -rf "$staged_backup"
+        rm -f "$REMOVE_LIST.last.rollback" "$PERSIST_DIR/raw_whiteouts.txt.last.rollback" "$REMOVE_LIST.old.rollback" "$PERSIST_DIR/raw_whiteouts.txt.old.rollback"
         exit 0
     fi
-    replace_file "$REMOVE_LIST.old" "$REMOVE_LIST" || exit 1
-    replace_file "$PERSIST_DIR/raw_whiteouts.txt.old" "$PERSIST_DIR/raw_whiteouts.txt" || exit 1
+    rm -rf "$MODULE_UPDATE_DIR"
+    if [ -d "$staged_backup" ]; then
+        mkdir -p "${MODULE_UPDATE_DIR%/*}" && mv "$staged_backup" "$MODULE_UPDATE_DIR" || exit 1
+    fi
+    for list in "$REMOVE_LIST" "$PERSIST_DIR/raw_whiteouts.txt"; do
+        replace_file "$list.last.rollback" "$list.last" || exit 1
+        replace_file "$list.last" "$list" || exit 1
+        replace_file "$list.old.rollback" "$list.old" || exit 1
+        rm -f "$list.last.rollback" "$list.old.rollback"
+    done
     reinstall_unlisted
     exit 1
 fi
@@ -543,10 +582,10 @@ for item in system system_ext vendor product update $targets; do
     rm -rf "$MODULE_UPDATE_DIR/$item"
 done
 
-if [ "$DUMMYZIP" = true ] && [ "$uninstall_only_mode" != "true" ]; then
+if [ "$DUMMYZIP" = true ] && [ "$nuke_mode" != uninstall_only ]; then
     preserve_whiteouts || exit 1
 fi
-if [ "$update" = true ] && [ "$uninstall_only_mode" != "true" ]; then
+if [ "$update" = true ] && [ "$nuke_mode" != uninstall_only ]; then
     preserve_whiteouts || exit 1
     if [ -s "$REMOVE_LIST" ]; then
         nuke_saved_apps || exit 1
@@ -554,7 +593,7 @@ if [ "$update" = true ] && [ "$uninstall_only_mode" != "true" ]; then
 elif [ -s "$REMOVE_LIST" ]; then
     nuke_system_apps || exit 1
 fi
-if [ "$DUMMYZIP" = true ] && [ "$uninstall_only_mode" != "true" ]; then
+if [ "$DUMMYZIP" = true ] && [ "$nuke_mode" != uninstall_only ]; then
     reinstall_unlisted
     pm_uninstall_listed
 fi

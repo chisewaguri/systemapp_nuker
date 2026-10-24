@@ -9,11 +9,10 @@ OLD_CONFIG="$PERSIST_DIR/config.sh"
 NEW_CONFIG="$PERSIST_DIR/config.sh.new"
 
 # import config
-uninstall_fallback=false
+nuke_mode=""
 uninstall_only_mode=false
 disable_only_mode=false
 [ -f "$OLD_CONFIG" ] && . "$OLD_CONFIG"
-[ "$disable_only_mode" = "true" ] && uninstall_only_mode=true
 
 # === FUNCTIONS ===
 
@@ -47,68 +46,9 @@ if [ -n "$KSU" ] || [ -n "$APATCH" ]; then
     rm -f "$MODPATH/action.sh"
 fi
 
-# nuke.sh only reads uninstall_only_mode from the config, so the rebuild can run
-# before the mount checks
-set_config uninstall_only_mode $uninstall_only_mode
-
-# migrate old things
-migrated_list=""
-if [ -f "$PERSIST_DIR/nuke_list.json" ]; then
-    # "<pkg> <path> <label>". json has the app_path, update needs it since
-    # apps are still hidden by the old module's whiteouts
-    migrated_list="$PERSIST_DIR/nuke_list.txt.new"
-    migration_fields="$migrated_list.fields.$$"
-    if ! sed -n -e 's/.*"package_name": "\([^"]*\)",/\1/p' -e 's/.*"app_path": "\([^"]*\)",/\1/p' -e 's/.*"app_name": "\([^"]*\)"/\1/p' "$PERSIST_DIR/nuke_list.json" > "$migration_fields" ||
-        ! sed 'N;N;s/\n/ /g' "$migration_fields" > "$migrated_list"; then
-        rm -f "$migration_fields" "$migrated_list" "$NEW_CONFIG"
-        abort "Failed to migrate nuke_list.json"
-    fi
-    rm -f "$migration_fields"
-
-    package_count=$(awk '/"package_name":/{count++} END{print count+0}' "$PERSIST_DIR/nuke_list.json") || abort "Failed to read nuke_list.json"
-    path_count=$(awk '/"app_path":/{count++} END{print count+0}' "$PERSIST_DIR/nuke_list.json") || abort "Failed to read nuke_list.json"
-    migrated_count=$(awk '!/^$/ && !/^#/{count++} END{print count+0}' "$migrated_list") || abort "Failed to read migrated list"
-    if [ "$package_count" != "$path_count" ] || [ "$package_count" != "$migrated_count" ]; then
-        rm -f "$migrated_list" "$NEW_CONFIG"
-        abort "Failed to migrate nuke_list.json"
-    fi
-fi
-
-# rebuild with the new config, but dont replace old state unless it works.
-# the spinner runs while it works, and at least three turns so it shows up.
-update_list="$PERSIST_DIR/nuke_list.txt"
-[ -n "$migrated_list" ] && update_list="$migrated_list"
-nuke_log="${TMPDIR:-/dev/tmp}/san_nuke.log"
-CONFIG_FILE="$NEW_CONFIG" REMOVE_LIST="$update_list" sh "$MODPATH/nuke.sh" update > "$nuke_log" 2>&1 &
-nuke_pid=$!
-if [ "$MMRL" = "true" ] || { [ "$KSU" = "true" ] && [ "$KSU_VER_CODE" -ge 11998 ]; } ||
-    { [ "$KSU_NEXT" = "true" ] && [ "$KSU_VER_CODE" -ge 12144 ]; } ||
-    { [ "$APATCH" = "true" ] && [ "$APATCH_VER_CODE" -ge 11022 ]; }; then
-    turns=0
-    while [ $turns -lt 3 ] || kill -0 "$nuke_pid" 2>/dev/null; do
-        for symbol in '-' '\' '|' '/'; do
-            clear
-            echo "[*] Installing System App Nuker... Please wait."
-            echo "[$symbol] Rebuilding whiteouts..."
-            sleep 0.1
-        done
-        turns=$((turns + 1))
-    done
-    clear
-else
-    echo "[*] Installing System App Nuker... Rebuilding whiteouts."
-fi
-wait "$nuke_pid"
-nuke_status=$?
-cat "$nuke_log"
-rm -f "$nuke_log"
-if [ "$nuke_status" -ne 0 ]; then
-    rm -f "$migrated_list" "$NEW_CONFIG"
-    abort "Failed to rebuild module whiteouts"
-fi
-# the spinner clears the screen, so report the migration after it
-[ -z "$migrated_list" ] || echo "[*] nuke_list.json found. Migrated to nuke_list.txt."
-
+# the spinner clears the screen, so report mounting after it
+mount_log="${TMPDIR:-/dev/tmp}/san_mount.log"
+{
 # --- check for mountify requirements ---
 
 # check for overlayfs
@@ -209,6 +149,84 @@ fi
 # set mounting mode config
 set_config mounting_mode $mounting_mode
 set_config magic_mount $magic_mount
+} > "$mount_log" 2>&1
+
+# late-loaded kernelsu loses whiteouts on a hard reboot but keeps uninstalls,
+# so default to whiteouts only when something can mount them
+if [ -z "$nuke_mode" ]; then
+    if [ ! -f "$OLD_CONFIG" ] && [ "$KSU_LATE_LOAD" = "1" ] && [ "$mounting_mode" = 2 ]; then
+        nuke_mode=whiteout_only
+    elif [ "$uninstall_only_mode" = "true" ] || [ "$disable_only_mode" = "true" ]; then
+        nuke_mode=uninstall_only
+    else
+        nuke_mode=whiteout_uninstall
+    fi
+fi
+case "$nuke_mode" in
+    whiteout_only|whiteout_uninstall|uninstall_only) ;;
+    *) rm -f "$mount_log" "$NEW_CONFIG"; abort "Invalid nuke mode: $nuke_mode" ;;
+esac
+set_config nuke_mode "$nuke_mode"
+
+# migrate old things
+migrated_list=""
+if [ -f "$PERSIST_DIR/nuke_list.json" ]; then
+    # "<pkg> <path> <label>". json has the app_path, update needs it since
+    # apps are still hidden by the old module's whiteouts
+    migrated_list="$PERSIST_DIR/nuke_list.txt.new"
+    migration_fields="$migrated_list.fields.$$"
+    if ! sed -n -e 's/.*"package_name": "\([^"]*\)",/\1/p' -e 's/.*"app_path": "\([^"]*\)",/\1/p' -e 's/.*"app_name": "\([^"]*\)"/\1/p' "$PERSIST_DIR/nuke_list.json" > "$migration_fields" ||
+        ! sed 'N;N;s/\n/ /g' "$migration_fields" > "$migrated_list"; then
+        rm -f "$migration_fields" "$migrated_list" "$NEW_CONFIG"
+        abort "Failed to migrate nuke_list.json"
+    fi
+    rm -f "$migration_fields"
+
+    package_count=$(awk '/"package_name":/{count++} END{print count+0}' "$PERSIST_DIR/nuke_list.json") || abort "Failed to read nuke_list.json"
+    path_count=$(awk '/"app_path":/{count++} END{print count+0}' "$PERSIST_DIR/nuke_list.json") || abort "Failed to read nuke_list.json"
+    migrated_count=$(awk '!/^$/ && !/^#/{count++} END{print count+0}' "$migrated_list") || abort "Failed to read migrated list"
+    if [ "$package_count" != "$path_count" ] || [ "$package_count" != "$migrated_count" ]; then
+        rm -f "$migrated_list" "$NEW_CONFIG"
+        abort "Failed to migrate nuke_list.json"
+    fi
+fi
+
+# rebuild with the new config, but dont replace old state unless it works.
+# the spinner runs while it works, and at least three turns so it shows up.
+update_list="$PERSIST_DIR/nuke_list.txt"
+[ -n "$migrated_list" ] && update_list="$migrated_list"
+nuke_log="${TMPDIR:-/dev/tmp}/san_nuke.log"
+CONFIG_FILE="$NEW_CONFIG" REMOVE_LIST="$update_list" sh "$MODPATH/nuke.sh" update > "$nuke_log" 2>&1 &
+nuke_pid=$!
+if [ "$MMRL" = "true" ] || { [ "$KSU" = "true" ] && [ "$KSU_VER_CODE" -ge 11998 ]; } ||
+    { [ "$KSU_NEXT" = "true" ] && [ "$KSU_VER_CODE" -ge 12144 ]; } ||
+    { [ "$APATCH" = "true" ] && [ "$APATCH_VER_CODE" -ge 11022 ]; }; then
+    turns=0
+    while [ $turns -lt 3 ] || kill -0 "$nuke_pid" 2>/dev/null; do
+        for symbol in '-' '\' '|' '/'; do
+            clear
+            echo "[*] Installing System App Nuker... Please wait."
+            echo "[$symbol] Rebuilding whiteouts..."
+            sleep 0.1
+        done
+        turns=$((turns + 1))
+    done
+    clear
+else
+    echo "[*] Installing System App Nuker... Rebuilding whiteouts."
+fi
+wait "$nuke_pid"
+nuke_status=$?
+cat "$nuke_log"
+rm -f "$nuke_log"
+if [ "$nuke_status" -ne 0 ]; then
+    rm -f "$migrated_list" "$NEW_CONFIG"
+    abort "Failed to rebuild module whiteouts"
+fi
+# the spinner clears the screen, so report the migration after it
+[ -z "$migrated_list" ] || echo "[*] nuke_list.json found. Migrated to nuke_list.txt."
+cat "$mount_log"
+rm -f "$mount_log"
 
 # Detect current manager
 [ ! "$APATCH" = "true" ] && [ ! "$KSU" = "true" ] && MANAGER="MAGISK"
@@ -225,7 +243,7 @@ mv -f "$NEW_CONFIG" "$PERSIST_DIR/config.sh" || abort "Failed to save config"
 [ -z "$migrated_list" ] || rm -f "$PERSIST_DIR/nuke_list.json" || abort "Failed to remove old nuke list"
 set_perm "$PERSIST_DIR/config.sh" 0 2000 0755 || abort "Failed to set config permissions"
 
-echo "[~] config: uninstall_only_mode=$uninstall_only_mode"
+echo "[~] config: nuke_mode=$nuke_mode"
 echo "[~] config: mounting_mode=$mounting_mode"
 echo "[~] config: magic_mount=$magic_mount"
 echo "[~] config: current_manager=$MANAGER"
@@ -244,6 +262,17 @@ if [ "$ksu_is_metamodule" = true ] && [ "$mounting_mode" = "0" ]; then
     echo "[!] KSU >22098: manager mounting is no longer available and standalone script"
     echo "[!]             requirements were not met (needs overlayfs + tmpfs xattr)."
     echo "[!]             Module WILL NOT be mounted. Please install a metamodule"
+fi
+
+if [ "$KSU_LATE_LOAD" = "1" ]; then
+    if [ "$nuke_mode" != whiteout_only ]; then
+        echo "[!] Uninstalls persist after a hard reboot, even without KernelSU."
+        [ "$mounting_mode" = 2 ] && echo "[i] Whiteout only is recommended for late-loaded KernelSU."
+    fi
+    if [ "$mounting_mode" != 2 ]; then
+        echo "[!] No external mounting provider detected. Install a metamodule"
+        echo "[i] to hide apps with whiteouts only."
+    fi
 fi
 
 # kernelsu swaps the whole module in after this script and leaves no update flag.

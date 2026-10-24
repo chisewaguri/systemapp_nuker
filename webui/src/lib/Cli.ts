@@ -8,6 +8,12 @@ import type { useSnackBar } from '../components/SnackBar'
 export type BackupStatus = 'available' | 'absent' | 'error'
 
 export class Cli {
+  static async isLateLoaded(): Promise<boolean> {
+    const { errno, stdout } = await exec('PATH=/data/adb/ksu/bin:$PATH; command -v ksud >/dev/null || exit 0; ksud debug info 2>/dev/null')
+    if (errno !== 0) throw new Error('Could not read KernelSU load state')
+    return /^late_load: true$/m.test(stdout)
+  }
+
   static async nuke(show: ReturnType<typeof useSnackBar>['show']): Promise<boolean> {
     let result: Awaited<ReturnType<typeof exec>>
     try {
