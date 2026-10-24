@@ -1,32 +1,23 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: Report something that is not working
 title: 'BUG:'
 labels: ''
 assignees: ''
-
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## What happened?
+Describe the problem and what you expected instead.
 
-**Step to Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+## Steps to reproduce
+1.
+2.
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## Setup
+- Module version:
+- Root manager and version:
+- WebUI app and version, if used:
+- Android version and device:
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
-
-**Environment (please complete the following information):**
- - Root Manager: [e.g. KernelSU, Magisk with MMRL]
- - Android Version [e.g. 14]
- - Kernel Version [e.g. 5.10]
-
-**Additional context**
-Add any other context about the problem here.
+## Logs or screenshots
+Attach any that show the problem.
