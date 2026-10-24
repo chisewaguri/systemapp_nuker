@@ -151,8 +151,12 @@ set_config mounting_mode $mounting_mode
 set_config magic_mount $magic_mount
 } > "$mount_log" 2>&1
 
+# late-loaded kernelsu loses whiteouts on a hard reboot but keeps uninstalls,
+# so default to whiteouts only when something can mount them
 if [ -z "$nuke_mode" ]; then
-    if [ "$uninstall_only_mode" = "true" ] || [ "$disable_only_mode" = "true" ]; then
+    if [ ! -f "$OLD_CONFIG" ] && [ "$KSU_LATE_LOAD" = "1" ] && [ "$mounting_mode" = 2 ]; then
+        nuke_mode=whiteout_only
+    elif [ "$uninstall_only_mode" = "true" ] || [ "$disable_only_mode" = "true" ]; then
         nuke_mode=uninstall_only
     else
         nuke_mode=whiteout_uninstall

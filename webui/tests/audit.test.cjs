@@ -603,7 +603,7 @@ esac
   })
 }
 
-test('installer migrates old modes and preserves saved choices', () => {
+test('installer migrates old modes and defaults late-load to whiteout only with a metamodule', () => {
   const source = fs.readFileSync(path.join(root, '../module/customize.sh'), 'utf8')
   const migration = source.slice(source.indexOf('if [ -z "$nuke_mode" ]'), source.indexOf('set_config nuke_mode'))
   for (const [env, expected] of [
@@ -611,7 +611,7 @@ test('installer migrates old modes and preserves saved choices', () => {
     ['mounting_mode=2;', 'whiteout_uninstall'],
     ['uninstall_only_mode=true;', 'uninstall_only'],
     ['disable_only_mode=true;', 'uninstall_only'],
-    ['KSU_LATE_LOAD=1; mounting_mode=2;', 'whiteout_uninstall'],
+    ['KSU_LATE_LOAD=1; mounting_mode=2;', 'whiteout_only'],
     [`OLD_CONFIG='${root}/../module/config.sh'; KSU_LATE_LOAD=1; mounting_mode=2; uninstall_only_mode=true;`, 'uninstall_only'],
     [`OLD_CONFIG='${root}/../module/config.sh'; KSU_LATE_LOAD=1; mounting_mode=2; uninstall_only_mode=false;`, 'whiteout_uninstall'],
     [`OLD_CONFIG='${root}/../module/config.sh'; KSU_LATE_LOAD=1; mounting_mode=2; disable_only_mode=true;`, 'uninstall_only'],
@@ -638,7 +638,7 @@ test('installer upgrades legacy configs and lists without losing saved state', a
     ['uninstall_only_mode=false', false, false, 'whiteout_uninstall', false],
     ['uninstall_only_mode=true', false, false, 'uninstall_only', false],
     ['disable_only_mode=true', false, false, 'uninstall_only', false],
-    [null, true, true, 'whiteout_uninstall', false],
+    [null, true, true, 'whiteout_only', false],
     ['', true, true, 'whiteout_uninstall', false],
     ['uninstall_only_mode=false', true, true, 'whiteout_uninstall', false],
     ['uninstall_only_mode=true', true, true, 'uninstall_only', false],
