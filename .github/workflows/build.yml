@@ -71,12 +71,16 @@ jobs:
         cache: 'pnpm'
         cache-dependency-path: webui/pnpm-lock.yaml
 
+    - name: Install WebUI dependencies
+      run: pnpm --dir webui install --frozen-lockfile
+
+    - name: Test module and WebUI
+      run: pnpm --dir webui test
+
     - name: Build WebUI
       run: |
         cd webui
-        pnpm install --frozen-lockfile
         pnpm lint
-        pnpm test
         # releases must ship app descriptions, other builds can go without them
         if ! node scripts/fetch-uad.cjs; then
           if [ "$GITHUB_REF_TYPE" = "tag" ]; then exit 1; fi
