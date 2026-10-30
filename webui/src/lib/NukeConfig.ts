@@ -1,6 +1,6 @@
 import { t } from 'i18next'
 import { MOD_ID, NUKE_CONFIG_VERSION } from '../constant'
-import { File } from './File'
+import { file } from './file'
 import AppList from './AppList'
 import { Cli } from './Cli'
 import { runMutation } from './mutationLock'
@@ -54,7 +54,7 @@ export class NukeConfig {
     const filePath = `/sdcard/Download/san-config-${timestamp}.json`
 
     try {
-      await File.write(filePath, JSON.stringify(config, null, 2))
+      await file.write(filePath, JSON.stringify(config, null, 2))
       snackBar(t('nuke_config.export_success', { path: filePath }))
     } catch {
       snackBar(t('nuke_config.export_empty'), false)

@@ -1,4 +1,4 @@
-import { File } from './File'
+import { file } from './file'
 import { PERSIST_DIR } from '../constant'
 import { isDev } from './utils'
 
@@ -28,7 +28,7 @@ export class Whiteout {
       this.#writable = true
       return
     }
-    const content = await File.readIfExists(this.#whiteoutPath)
+    const content = await file.readIfExists(this.#whiteoutPath)
 
     this.#whiteouts = content
       .split('\n')
@@ -61,7 +61,7 @@ export class Whiteout {
       return false
     }
     try {
-      await File.write(this.#whiteoutPath, this.#whiteouts.join('\n'))
+      await file.write(this.#whiteoutPath, this.#whiteouts.join('\n'))
       this.#savedWhiteouts = [...this.#whiteouts]
       return true
     } catch {

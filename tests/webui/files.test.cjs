@@ -13,7 +13,7 @@ for (const [failure, writes] of [['cp', true], ['touch', true], ['write', false]
     // 'touch' covers a target that does not exist yet, where the staging file is created with a redirect.
     if (failure !== 'touch') fs.writeFileSync(path.join(dir, 'state.txt'), 'original\n')
     const { shellQuote } = load('src/lib/shell.ts', {})
-    const { File } = load('src/lib/File.ts', {
+    const { ShellFile } = load('src/lib/file/ShellFile.ts', {
       './shell': { shellQuote },
       'kernelsu-alt': { exec: async script => {
         // A read-only staging file makes the ': > "$tmp"' redirect fail like a host that rejects sibling files.
@@ -31,7 +31,7 @@ for (const [failure, writes] of [['cp', true], ['touch', true], ['write', false]
         return { errno: result.status, stdout: result.stdout, stderr: result.stderr }
       } },
     })
-    const write = File.write('state.txt', "new 'quoted' $data\nsecond line")
+    const write = new ShellFile().write('state.txt', "new 'quoted' $data\nsecond line")
     if (writes) await write
     else await assert.rejects(write)
     assert.equal(fs.readFileSync(path.join(dir, 'state.txt'), 'utf8'), writes ? "new 'quoted' $data\nsecond line\n" : 'original\n')
