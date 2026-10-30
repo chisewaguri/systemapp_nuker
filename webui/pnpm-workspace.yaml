@@ -1,6 +1,9 @@
 allowBuilds:
   '@parcel/watcher': set this to true or false
 
+minimumReleaseAgeExclude:
+  - kernelsu-alt
+
 overrides:
   js-yaml@4: ^4.3.2
   brace-expansion@5: ^5.0.12
