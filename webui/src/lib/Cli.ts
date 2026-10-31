@@ -1,5 +1,5 @@
 import { exec, toast } from 'kernelsu-alt'
-import { File } from './File'
+import { file } from './file'
 import { shellQuote } from './shell'
 import { t } from 'i18next'
 import { MOD_DIR, PERSIST_DIR } from '../constant'
@@ -54,17 +54,13 @@ export class Cli {
 
   static async restore(restore: boolean = true): Promise<boolean> {
     try {
-      const { errno } = await exec(`
-      for f in ${PERSIST_DIR}/*.bak; do
-        [ -f "$f" ] || continue
-        ${restore ? `
-          target="\${f%.bak}"
-          tmp="$target.restore.$$"
-          cp -f "$f" "$tmp" && mv -f "$tmp" "$target" || { rm -f "$tmp"; exit 1; }
-        ` : `rm -f "$f" || exit 1`}
-      done;
-    `)
-      return errno === 0
+      for (const name of ['nuke_list.txt', 'raw_whiteouts.txt']) {
+        const backup = `${PERSIST_DIR}/${name}.bak`
+        if (!(await file.exist(backup))) continue
+        if (restore) await file.move(backup, `${PERSIST_DIR}/${name}`)
+        else await file.delete(backup)
+      }
+      return true
     } catch {
       return false
     }
@@ -72,9 +68,9 @@ export class Cli {
 
   static async needRestore(): Promise<BackupStatus> {
     try {
-      const dirExist = await File.isDirectory(PERSIST_DIR)
+      const dirExist = await file.isDirectory(PERSIST_DIR)
       if (!dirExist) {
-        await File.createDirectory(PERSIST_DIR)
+        await file.createDirectory(PERSIST_DIR)
         return 'absent'
       }
       const ps = await exec(`[ -f ${PERSIST_DIR}/nuke_list.txt.bak ] || [ -f ${PERSIST_DIR}/raw_whiteouts.txt.bak ]`)

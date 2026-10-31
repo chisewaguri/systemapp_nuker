@@ -1,6 +1,6 @@
 import { exec } from 'kernelsu-alt'
 import { PERSIST_DIR } from '../constant'
-import { File } from './File'
+import { file } from './file'
 import { shellQuote } from './shell'
 
 export const UAD_URL = 'https://raw.githubusercontent.com/Universal-Debloater-Alliance/universal-android-debloater-next-generation/main/resources/assets/uad_lists.json'
@@ -46,22 +46,13 @@ let entries: Trimmed = {}
 let source: UadSource = { kind: 'none', count: 0, date: null }
 let loading: Promise<UadSource> | null = null
 
-// the host passes stdout back as one javascript call, which never returns for a file this big
 async function readLarge(path: string): Promise<string> {
-  const quoted = shellQuote(path)
-  const step = 2000
-  let content = ''
-  for (let start = 1; ; start += step) {
-    const { errno, stdout, stderr } = await exec(`sed -n '${start},${start + step - 1}p' ${quoted}`)
-    if (errno !== 0) throw new Error(stderr.trim() || `could not read ${path}`)
-    if (!stdout) return content
-    content += stdout.endsWith('\n') ? stdout : `${stdout}\n`
-  }
+  return file.read(path)
 }
 
 async function readDownloaded(): Promise<{ list: Trimmed, date: string | null } | null> {
   try {
-    if (!(await File.exist(DOWNLOADED))) return null
+    if (!(await file.exist(DOWNLOADED))) return null
     const content = await readLarge(DOWNLOADED)
     if (!content.trim()) return null
     const list = trimUad(JSON.parse(content))
@@ -137,13 +128,12 @@ export function removalCounts(apps: { packageName: string }[]): Partial<Record<R
 
 /** Downloads the latest list as root. A failed or malformed download keeps the current copy. */
 export async function updateUad(): Promise<UadSource> {
-  const target = shellQuote(DOWNLOADED)
   const temp = shellQuote(`${DOWNLOADED}.new`)
   const url = shellQuote(UAD_URL)
+  await file.createDirectory(PERSIST_DIR)
+  await file.delete(`${DOWNLOADED}.new`).catch(() => {})
   const download = await exec(`
     PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
-    mkdir -p ${shellQuote(PERSIST_DIR)} || exit 1
-    rm -f ${temp}
     if command -v curl >/dev/null 2>&1; then
       curl -fsSL --max-time 60 ${url} -o ${temp}
     elif command -v wget >/dev/null 2>&1; then
@@ -156,17 +146,16 @@ export async function updateUad(): Promise<UadSource> {
     fi
   `)
   if (download.errno !== 0) {
-    await exec(`rm -f ${temp}`)
+    await file.delete(`${DOWNLOADED}.new`).catch(() => {})
     throw new Error(download.stderr.trim() || `download failed (${download.errno})`)
   }
   const valid = await readLarge(`${DOWNLOADED}.new`)
     .then(content => trimUad(JSON.parse(content)) !== null)
     .catch(() => false)
   if (!valid) {
-    await exec(`rm -f ${temp}`)
+    await file.delete(`${DOWNLOADED}.new`).catch(() => {})
     throw new Error('the downloaded list is not a uad-ng list')
   }
-  const swap = await exec(`mv -f ${temp} ${target} || { rm -f ${temp}; exit 1; }`)
-  if (swap.errno !== 0) throw new Error(swap.stderr.trim() || 'could not save the list')
+  await file.move(`${DOWNLOADED}.new`, DOWNLOADED)
   return loadUad()
 }

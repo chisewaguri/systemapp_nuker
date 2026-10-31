@@ -1,5 +1,5 @@
 import { PERSIST_DIR } from '../constant'
-import { File } from './File'
+import { file } from './file'
 import { configItem, type ConfigItem } from '../data/config'
 import { isDev } from './utils'
 
@@ -18,7 +18,7 @@ export default class Config {
             return
         }
 
-        const content = await File.read(this.#configPath)
+        const content = await file.read(this.#configPath)
         const fileValues: Record<string, string | boolean | number> = {}
         for (const line of content.split('\n')) {
             const trimmed = line.trim()
@@ -49,7 +49,7 @@ export default class Config {
     async write() {
         if (isDev()) return
         const lines = this.#config.map(item => `${item.key}=${item.value}`)
-        await File.write(this.#configPath, lines.join('\n'))
+        await file.write(this.#configPath, lines.join('\n'))
     }
 
     get config() {

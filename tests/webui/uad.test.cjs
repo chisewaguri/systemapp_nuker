@@ -22,7 +22,13 @@ function uadFixture({ downloaded, bundled }) {
   const fetched = []
   const mod = load('src/lib/uad.ts', {
     '../constant': { PERSIST_DIR: '/persist' },
-    './File': { File: { exist: async file => file === UAD_DOWNLOADED && downloaded !== undefined } },
+    './file': { file: {
+      exist: async file => file === UAD_DOWNLOADED && downloaded !== undefined,
+      read: async file => file === UAD_DOWNLOADED ? downloaded ?? '' : '',
+      createDirectory: async () => {},
+      delete: async () => {},
+      move: async () => {},
+    } },
     './shell': { shellQuote: value => `'${value}'` },
     'kernelsu-alt': { exec: sedExec(file => (file === UAD_DOWNLOADED ? downloaded ?? '' : '')) },
   }, {

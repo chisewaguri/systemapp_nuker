@@ -14,15 +14,13 @@ async function appsFixture(infos, extraPkgs = [], files = new Map([
   const pkgs = ['com.pending', 'com.restore', 'com.installed', ...extraPkgs]
   const { default: AppList } = load('src/lib/AppList.ts', {
     'kernelsu-alt': {
-      listPackages: async () => pkgs,
-      exec: async () => ({ errno: 0, stdout: pkgs.map(pkg => `package:${pkg}`).join('\n'), stderr: '' }),
-      getPackagesInfo: async () => infos ?? pkgs.map(packageName => ({ packageName, appLabel: packageName, isSystem: true })),
+      pm: {
+        listPackages: async () => pkgs,
+        getPackagesInfo: async () => infos ?? pkgs.map(packageName => ({ packageName, appLabel: packageName, isSystem: true, uid: 10000, userId: 0 })),
+      },
     },
     '../constant': { PERSIST_DIR: '/persist' },
-    './File': { File: {
-      readIfExists: async file => files.get(file) ?? '',
-      write: async (file, data) => files.set(file, data),
-    } },
+    './file': { file: { readIfExists: async file => files.get(file) ?? '', write: async (file, data) => files.set(file, data) } },
     './utils': { isDev: () => false },
     './nukeList': { parseNukeLine },
     './uad': { loadUad: async () => ({ kind: 'none', count: 0, date: null }) },
@@ -96,7 +94,7 @@ test('app lists put pending apps first, then sort by app name', async () => {
 test('backup operations return failure when the host rejects execution', async () => {
   const { Cli } = load('src/lib/Cli.ts', {
     'kernelsu-alt': { exec: async () => { throw new Error('host unavailable') } },
-    './File': {}, './shell': { shellQuote: value => `'${value}'` }, 'i18next': {}, '../constant': { PERSIST_DIR: '/persist' },
+    './file': { file: {} }, './shell': { shellQuote: value => `'${value}'` }, 'i18next': {}, '../constant': { PERSIST_DIR: '/persist' },
   })
   assert.equal(await Cli.restore(true), false)
   assert.equal(await Cli.restore(false), false)
@@ -169,7 +167,7 @@ test('opening a link from a description never runs shell syntax in the url', asy
         return { errno: result.status, stdout: result.stdout, stderr: result.stderr }
       },
     },
-    './File': {}, './shell': load('src/lib/shell.ts', {}), 'i18next': {}, '../constant': { PERSIST_DIR: '/persist' },
+    './file': { file: {} }, './shell': load('src/lib/shell.ts', {}), 'i18next': {}, '../constant': { PERSIST_DIR: '/persist' },
   }, { setTimeout: fn => fn(), window: { open: () => {} } })
   const url = `https://example.org/a?x=1&y=$(touch ${marker})\`touch ${marker}\`;touch ${marker}`
   Cli.openLink(url)
@@ -185,7 +183,7 @@ test('icon cache saves at nuke time and serves only data image urls back', async
   const { saveIcons, savedIcon } = load('src/lib/iconCache.ts', {
     'kernelsu-alt': { exec: async () => ({ errno: 0, stdout: '', stderr: '' }) },
     '../constant': { PERSIST_DIR: '/persist' },
-    './File': { File: {
+    './file': { file: {
       write: async (f, data) => { files.set(f, data) },
       readIfExists: async f => files.get(f) ?? '',
     } },
@@ -211,7 +209,7 @@ test('late-load detection distinguishes normal boot from a failed query', async 
   for (const [errno, stdout, expected] of [[0, 'late_load: true', true], [0, 'late_load: false', false], [0, '', false], [1, '', null]]) {
     const { Cli } = load('src/lib/Cli.ts', {
       'kernelsu-alt': { exec: async () => ({ errno, stdout, stderr: '' }) },
-      './File': {}, './shell': {}, 'i18next': {}, '../constant': {},
+      './file': { file: {} }, './shell': {}, 'i18next': {}, '../constant': {},
     })
     if (expected === null) await assert.rejects(Cli.isLateLoaded(), /Could not read/)
     else assert.equal(await Cli.isLateLoaded(), expected)

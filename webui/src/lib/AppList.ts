@@ -1,6 +1,6 @@
-import { exec, listPackages, getPackagesInfo, type PackagesInfo } from 'kernelsu-alt'
+import { pm, type PackageInfoError, type PackageInfoPerUid, type PackagesInfo } from 'kernelsu-alt'
 import { PERSIST_DIR } from '../constant'
-import { File } from './File'
+import { file } from './file'
 import { isDev } from './utils'
 import { parseNukeLine } from './nukeList'
 import { loadUad } from './uad'
@@ -26,14 +26,6 @@ function parseNuking(content: string): NukeInfo[] {
       const { packageName, appLabel } = parseNukeLine(line)
       return { packageName, appLabel }
     })
-}
-
-// kernelsu-alt's pm fallback treats each stdout chunk as one package name.
-async function listSystemPackages(): Promise<string[]> {
-  if (typeof (globalThis as { ksu?: { listPackages?: unknown } }).ksu?.listPackages === 'function') return listPackages('system')
-  const { errno, stdout, stderr } = await exec('pm list packages -s')
-  if (errno !== 0) throw new Error(`pm list packages failed (${errno}): ${stderr}`)
-  return stdout.split('\n').map(line => line.trim().replace(/^package:/, '')).filter(Boolean)
 }
 
 // pending apps first, then by the name shown in the list
@@ -93,23 +85,25 @@ export default class AppList {
       return
     }
 
-    const pkgs = await listSystemPackages()
+    const pkgs = await pm.listPackages('system')
 
-    let infos: PackagesInfo[]
+    let infos: Array<PackageInfoPerUid | PackageInfoError>
     try {
-      infos = await getPackagesInfo(pkgs) as PackagesInfo[]
+      infos = await pm.getPackagesInfo(pkgs) as Array<PackageInfoPerUid | PackageInfoError>
     } catch {
-      infos = pkgs.map((pkg: string) => ({
-        packageName: pkg,
-        versionName: '',
-        versionCode: 0,
-        appLabel: pkg,
-        isSystem: true,
-        uid: 0,
-      }))
+      infos = []
     }
 
-    const infoByPackage = new Map(infos.map(info => [info.packageName, info]))
+    const infoByPackage = new Map<string, PackageInfoPerUid>()
+    for (const result of infos) {
+      if ('error' in result) continue
+      const info = result
+      const previous = infoByPackage.get(info.packageName)
+      if (!previous || (previous.userId !== 0 && info.userId === 0)) {
+        infoByPackage.set(info.packageName, info)
+      }
+    }
+
     this.#apps = pkgs.map((packageName: string) => {
       const info = infoByPackage.get(packageName)
       return {
@@ -118,7 +112,7 @@ export default class AppList {
         versionName: info?.versionName ?? null,
         versionCode: info?.versionCode ?? null,
         uid: info?.uid ?? null,
-        isSystem: true,
+        isSystem: info?.isSystem ?? true,
         nuked: false,
         pending: false,
       }
@@ -142,7 +136,7 @@ export default class AppList {
       return
     }
 
-    const nukeList = await File.readIfExists(`${this.#nukeListPath}.old`)
+    const nukeList = await file.readIfExists(`${this.#nukeListPath}.old`)
     const nukedApps = nukeList.split('\n').filter(line => line.trim() && !line.startsWith('#') && !line.startsWith('$'))
 
     for (const line of nukedApps) {
@@ -177,7 +171,7 @@ export default class AppList {
       return
     }
 
-    const nukeList = await File.readIfExists(`${this.#nukeListPath}`)
+    const nukeList = await file.readIfExists(`${this.#nukeListPath}`)
     this.#nuking = parseNuking(nukeList)
     for (const app of this.#nuking) {
       if (this.#apps.some(item => item.packageName === app.packageName)) continue
@@ -289,7 +283,7 @@ export default class AppList {
     try {
       // keep the saved path for apps already nuked (pm cant see them once
       // hidden, so keep it or it gets lost on rewrite)
-      current = await File.readIfExists(`${this.#nukeListPath}`)
+      current = await file.readIfExists(`${this.#nukeListPath}`)
       previous = parseNuking(current)
     } catch {
       this.#nuking = previous
@@ -307,7 +301,7 @@ export default class AppList {
       }
 
       const lines = this.#nuking.map(n => `${n.packageName} ${pathOf.get(n.packageName) ?? ''} ${n.appLabel.replace(/\n/g, ' ')}`)
-      await File.write(`${this.#nukeListPath}`, lines.join('\n'))
+      await file.write(`${this.#nukeListPath}`, lines.join('\n'))
       this.#savedNuking = this.#nuking.map(app => ({ ...app }))
       return true
     } catch {
