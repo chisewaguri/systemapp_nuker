@@ -6,12 +6,11 @@ const path = require('node:path')
 const { spawnSync } = require('node:child_process')
 const { root, load, shell } = require('../helpers/runtime.cjs')
 
-async function appsFixture(infos, extraPkgs = []) {
+async function appsFixture(infos, extraPkgs = [], files = new Map([
+  ['/persist/nuke_list.txt', 'com.pending  Pending'],
+  ['/persist/nuke_list.txt.old', 'com.restore  Restore'],
+])) {
   const { parseNukeLine } = load('src/lib/nukeList.ts', {})
-  const files = new Map([
-    ['/persist/nuke_list.txt', 'com.pending  Pending'],
-    ['/persist/nuke_list.txt.old', 'com.restore  Restore'],
-  ])
   const pkgs = ['com.pending', 'com.restore', 'com.installed', ...extraPkgs]
   const { default: AppList } = load('src/lib/AppList.ts', {
     'kernelsu-alt': {
@@ -61,6 +60,17 @@ test('app actions leave unselected pending work unchanged', async () => {
   await applyPage('Home', apps, [])
   await applyPage('Restore', apps, [])
   assert.deepEqual(apps.nukedAppList.map(app => app.packageName), ['com.pending'])
+})
+
+test('app-list writes preserve a hidden app saved APK path when another app is selected', async () => {
+  const files = new Map([
+    ['/persist/nuke_list.txt', 'com.hidden /system/app/Hidden/Hidden.apk Hidden'],
+    ['/persist/nuke_list.txt.old', 'com.hidden /system/app/Hidden/Hidden.apk Hidden'],
+  ])
+  const apps = await appsFixture(undefined, [], files)
+  apps.setNuke('com.installed', true)
+  assert.equal(await apps.write(), true)
+  assert.equal(files.get('/persist/nuke_list.txt'), 'com.hidden /system/app/Hidden/Hidden.apk Hidden\ncom.installed  com.installed')
 })
 
 test('partial and reordered host metadata preserves each package and searchable label', async () => {

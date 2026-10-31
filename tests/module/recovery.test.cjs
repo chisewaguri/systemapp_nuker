@@ -124,8 +124,11 @@ test('failed bootloop repairs retain packages until repair succeeds', t => {
     assert.match(fs.readFileSync(`${persist}/nuke_list.txt.bak`, 'utf8'), /com.new/)
   }
   assert.equal(fs.readFileSync(`${dir}/attempts`, 'utf8'), 'attempt\nattempt\nattempt\n')
-  fs.writeFileSync(xml, '<pkg name="com.new" />\n')
+  fs.writeFileSync(`${dir}/bin/chcon`, '#!/bin/sh\nexit 0\n')
+  fs.chmodSync(`${dir}/bin/chcon`, 0o755)
+  fs.writeFileSync(xml, '<pkg name="com.new" inst="false" />\n<pkg name="com.other" inst="false" />\n')
   run()
+  assert.equal(fs.readFileSync(xml, 'utf8'), '<pkg name="com.new" />\n<pkg name="com.other" inst="false" />\n')
   assert.ok(fs.existsSync(`${mod}/disable`))
 })
 
