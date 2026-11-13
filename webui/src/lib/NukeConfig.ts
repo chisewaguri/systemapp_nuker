@@ -1,10 +1,10 @@
 import { t } from 'i18next'
 import { MOD_ID, NUKE_CONFIG_VERSION } from '../constant'
 import { File } from './File'
-import AppList from './AppList'
+import AppList, { type AppInfo } from './AppList'
 import { Cli } from './Cli'
 import { runMutation } from './mutationLock'
-import { whiteoutManager } from './Whiteout'
+import { refreshLists } from './refreshLists'
 import type { useSnackBar } from '../components/SnackBar'
 
 interface NukeConfigData {
@@ -14,6 +14,12 @@ interface NukeConfigData {
     timestamp: string
   }
   packages: string[]
+}
+
+export interface ImportPreview {
+  apps: AppInfo[]
+  unavailable: string[]
+  alreadyListed: number
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -27,6 +33,23 @@ function getPackages(value: unknown): string[] | null {
 }
 
 export class NukeConfig {
+  static previewImport(content: string, appList: AppList): ImportPreview {
+    let packages: string[] | null
+    try {
+      packages = getPackages(JSON.parse(content))
+    } catch {
+      packages = null
+    }
+    if (!packages) throw new Error(t('nuke_config.import_invalid'))
+    const unique = [...new Set(packages)]
+    const listed = new Set(appList.nukingAppList.map(app => app.packageName))
+    const available = new Map(appList.systemAppList.map(app => [app.packageName, app]))
+    return {
+      apps: unique.filter(pkg => available.has(pkg)).map(pkg => available.get(pkg)!),
+      unavailable: unique.filter(pkg => !listed.has(pkg) && !available.has(pkg)),
+      alreadyListed: unique.filter(pkg => listed.has(pkg)).length,
+    }
+  }
   static async export(
     appList: AppList,
     snackBar: ReturnType<typeof useSnackBar>['show']
@@ -57,29 +80,15 @@ export class NukeConfig {
       await File.write(filePath, JSON.stringify(config, null, 2))
       snackBar(t('nuke_config.export_success', { path: filePath }))
     } catch {
-      snackBar(t('nuke_config.export_empty'), false)
+      snackBar(t('nuke_config.export_error', { path: filePath }), false)
     }
   }
 
-  static async handleImport(
-    content: string | null,
+  static async applyImport(
+    packages: string[],
     appList: AppList,
     snackBar: ReturnType<typeof useSnackBar>['show']
   ): Promise<void> {
-    if (!content) return
-
-    let packages: string[] | null
-    try {
-      packages = getPackages(JSON.parse(content))
-    } catch {
-      packages = null
-    }
-
-    if (!packages) {
-      snackBar(t('nuke_config.import_invalid'), false)
-      return
-    }
-
     if (packages.length === 0) {
       snackBar(t('nuke_config.import_empty'), false)
       return
@@ -89,7 +98,7 @@ export class NukeConfig {
       let importedCount = 0
       for (const pkg of packages) {
         const app = appList.systemAppList.find(a => a.packageName === pkg)
-        if (app && !app.nuked) {
+        if (app) {
           appList.setNuke(pkg, true)
           importedCount++
         }
@@ -107,7 +116,7 @@ export class NukeConfig {
 
       snackBar(t('nuke_config.import_success', { count: importedCount }))
       await Cli.nuke(snackBar)
-      await Promise.all([appList.refresh(), whiteoutManager.refresh()]).catch(() => snackBar(t('global.read_error'), false))
+      await refreshLists(appList).catch(() => snackBar(t('global.read_error'), false))
     })
     if (!started) snackBar(t('global.processing'), true, 3000)
   }

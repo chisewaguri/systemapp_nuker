@@ -10,6 +10,7 @@ export interface SegmentedListItem {
   /** Keep in DOM but visually hidden — prevents remounting children */
   hidden?: boolean
   noRipple?: boolean
+  labelFor?: string
   onClick?: () => void
   onContextMenu?: (e: React.MouseEvent) => void
 }
@@ -27,7 +28,7 @@ export default function SegmentedList({ items, className = '' }: SegmentedListPr
   }
 
   return (
-    <div className={`flex flex-col gap-0.5 px-4 pb-4 ${className}`}>
+    <ul className={`m-0 list-none flex flex-col gap-0.5 px-4 pb-4 ${className}`}>
       {items.map((item, i) => {
         const isFirst = i === firstVisibleIdx
         const isLast = i === lastVisibleIdx
@@ -36,40 +37,35 @@ export default function SegmentedList({ items, className = '' }: SegmentedListPr
           isLast ? 'rounded-b-[20px]' : 'rounded-sm',
         ].join(' ')
 
-        const Wrapper = item.noRipple ? 'div' : 'label'
+        const Wrapper = item.labelFor ? 'label' : item.noRipple ? 'div' : item.onClick ? 'button' : 'label'
 
         return (
-          <Wrapper
-            key={item.key}
-            className={`
-              relative flex items-center gap-3 p-3
-              bg-surface-container-high
-              ${corners}
-              active:rounded-[20px]
-              active:bg-surface-container-high
-              transition-all duration-200 ease-out
-              ${item.hidden ? 'hidden' : ''}
-              ${item.className ?? ''}
-            `}
-            onClick={item.onClick}
-            onContextMenu={item.onContextMenu}
-            tabIndex={item.onClick || item.onContextMenu ? 0 : undefined}
-            onKeyDown={item.onClick ? event => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault()
-                item.onClick?.()
-              }
-            } : undefined}
-          >
-            {!item.noRipple && <md-ripple />}
-            {item.leadingContent}
-            <div className="flex flex-col min-w-0 flex-1">
-              {item.content}
-            </div>
-            {item.trailingContent}
-          </Wrapper>
+          <li key={item.key} hidden={item.hidden}>
+            <Wrapper
+              type={Wrapper === 'button' ? 'button' : undefined}
+              htmlFor={Wrapper === 'label' ? item.labelFor : undefined}
+              className={`
+                relative box-border w-full flex items-center gap-3 p-3 text-start border-0 text-base font-[family-name:inherit]
+                bg-surface-container-high text-on-surface
+                ${corners}
+                active:rounded-[20px]
+                active:bg-surface-container-high
+                transition-all duration-200 ease-out
+                ${item.className ?? ''}
+              `}
+              onClick={item.onClick}
+              onContextMenu={item.onContextMenu}
+            >
+              {!item.noRipple && <md-ripple />}
+              {item.leadingContent}
+              <div className="flex flex-col min-w-0 flex-1">
+                {item.content}
+              </div>
+              {item.trailingContent}
+            </Wrapper>
+          </li>
         )
       })}
-    </div>
+    </ul>
   )
 }

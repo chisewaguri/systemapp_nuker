@@ -24,10 +24,14 @@ export function useHistory() {
   const activeKeysRef = useRef<string[]>([])
   const entriesRef = useRef<Map<string, () => void>>(new Map())
   const pendingCleanupCountRef = useRef(0)
+  const pendingCleanupCallbacksRef = useRef<Array<(() => void) | undefined>>([])
 
   const onPopState = useCallback((event: PopStateEvent) => {
     if (pendingCleanupCountRef.current > 0) {
       pendingCleanupCountRef.current--
+      const ready = pendingCleanupCallbacksRef.current.shift()
+      // Other dialogs must finish handling this popstate before a new one opens.
+      if (ready) setTimeout(ready, 0)
       return
     }
 
@@ -67,12 +71,16 @@ export function useHistory() {
     window.history.back()
   }, [])
 
-  const consume = useCallback((key: string): boolean => {
-    if (!entriesRef.current.has(key)) return false
+  const consume = useCallback((key: string, onConsumed?: () => void): boolean => {
+    if (!entriesRef.current.has(key)) {
+      onConsumed?.()
+      return false
+    }
 
     activeKeysRef.current = activeKeysRef.current.filter(k => k !== key)
     entriesRef.current.delete(key)
     pendingCleanupCountRef.current++
+    pendingCleanupCallbacksRef.current.push(onConsumed)
     window.history.back()
     return true
   }, [])

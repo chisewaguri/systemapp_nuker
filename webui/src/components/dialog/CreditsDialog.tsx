@@ -57,7 +57,7 @@ export default function CreditsDialog({ open, onClose }: CreditsDialogProps) {
             <span className="text-xs leading-relaxed text-on-surface-variant">{t(`credits.${credit.id}`)}</span>
           </button>
         ))}
-        <p className="pt-2 text-xs leading-relaxed text-outline">{t('credits.everyone')}</p>
+        <p className="pt-2 text-xs leading-relaxed text-on-surface-variant">{t('credits.everyone')}</p>
       </div>
       <div slot="actions">
         <md-text-button onClick={() => dialogRef.current?.close()}>{t('credits.close')}</md-text-button>

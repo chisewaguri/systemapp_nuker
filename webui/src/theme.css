@@ -13,7 +13,7 @@
   --md-sys-color-secondary: var(--secondary, #625B71);
   --md-sys-color-on-secondary: var(--onSecondary, #FFFFFF);
   --md-sys-color-secondary-container: var(--secondaryContainer, #E8DEF8);
-  --md-sys-color-on-secondary-container: var(--on-secondaryContainer, #4A4458);
+  --md-sys-color-on-secondary-container: var(--onSecondaryContainer, #4A4458);
   --md-sys-color-tertiary: var(--tertiary, #7D5260);
   --md-sys-color-on-tertiary: var(--onTertiary, #FFFFFF);
   --md-sys-color-tertiary-container: var(--tertiaryContainer, #FFD8E4);

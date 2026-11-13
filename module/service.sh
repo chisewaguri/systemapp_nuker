@@ -183,6 +183,7 @@ rm -f "$FAILED_RESTORES" "$FAILED_UNINSTALLS" "$APPLIED"
 RAW_SNAPSHOT="$RAW_LIST.old.new.$$"
 cp -f "$RAW_LIST" "$RAW_SNAPSHOT" || { rm -f "$RAW_SNAPSHOT"; exit 1; }
 mv -f "$RAW_SNAPSHOT" "$RAW_LIST.old" || { rm -f "$RAW_SNAPSHOT"; exit 1; }
+rm -f "$PERSIST_DIR/reboot_required"
 
 for list in "$REMOVE_LIST" "$RAW_LIST"; do
     cp -f "$list.old" "$list.boot.new" && mv -f "$list.boot.new" "$list.boot" || exit 1

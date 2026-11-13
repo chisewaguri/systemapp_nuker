@@ -20,4 +20,4 @@ function load(relative, imports, globals = {}) {
 
 const shell = process.env.TEST_SHELL || (process.platform === 'win32' ? 'C:/Program Files/Git/bin/sh.exe' : '/bin/sh')
 
-module.exports = { root, load, shell }
+module.exports = { root, load, shell, ts }

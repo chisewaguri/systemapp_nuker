@@ -4,7 +4,7 @@ const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
 const { spawnSync } = require('node:child_process')
-const { root, load, shell } = require('../helpers/runtime.cjs')
+const { root, load, shell, ts } = require('../helpers/runtime.cjs')
 
 async function appsFixture(infos, extraPkgs = [], files = new Map([
   ['/persist/nuke_list.txt', 'com.pending  Pending'],
@@ -37,10 +37,13 @@ async function applyPage(page, apps, selected) {
   const handler = page === 'Home' ? 'applyNuke' : 'handleFabClick'
   const body = source.split(`const ${handler} = useCallback(async () => {`)[1]
     .split('}, [appListManager, showSnackBar, t])')[0]
-  const run = new Function('appListManager', 'appListRef', 'runMutation', 'showSnackBar', 't', 'setApps', 'Cli', 'setLoadFailed', 'saveIcons', 'whiteoutManager',
-    `return (async () => {${body}})()`)
+  const {outputText} = ts.transpileModule(`async function runPage() {${body}}`, {
+    compilerOptions: {target: ts.ScriptTarget.ES2022},
+  })
+  const run = new Function('appListManager', 'appListRef', 'runMutation', 'showSnackBar', 't', 'setApps', 'Cli', 'setLoadFailed', 'saveIcons', 'refreshLists',
+    `${outputText}\nreturn runPage()`)
   await run(apps, { current: { getSelectedPackages: () => selected } }, async task => { await task(); return true },
-    () => {}, key => key, () => {}, { nuke: async () => true }, () => {}, async () => {}, { refresh: async () => {} })
+    () => {}, key => key, () => {}, { nuke: async () => true }, () => {}, async () => {}, load('src/lib/refreshLists.ts', {'./Whiteout': {whiteoutManager: {refresh: async () => {}}}}).refreshLists)
 }
 
 test('Home can remove an app that is pending restoration', async () => {
@@ -107,11 +110,15 @@ test('native backup-dialog dismissal clears the parent open state', () => {
   const dialog = { addEventListener: (name, callback) => events.set(name, callback), removeEventListener: () => {} }
   let dismissed = 0
   const { default: BackupRestoreDialog } = load('src/components/dialog/BackupRestoreDialog.tsx', {
-    react: { useRef: () => ({ current: dialog }), useEffect: effect => effect() },
+    react: { useRef: () => ({ current: dialog }), useEffect: effect => effect(), useState: value => [value, () => {}] },
     'react/jsx-runtime': { jsx: () => null, jsxs: () => null },
     'react-dom': {}, 'react-i18next': { useTranslation: () => ({ t: key => key }) },
     '../../hooks/useDialogAnimation': { customizeDialogAnimation: () => {} },
     '../../hooks/useHistory': { useHistory: () => ({ push: () => {}, consume: () => {} }) },
+    '../../lib/File': { File: { readIfExists: async () => '' } },
+    '../../constant': { PERSIST_DIR: '/persist' },
+    '../../lib/nukeList': load('src/lib/nukeList.ts', {}),
+    './AppInfoDialog': {__esModule: true, default: 'AppInfoDialog'}, '../../lib/uad': {getUad: () => ({removal: 'unknown'})},
   }, { document: { getElementById: () => null } })
   BackupRestoreDialog({ open: true, onDismiss: () => dismissed++, onDontRestore: () => {}, onRestore: () => {} })
   events.get('closed')()
@@ -121,39 +128,132 @@ test('native backup-dialog dismissal clears the parent open state', () => {
 test('app list filter matches apps by uad-ng removal level and unlisted apps by unknown', () => {
   const levels = { 'com.ok': 'recommended', 'com.risky': 'unsafe' }
   let rendered
+  let selection
+  let handle
+  let cursor = 0
+  let pendingRendered
+  let renderedTree
+  const cancelled = []
+  const states = []
   const { default: AppList } = load('src/components/AppList.tsx', {
     react: {
-      useState: init => [typeof init === 'function' ? init() : init, () => {}],
+      useState: init => { const i = cursor++; if (!(i in states)) states[i] = typeof init === 'function' ? init() : init; return [states[i], next => { states[i] = typeof next === 'function' ? next(states[i]) : next }] },
       useCallback: fn => fn,
-      useImperativeHandle: () => {},
+      useImperativeHandle: (_ref, create) => { handle = create() },
       forwardRef: fn => props => fn(props, null),
-      useEffect: () => {},
+      useEffect: effect => effect(),
+      useLayoutEffect: effect => effect(),
     },
     'react/jsx-runtime': {
-      jsx: (type, props) => { if (props && props.items) rendered = props.items; return null },
-      jsxs: (type, props) => { if (props && props.items) rendered = props.items; return null },
+      jsx: (type, props) => { if (type === 'PendingMatches') { pendingRendered = props.changes } else if (props && props.items) rendered.push(...props.items); return {type, props} },
+      jsxs: (type, props) => { if (type === 'PendingMatches') { pendingRendered = props.changes } else if (props && props.items) rendered.push(...props.items); return {type, props} },
       Fragment: 'Fragment',
     },
-    'react-i18next': { useTranslation: () => ({ t: key => key }) },
+    'react-i18next': { useTranslation: () => ({ t: (key, values) => values ? `${key} ${JSON.stringify(values)}` : key }) },
     '../lib/uad': {
       getUad: pkg => ({ removal: levels[pkg] ?? 'unknown', description: null }),
       removalLevels: [{ id: 'recommended', color: 'g' }, { id: 'unsafe', color: 'r' }, { id: 'unknown', color: 'x' }],
     },
     '../hooks/useIconObserver': { useIconObserver: () => ({ current: null }) },
+    '../lib/AppListContext': { useAppList: () => ({ getSelection: () => ['com.risky'], setSelection: () => {}, pendingApps: [
+      {packageName: 'com.pending.video', appLabel: 'Pending Video', nuked: false},
+      {packageName: 'com.risky', appLabel: 'Pending Restore', nuked: true},
+    ] }) },
     '../assets/android.svg?react': () => null,
     './dialog/AppInfoDialog': () => null,
     './SegmentedList': props => { rendered = props.items; return null },
-  })
-  const apps = ['com.ok', 'com.risky', 'com.unlisted'].map(packageName => ({ packageName, appLabel: packageName, pending: false, nuked: false }))
-  const visible = selectedCategories => {
-    rendered = undefined
-    AppList({ apps, searchQuery: '', selectedCategories, emptyMessage: '' })
+    './PendingMatches': {__esModule: true, default: 'PendingMatches'},
+  }, {window: {dispatchEvent: event => cancelled.push(event.detail)}})
+  const apps = ['com.ok', 'com.risky', 'com.unlisted'].map(packageName => ({ packageName, appLabel: packageName === 'com.unlisted' ? 'Other app' : 'Shared name', pending: false, nuked: false }))
+  const textOf = node => typeof node === 'string' ? node : Array.isArray(node) ? node.map(textOf).join(' ') : node?.props ? textOf(node.props.children) : ''
+  const visible = (selectedCategories, searchQuery = '') => {
+    cursor = 0
+    rendered = []
+    pendingRendered = undefined
+    renderedTree = AppList({ apps, searchQuery, selectedCategories, emptyMessage: 'No results', selectionKey: 'remove', onSelectionChange: (packages, hidden) => { selection = {packages, hidden} } })
     return rendered.filter(item => !item.hidden).map(item => item.key)
   }
   assert.deepEqual(visible([]), ['com.ok', 'com.risky', 'com.unlisted'])
+  assert.match(textOf(rendered.find(row => row.key === 'com.ok').content), /com.ok/)
+  assert.match(textOf(rendered.find(row => row.key === 'com.risky').content), /com.risky/)
+  const unlisted = rendered.find(row => row.key === 'com.unlisted')
+  assert.doesNotMatch(textOf(unlisted.content), /com.unlisted/)
+  assert.match(JSON.stringify(unlisted.trailingContent), /com.unlisted/)
+  assert.deepEqual(visible([], 'COM.UNLISTED'), ['com.unlisted'])
+  assert.match(textOf(rendered.find(row => row.key === 'com.unlisted').content), /com.unlisted/)
+  visible([])
+  const identity = rendered.find(row => row.key === 'com.ok').content
+  assert.equal(identity.type, 'button')
+  identity.props.onClick({preventDefault() {}, stopPropagation() {}})
+  const currentDetails = () => renderedTree.props.children.find(child => child?.props?.onClose)
+  visible([])
+  assert.equal(currentDetails().props.app.packageName, 'com.ok')
+  assert.equal(currentDetails().props.navigation.onPrevious, undefined)
+  currentDetails().props.navigation.onNext()
+  visible([])
+  assert.equal(currentDetails().props.app.packageName, 'com.risky')
+  assert.deepEqual(selection.packages, ['com.risky'])
+  currentDetails().props.navigation.onNext()
+  visible([])
+  assert.equal(currentDetails().props.app.packageName, 'com.unlisted')
+  assert.equal(currentDetails().props.navigation.onNext, undefined)
+  assert.equal(currentDetails().props.selection.checked, false)
+  currentDetails().props.selection.onChange()
+  visible([])
+  assert.deepEqual(selection.packages, ['com.risky', 'com.unlisted'])
+  assert.equal(currentDetails().props.selection.checked, true)
+  currentDetails().props.selection.onChange()
+  visible([])
+  assert.deepEqual(selection.packages, ['com.risky'])
+  visible(['unknown'])
+  assert.equal(currentDetails().props.navigation, undefined)
+  visible([])
+  assert.equal(pendingRendered, undefined)
+  assert.doesNotMatch(renderedTree.props.children.find(child => child?.props?.role === 'status').props.children, /review.pending_matches/)
   assert.deepEqual(visible(['unsafe']), ['com.risky'])
+  assert.equal(pendingRendered.length, 1)
+  assert.deepEqual(pendingRendered, [{kind: 'app', packageName: 'com.risky'}])
+  assert.deepEqual(cancelled, [])
+  assert.equal(selection.hidden, 0)
   assert.deepEqual(visible(['unknown']), ['com.unlisted'])
+  assert.equal(selection.hidden, 1)
+  assert.deepEqual(selection.packages, ['com.risky'])
   assert.deepEqual(visible(['recommended', 'unknown']), ['com.ok', 'com.unlisted'])
+  apps[0].pending = true
+  visible([])
+  const findCheckbox = node => Array.isArray(node) ? node.map(findCheckbox).find(Boolean) : node?.type === 'md-checkbox' ? node : node?.props ? findCheckbox(node.props.children) : undefined
+  const row = rendered.find(item => item.key === 'com.ok')
+  const checkbox = findCheckbox([row.content, row.trailingContent])
+  assert.equal(checkbox.props.id, 'app-select-com.ok')
+  assert.equal(row.labelFor, undefined)
+  assert.match(checkbox.props['aria-label'], /removal.recommended/)
+  assert.match(checkbox.props['aria-label'], /app_info.pending_removal/)
+  visible(['recommended'])
+  handle.selectAllVisible()
+  visible(['unsafe'])
+  assert.deepEqual(selection.packages.sort(), ['com.ok', 'com.risky'])
+  assert.equal(selection.hidden, 1)
+  handle.deselectAllVisible()
+  visible(['unsafe'])
+  assert.deepEqual(selection.packages, ['com.ok'])
+  assert.equal(selection.hidden, 1)
+  assert.deepEqual(visible([], 'pending'), [])
+  assert.doesNotMatch(JSON.stringify(renderedTree), /review.no_selectable_matches/)
+  assert.equal(renderedTree.props.children[0], false)
+  assert.doesNotMatch(JSON.stringify(renderedTree), /review.pending_below/)
+  const resultStatus = renderedTree.props.children.find(child => child?.props?.role === 'status').props.children
+  assert.match(resultStatus, /review.results_remove.*"count":0/)
+  assert.match(resultStatus, /review.pending_matches.*"count":2/)
+  assert.deepEqual(pendingRendered, [
+    {kind: 'app', packageName: 'com.pending.video'},
+    {kind: 'app', packageName: 'com.risky'},
+  ])
+  assert.deepEqual(cancelled, [])
+  visible(['unsafe'], 'pending')
+  assert.deepEqual(pendingRendered, [{kind: 'app', packageName: 'com.risky'}])
+  visible([], 'COM.PENDING')
+  assert.deepEqual(pendingRendered, [{kind: 'app', packageName: 'com.pending.video'}])
+
 })
 
 test('opening a link from a description never runs shell syntax in the url', async () => {

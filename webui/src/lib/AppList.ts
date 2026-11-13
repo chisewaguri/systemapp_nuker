@@ -13,6 +13,11 @@ export interface AppInfo extends Omit<PackagesInfo, 'versionName' | 'versionCode
   pending: boolean
 }
 
+interface ListView {
+  query: string
+  categories: string[]
+}
+
 interface NukeInfo {
   packageName: string
   appLabel: string
@@ -48,6 +53,45 @@ export default class AppList {
   #savedNuking: NukeInfo[] = []
   #writable = false
   #ready: Promise<void>
+  #version = 0
+  #listeners = new Set<() => void>()
+  #selections: Record<'remove' | 'restore', string[]> = { remove: [], restore: [] }
+  #views: Record<'remove' | 'restore', ListView> = {
+    remove: { query: '', categories: [] },
+    restore: { query: '', categories: [] },
+  }
+
+  getView(key: 'remove' | 'restore'): ListView {
+    return this.#views[key]
+  }
+
+  setView(key: 'remove' | 'restore', view: ListView) {
+    this.#views[key] = view
+  }
+
+  getSelection(key: 'remove' | 'restore'): string[] {
+    return this.#selections[key]
+  }
+
+  setSelection(key: 'remove' | 'restore', packages: string[]) {
+    this.#selections[key] = packages
+  }
+
+  subscribe = (listener: () => void) => {
+    this.#listeners.add(listener)
+    return () => { this.#listeners.delete(listener) }
+  }
+
+  getVersion = () => this.#version
+
+  #notify() {
+    this.#version++
+    this.#listeners.forEach(listener => listener())
+  }
+
+  get pendingApps(): AppInfo[] {
+    return this.#apps.filter(app => app.pending).sort(byPendingThenLabel)
+  }
 
   readonly #nukeListPath = `${PERSIST_DIR}/nuke_list.txt`
 
@@ -69,6 +113,7 @@ export default class AppList {
       await this.#getNukedAppList()
       await this.#getNukePendingList()
       this.#writable = true
+      this.#notify()
     } catch (error) {
       this.#apps = previousApps
       this.#nuking = previousNuking
@@ -309,6 +354,7 @@ export default class AppList {
       const lines = this.#nuking.map(n => `${n.packageName} ${pathOf.get(n.packageName) ?? ''} ${n.appLabel.replace(/\n/g, ' ')}`)
       await File.write(`${this.#nukeListPath}`, lines.join('\n'))
       this.#savedNuking = this.#nuking.map(app => ({ ...app }))
+      this.#notify()
       return true
     } catch {
       this.#nuking = previous

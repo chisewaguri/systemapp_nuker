@@ -2,7 +2,8 @@ export interface ConfigItem {
     key: string
     value: string | boolean | number
     readonly?: boolean
-    options?: Array<string | number>
+    options?: Array<string | number | boolean>
+    optionDescriptions?: Record<string, string>
     label?: string
     description?: string
 }
@@ -12,8 +13,11 @@ export const configItem: ConfigItem[] = [
         key: 'nuke_mode',
         value: 'whiteout_uninstall',
         options: ['whiteout_only', 'whiteout_uninstall', 'uninstall_only'],
+        optionDescriptions: {
+            whiteout_only: 'config.nuke_mode_whiteout_only_desc',
+            uninstall_only: 'config.nuke_mode_uninstall_only_desc',
+        },
         label: 'config.nuke_mode',
-        description: 'config.nuke_mode_desc',
     },
     {
         key: 'mounting_mode',

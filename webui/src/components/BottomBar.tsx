@@ -45,7 +45,7 @@ export default function BottomBar({ activeTab, onTabChange }: BottomBarProps) {
     <nav
       className="
         fixed bottom-0 inset-s-0 w-full
-        md:w-20 md:h-full md:flex-col md:justify-center md:gap-4
+        md:w-32 md:h-full md:flex-col md:justify-center md:gap-4
         z-40
         flex items-center
         h-bottombar
@@ -61,6 +61,7 @@ export default function BottomBar({ activeTab, onTabChange }: BottomBarProps) {
         return (
           <button
             key={tab.key}
+            aria-current={active ? 'page' : undefined}
             onClick={() => {
               if (activeTab === tab.key) return
               if (document.startViewTransition) {
@@ -71,8 +72,9 @@ export default function BottomBar({ activeTab, onTabChange }: BottomBarProps) {
             }}
             className={`
               relative flex flex-col items-center justify-start gap-1
-              md:flex-none md:max-h-min md:px-4
+              md:flex-none md:max-h-min md:px-3
               flex-1
+              ${whiteoutEnabled ? 'self-stretch md:self-auto' : ''}
               box-border select-none
               border-none bg-transparent p-0 pb-safe
               text-on-surface-variant
@@ -89,7 +91,7 @@ export default function BottomBar({ activeTab, onTabChange }: BottomBarProps) {
               `}
             />
             <Icon className="relative" style={{ height: '32px', width: '24px' }} />
-            <span className="text-xs leading-none relative">
+            <span className="text-sm leading-none relative">
               {t(tab.labelKey)}
             </span>
           </button>
