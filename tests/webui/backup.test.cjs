@@ -44,6 +44,11 @@ function restoreAction(Cli) {
     './lib/Whiteout': { whiteoutManager: { refresh: async () => {} } },
     './lib/mutationLock': load('src/lib/mutationLock.ts', {}),
     './lib/navigation': { readPagePath: () => '/' },
+    './lib/refreshLists': load('src/lib/refreshLists.ts', {'./Whiteout': {whiteoutManager: {refresh: async () => {}}}}),
+    './lib/PendingChanges': {},
+    './hooks/useMutationBusy': {useMutationBusy: () => false},
+    './components/dialog/OperationLogDialog': component,
+    './components/dialog/ReviewDialog': component,
     './components/dialog/BackupRestoreDialog': dialog,
     './components/SnackBar': { useSnackBar: () => ({ show: () => {} }) },
   }

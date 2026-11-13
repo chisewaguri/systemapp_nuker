@@ -109,3 +109,105 @@ body {
   position: relative;
   z-index: 9999;
 }
+
+md-outlined-select {
+  container-type: inline-size;
+}
+
+md-outlined-select::part(menu) {
+  min-width: 100cqi;
+  max-width: 100cqi;
+}
+
+.review-actions {
+  flex-direction: column;
+}
+
+@media (max-height: 640px) {
+  .review-dialog > [slot="headline"] {
+    padding-top: 16px;
+  }
+
+  .review-dialog > [slot="content"] {
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  .review-dialog > .review-actions {
+    padding-top: 8px;
+    padding-bottom: 16px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 400px) {
+  .review-dialog {
+    width: min(560px, calc(100vw - 32px));
+  }
+
+  .review-dialog > [slot="headline"] {
+    padding: 8px 16px 0;
+    font-size: 20px;
+    line-height: 28px;
+  }
+
+  .review-dialog > [slot="content"] {
+    padding: 8px 16px;
+  }
+
+  .review-dialog > [slot="actions"] {
+    padding: 4px 16px 8px;
+  }
+
+  .review-dialog > .review-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .review-actions > :first-child {
+    min-width: min(100%, 240px);
+    flex: 1;
+  }
+
+  .review-actions > :last-child {
+    flex-shrink: 0;
+  }
+}
+
+.app-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  min-width: 0;
+}
+
+@media (max-width: 360px) {
+  .pending-action {
+    --md-text-button-container-height: 34px;
+  }
+
+  .pending-action-label {
+    display: inline-block;
+    width: 4.5em;
+    white-space: normal;
+    line-height: 1.15;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  ::view-transition-old(page-content), ::view-transition-new(page-content) {
+    animation: none;
+  }
+}

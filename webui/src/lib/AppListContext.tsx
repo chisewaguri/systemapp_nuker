@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, useSyncExternalStore, type ReactNode } from 'react'
 import AppList from './AppList'
 
 const AppListContext = createContext<AppList | null>(null)
@@ -11,5 +11,6 @@ export function AppListProvider({ children }: { children: ReactNode }) {
 export function useAppList(): AppList {
   const ctx = useContext(AppListContext)
   if (!ctx) throw new Error('useAppList must be used within AppListProvider')
+  useSyncExternalStore(ctx.subscribe, ctx.getVersion)
   return ctx
 }

@@ -1,66 +1,65 @@
-import { useState, useImperativeHandle, forwardRef, useCallback } from 'react'
+import { useState, useImperativeHandle, forwardRef, useEffect, useMemo, useLayoutEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import SegmentedList, { type SegmentedListItem } from './SegmentedList'
+import PendingMatches from './PendingMatches'
 
 interface WhiteoutListProps {
   whiteouts: string[]
+  pendingChanges: {path: string, hiding: boolean}[]
   searchQuery: string
   emptyMessage: string
-  onSelectionChange?: (hasSelection: boolean) => void
-  onEditModeChange?: (isEditing: boolean) => void
+  initialSelection?: string[]
+  disabled?: boolean
+  onSelectionChange?: (paths: string[], hiddenCount: number, visibleCount: number) => void
 }
 
 export interface WhiteoutListHandle {
   getSelectedWhiteouts: () => string[]
   clearSelection: () => void
-  showCheckboxes: () => void
-  hideCheckboxes: () => void
-  isCheckboxVisible: () => boolean
   selectAll: () => void
-  deselectAll: () => void
+  deselectAllVisible: () => void
 }
 
-const WhiteoutList = forwardRef<WhiteoutListHandle, WhiteoutListProps>(function WhiteoutList({ whiteouts, searchQuery, emptyMessage, onSelectionChange, onEditModeChange }, ref) {
-  const [selectedWhiteouts, setSelectedWhiteouts] = useState<Set<string>>(new Set())
-  const [checkboxVisible, setCheckboxVisible] = useState(false)
-  const filteredWhiteouts = whiteouts.filter(whiteout =>
+const WhiteoutList = forwardRef<WhiteoutListHandle, WhiteoutListProps>(function WhiteoutList({ whiteouts, pendingChanges, searchQuery, emptyMessage, initialSelection = [], disabled = false, onSelectionChange }, ref) {
+  const { t } = useTranslation()
+  const [selectedWhiteouts, setSelectedWhiteouts] = useState<Set<string>>(() => new Set(initialSelection))
+  const restorablePaths = useMemo(() => whiteouts.filter(path => !pendingChanges.some(change => change.path === path)), [whiteouts, pendingChanges])
+  const filteredWhiteouts = restorablePaths.filter(whiteout =>
     searchQuery === '' ||
     whiteout.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const handleSelectionChange = useCallback((newSelection: Set<string>) => {
-    queueMicrotask(() => onSelectionChange?.(newSelection.size > 0))
-  }, [onSelectionChange])
+  useEffect(() => {
+    setSelectedWhiteouts(previous => {
+      const next = new Set([...previous].filter(path => restorablePaths.includes(path)))
+      if (next.size === previous.size) return previous
+      return next
+    })
+  }, [restorablePaths])
 
-  const setCheckboxVisibleWithCallback = useCallback((visible: boolean) => {
-    setCheckboxVisible(visible)
-    onEditModeChange?.(visible)
-  }, [onEditModeChange])
+  const visiblePaths = filteredWhiteouts
+  const hiddenCount = [...selectedWhiteouts].filter(path => !visiblePaths.includes(path)).length
+  const visibleCount = visiblePaths.length
+  useLayoutEffect(() => {
+    onSelectionChange?.([...selectedWhiteouts], hiddenCount, visibleCount)
+  }, [selectedWhiteouts, hiddenCount, visibleCount, onSelectionChange])
 
   useImperativeHandle(ref, () => ({
     getSelectedWhiteouts: () => Array.from(selectedWhiteouts),
     clearSelection: () => {
       setSelectedWhiteouts(new Set())
-      handleSelectionChange(new Set())
     },
-    showCheckboxes: () => setCheckboxVisibleWithCallback(true),
-    hideCheckboxes: () => {
-      setCheckboxVisibleWithCallback(false)
-      setSelectedWhiteouts(new Set())
-      handleSelectionChange(new Set())
-    },
-    isCheckboxVisible: () => checkboxVisible,
     selectAll: () => {
-      const all = new Set(filteredWhiteouts)
-      setSelectedWhiteouts(all)
-      handleSelectionChange(all)
+      setSelectedWhiteouts(previous => new Set([...previous, ...visiblePaths]))
     },
-    deselectAll: () => {
-      setSelectedWhiteouts(new Set())
-      handleSelectionChange(new Set())
+    deselectAllVisible: () => {
+      const visible = new Set(visiblePaths)
+      setSelectedWhiteouts(previous => new Set([...previous].filter(path => !visible.has(path))))
     },
   }))
 
   const toggleWhiteout = (whiteout: string) => {
+    if (!restorablePaths.includes(whiteout)) return
     setSelectedWhiteouts(prev => {
       const next = new Set(prev)
       if (next.has(whiteout)) {
@@ -68,52 +67,50 @@ const WhiteoutList = forwardRef<WhiteoutListHandle, WhiteoutListProps>(function 
       } else {
         next.add(whiteout)
       }
-      handleSelectionChange(next)
       return next
     })
   }
 
-  const handleContextMenu = (e: React.MouseEvent, whiteout: string) => {
-    e.preventDefault()
-    if (!checkboxVisible) {
-      setCheckboxVisibleWithCallback(true)
+  const listItems: SegmentedListItem[] = filteredWhiteouts.map(whiteout => {
+    const status = t('whiteout.hidden')
+    return {
+      key: whiteout,
+      leadingContent: (
+        <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-secondary-container rounded-lg my-1">
+          <md-icon>description</md-icon>
+        </div>
+      ),
+      content: (
+        <>
+          <span className="text-on-surface font-medium whitespace-normal wrap-break-word text-sm font-mono">{whiteout}</span>
+          <span className="text-sm text-on-surface-variant">{status}</span>
+        </>
+      ),
+      trailingContent: (
+        <div>
+          <md-checkbox
+            aria-label={`${whiteout}, ${status}`}
+            disabled={disabled}
+            touch-target="wrapper"
+            checked={selectedWhiteouts.has(whiteout)}
+            onChange={() => toggleWhiteout(whiteout)}
+          />
+        </div>
+      ),
     }
-    setSelectedWhiteouts(prev => {
-      const next = new Set(prev)
-      next.add(whiteout)
-      handleSelectionChange(next)
-      return next
-    })
-  }
+  })
 
-  const listItems: SegmentedListItem[] = filteredWhiteouts.map(whiteout => ({
-    key: whiteout,
-    leadingContent: (
-      <div className="w-10 h-10 shrink-0 flex items-center justify-center bg-secondary-container rounded-lg my-1">
-        <md-icon>description</md-icon>
-      </div>
-    ),
-    content: (
-      <span className="text-on-surface font-medium whitespace-normal wrap-break-word text-sm font-mono">
-        {whiteout}
-      </span>
-    ),
-    trailingContent: checkboxVisible ? (
-      <div>
-        <md-checkbox
-          aria-label={whiteout}
-          touch-target="wrapper"
-          checked={selectedWhiteouts.has(whiteout)}
-          onChange={() => toggleWhiteout(whiteout)}
-        />
-      </div>
-    ) : undefined,
-    onContextMenu: (e: React.MouseEvent) => handleContextMenu(e, whiteout),
-  }))
+  const pendingMatches = pendingChanges.filter(change => change.path.toLowerCase().includes(searchQuery.toLowerCase()))
+    .map(change => ({kind: 'path' as const, path: change.path}))
 
-  return filteredWhiteouts.length > 0
+  return <>
+    {searchQuery !== '' && <PendingMatches changes={pendingMatches} />}
+    {filteredWhiteouts.length > 0
     ? <SegmentedList items={listItems} />
-    : <div className="flex items-center justify-center px-6 py-12 text-sm text-on-surface-variant text-center">{emptyMessage}</div>
+    : (!searchQuery || pendingMatches.length === 0) && <div className="flex flex-col items-center justify-center gap-3 px-6 py-12 text-sm text-on-surface-variant text-center">
+      <span>{emptyMessage}</span>
+    </div>}
+  </>
 })
 
 export default WhiteoutList

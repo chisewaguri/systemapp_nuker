@@ -28,7 +28,7 @@ export default function Config({ items, onSave, disabled = false }: ConfigProps)
             supporting-text={description}
             value={String(item.value)}
             disabled={disabled}
-            style={{ '--md-outlined-field-supporting-text-color': 'var(--md-sys-color-outline)' } as React.CSSProperties}
+            style={{ '--md-outlined-field-supporting-text-color': 'var(--md-sys-color-on-surface-variant)' } as React.CSSProperties}
             onChange={(e: React.ChangeEvent<MdOutlinedSelect>) => {
               const target = e.target
               const newValue = item.options!.find(o => String(o) === target.value)
@@ -38,6 +38,7 @@ export default function Config({ items, onSave, disabled = false }: ConfigProps)
             {item.options.map(opt => (
               <md-select-option key={String(opt)} value={String(opt)}>
                 <div slot="headline">{t(`config.${item.key}_${opt}`)}</div>
+                {item.optionDescriptions?.[String(opt)] && <div slot="supporting-text">{t(item.optionDescriptions[String(opt)])}</div>}
               </md-select-option>
             ))}
           </md-outlined-select>
@@ -53,13 +54,13 @@ export default function Config({ items, onSave, disabled = false }: ConfigProps)
           <>
             <span className="text-on-surface">{label}</span>
             {description && (
-              <span className="text-outline text-xs">{description}</span>
+              <span className="text-on-surface-variant text-xs">{description}</span>
             )}
           </>
         ),
         trailingContent: (
           <md-switch
-            aria-label={label}
+            aria-label={description ? `${label}. ${description}` : label}
             icons
             selected={item.value}
             disabled={disabled}
@@ -80,7 +81,7 @@ export default function Config({ items, onSave, disabled = false }: ConfigProps)
           value={String(item.value)}
           type={typeof item.value === 'number' ? 'number' : 'text'}
           disabled={disabled}
-          style={{ '--md-outlined-field-supporting-text-color': 'var(--md-sys-color-outline)' } as React.CSSProperties}
+          style={{ '--md-outlined-field-supporting-text-color': 'var(--md-sys-color-on-surface-variant)' } as React.CSSProperties}
           onBlur={(e: React.FocusEvent<MdOutlinedTextField>) => {
             const target = e.target
             const newValue = typeof item.value === 'number'

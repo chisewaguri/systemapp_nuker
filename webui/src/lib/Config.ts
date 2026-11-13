@@ -39,7 +39,7 @@ export default class Config {
             if (value === undefined || typeof value !== typeof item.value) {
                 throw new Error(`Invalid config key: ${item.key}`)
             }
-            if (item.options && (typeof value === 'boolean' || !item.options.includes(value))) {
+            if (item.options && !item.options.includes(value)) {
                 throw new Error(`Invalid config option: ${item.key}`)
             }
             return { ...item, value }

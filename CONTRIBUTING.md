@@ -32,7 +32,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-The dev server uses mock device data for browser-based UI work. It does not test root commands, mounting or installation.
+Development mode uses mock app and hidden-path lists. Root commands, mounting and installation require a supported Android WebUI host.
 
 Before submitting frontend changes, run:
 

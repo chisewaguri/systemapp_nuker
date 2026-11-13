@@ -1,41 +1,68 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import Header from '../components/Header'
+import SelectAll from '../components/SelectAll'
 import SearchBar from '../components/SearchBar'
-import { getUad, removalCounts } from '../lib/uad'
+import { removalCounts } from '../lib/uad'
 import AppList, { type AppListHandle } from '../components/AppList'
 import { type AppInfo } from '../lib/AppList'
 import { useAppList } from '../lib/AppListContext'
-import { whiteoutManager } from '../lib/Whiteout'
+import { refreshLists } from '../lib/refreshLists'
 import { Cli } from '../lib/Cli'
 import SnackBar, { useSnackBar } from '../components/SnackBar'
 import Fab from '../components/Fab'
 import { runMutation } from '../lib/mutationLock'
 import LoadError from '../components/LoadError'
 import { saveIcons } from '../lib/iconCache'
+import AppReviewDialog from '../components/dialog/AppReviewDialog'
+import { useMutationBusy } from '../hooks/useMutationBusy'
 
 export default function Home() {
   const { t } = useTranslation()
   const { state: snackBarState, show: showSnackBar, hide: hideSnackBar } = useSnackBar()
   const appListManager = useAppList()
+  const appListVersion = appListManager.getVersion()
   const [apps, setApps] = useState<AppInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [loadFailed, setLoadFailed] = useState(false)
   const [fabVisible, setFabVisible] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [searchQuery, setSearchQuery] = useState(() => appListManager.getView('remove').query)
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => appListManager.getView('remove').categories)
   const appListRef = useRef<AppListHandle>(null)
-  const [risky, setRisky] = useState<AppInfo[]>([])
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const [reviewApps, setReviewApps] = useState<AppInfo[]>([])
+  const [selectedPackages, setSelectedPackages] = useState<string[]>([])
+  const [hiddenSelectedCount, setHiddenSelectedCount] = useState(0)
+  const [visibleCount, setVisibleCount] = useState(0)
+  const selectedCount = selectedPackages.length
+  const visibleSelectedCount = selectedCount - hiddenSelectedCount
+  const allVisibleSelected = visibleCount > 0 && visibleSelectedCount === visibleCount
+  const busy = useMutationBusy()
 
   useEffect(() => {
+    appListManager.setView('remove', {query: searchQuery, categories: selectedCategories})
+  }, [appListManager, searchQuery, selectedCategories])
+
+  const handleSelectionChange = useCallback((packages: string[], hidden: number, visible: number) => {
+    setSelectedPackages(packages)
+    setHiddenSelectedCount(hidden)
+    setVisibleCount(visible)
+  }, [])
+
+  useEffect(() => {
+    if (busy) return
+    let active = true
     appListManager.waitForReady().then(() => {
-      setApps(appListManager.systemAppList)
+      if (!active) return
+      setApps(appListManager.systemAppList.filter(app => !app.pending).map(app => ({...app})))
       setLoading(false)
     }).catch(() => {
+      if (!active) return
       setLoadFailed(true)
       setLoading(false)
     })
-  }, [appListManager])
+    return () => { active = false }
+  }, [appListManager, appListVersion, busy])
 
   const handleFabVisibilityChange = useCallback((visible: boolean) => {
     setFabVisible(visible)
@@ -45,30 +72,30 @@ export default function Home() {
     const started = await runMutation(async () => {
       const selected = appListRef.current?.getSelectedPackages() ?? []
       const currentApps = appListManager.systemAppList
-      let count = 0
+      const submitted: string[] = []
 
       for (const app of currentApps) {
         const isSelected = selected.includes(app.packageName)
 
         if (isSelected) {
           appListManager.setNuke(app.packageName, true)
-          count++
+          submitted.push(app.packageName)
         }
       }
 
-      if (count === 0) return
+      if (submitted.length === 0) return
       showSnackBar(t('global.processing'), true, 60000)
 
       const ok = await appListManager.write()
       if (!ok) {
         showSnackBar(t('global.write_error'), false)
-        setApps(appListManager.systemAppList)
       } else {
-        await saveIcons(selected)
+        await saveIcons(submitted)
         // A failed nuke rolls the lists back on disk, so reload either way.
-        await Cli.nuke(showSnackBar)
-        await Promise.all([appListManager.refresh(), whiteoutManager.refresh()])
-          .then(() => setApps(appListManager.systemAppList))
+        if (await Cli.nuke(showSnackBar)) {
+          appListManager.setSelection('remove', appListManager.getSelection('remove').filter(pkg => !submitted.includes(pkg)))
+        }
+        await refreshLists(appListManager)
           .catch(() => {
             setLoadFailed(true)
             showSnackBar(t('global.read_error'), false)
@@ -77,14 +104,6 @@ export default function Home() {
     })
     if (!started) showSnackBar(t('global.processing'), true, 3000)
   }, [appListManager, showSnackBar, t])
-
-  const handleFabClick = useCallback(() => {
-    const selected = appListRef.current?.getSelectedPackages() ?? []
-    const flagged = appListManager.systemAppList.filter(app =>
-      selected.includes(app.packageName) && ['expert', 'unsafe'].includes(getUad(app.packageName).removal))
-    if (flagged.length > 0) setRisky(flagged)
-    else applyNuke()
-  }, [appListManager, applyNuke])
 
   const toggleCategory = (categoryId: string) => {
     setSelectedCategories(prev =>
@@ -96,57 +115,58 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <md-circular-progress indeterminate />
+      <div data-page-loading className="flex items-center justify-center h-full">
+        <md-circular-progress indeterminate aria-label={t('global.loading')} />
       </div>
     )
   }
 
   if (loadFailed) {
-    return <LoadError />
+    return <LoadError message={t('home.load_error')} />
   }
 
   return (
     <>
       <Header
-        title={t('home.title')}
+        title={selectedCount ? t('review.selection_title', {operation: t('nav.home'), count: selectedCount}) : t('nav.home')}
+        action={visibleCount > 0 ? <SelectAll count={visibleCount} label={t(allVisibleSelected ? 'review.deselect_visible' : 'review.select_visible')} disabled={busy} checked={allVisibleSelected} indeterminate={visibleSelectedCount > 0 && !allVisibleSelected}
+          onChange={() => allVisibleSelected ? appListRef.current?.deselectAllVisible() : appListRef.current?.selectAllVisible()} /> : undefined}
         bottomContent={
           <>
             <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              filter={{ selected: selectedCategories, onToggle: toggleCategory, counts: removalCounts(apps) }}
+              filter={{ selected: selectedCategories, onToggle: toggleCategory, counts: removalCounts(apps, searchQuery), pendingCounts: removalCounts(appListManager.pendingApps, searchQuery) }}
             />
+            {hiddenSelectedCount > 0 && <span role="status" className="text-sm text-on-surface-variant">{t('review.selected_hidden', {count: selectedCount, hidden: hiddenSelectedCount})}</span>}
           </>
         }
       />
       <AppList
         ref={appListRef}
+        selectionKey="remove"
+        disabled={busy}
+        onSelectionChange={handleSelectionChange}
         apps={apps}
         searchQuery={searchQuery}
         selectedCategories={selectedCategories}
         emptyMessage={apps.length === 0 ? t('home.empty') : t('global.no_results')}
       />
       <Fab
-        onClick={handleFabClick}
+        secondaryAction={<md-icon-button class="size-12 shrink-0" aria-label={t('review.clear')} disabled={busy} onClick={() => appListRef.current?.clearSelection()}><md-icon>close</md-icon></md-icon-button>}
+        onClick={() => {
+          setReviewApps(apps.filter(app => selectedPackages.includes(app.packageName)))
+          setReviewOpen(true)
+        }}
         icon="remove_selection"
-        label={t('home.apply')}
-        variant="primary"
+        label={t('review.remove_action', {count: selectedCount})}
+        open={selectedCount > 0}
+        disabled={selectedCount === 0 || busy}
         onVisibilityChange={handleFabVisibilityChange}
       />
-      <md-dialog open={risky.length > 0} onClosed={() => setRisky([])}>
-        <div slot="headline">{t('home.risky_title')}</div>
-        <div slot="content">
-          {t('home.risky_message', { count: risky.length })}
-          <ul className="mt-2 list-disc pl-5">
-            {risky.map(app => <li key={app.packageName}>{app.appLabel} ({t(`removal.${getUad(app.packageName).removal}`)})</li>)}
-          </ul>
-        </div>
-        <div slot="actions">
-          <md-text-button onClick={() => setRisky([])}>{t('whiteout.cancel')}</md-text-button>
-          <md-filled-button onClick={() => { setRisky([]); applyNuke() }}>{t('home.risky_confirm')}</md-filled-button>
-        </div>
-      </md-dialog>
+      <AppReviewDialog open={reviewOpen} apps={reviewApps} operation="remove" selectedPackages={selectedPackages}
+        onToggle={pkg => appListRef.current?.toggleSelection(pkg)}
+        onClose={() => setReviewOpen(false)} onConfirm={() => { setReviewOpen(false); applyNuke() }} />
       <SnackBar state={snackBarState} onHide={hideSnackBar} fabVisible={fabVisible} />
     </>
   )

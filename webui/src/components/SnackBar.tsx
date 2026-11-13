@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 export interface SnackBarAction {
   text: string
@@ -12,6 +13,8 @@ interface SnackBarState {
   action?: SnackBarAction
 }
 
+let hideActiveSnackBar: (() => void) | undefined
+
 export function useSnackBar() {
   const [state, setState] = useState<SnackBarState>({
     message: '',
@@ -20,18 +23,6 @@ export function useSnackBar() {
   })
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const show = useCallback((message: string, success = true, duration = 3000, action?: SnackBarAction) => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-    }
-
-    setState({ message, success, visible: true, action })
-
-    timerRef.current = setTimeout(() => {
-      setState(prev => ({ ...prev, visible: false }))
-    }, duration)
-  }, [])
-
   const hide = useCallback(() => {
     if (timerRef.current) {
       clearTimeout(timerRef.current)
@@ -39,13 +30,25 @@ export function useSnackBar() {
     setState(prev => ({ ...prev, visible: false }))
   }, [])
 
+  const show = useCallback((message: string, success = true, duration = success ? 3000 : 0, action?: SnackBarAction) => {
+    if (hideActiveSnackBar !== hide) hideActiveSnackBar?.()
+    hideActiveSnackBar = hide
+    if (timerRef.current) clearTimeout(timerRef.current)
+    setState({ message, success, visible: true, action })
+
+    timerRef.current = duration > 0 ? setTimeout(() => {
+      setState(prev => ({ ...prev, visible: false }))
+    }, duration) : null
+  }, [hide])
+
   useEffect(() => {
     return () => {
+      if (hideActiveSnackBar === hide) hideActiveSnackBar = undefined
       if (timerRef.current) {
         clearTimeout(timerRef.current)
       }
     }
-  }, [])
+  }, [hide])
 
   return { state, show, hide }
 }
@@ -161,28 +164,31 @@ export default function SnackBar({ state, onHide, fabVisible = true }: SnackBarP
     document.addEventListener('pointercancel', handlePointerUp)
   }, [state.visible, onHide, resetInlineStyles])
 
-  if (!mounted) return null
+  if (!mounted || (!state.success && !state.visible)) return null
 
-  return (
+  const message = (
     <div
       ref={elementRef}
+      role={state.success ? 'status' : 'alert'}
+      aria-live={state.success ? 'polite' : 'assertive'}
+      aria-atomic="true"
       className={`
-        fixed left-4 right-4 mx-auto bottom-before-bottombar mb-4
-        max-w-150 px-1 flex items-center gap-2
-        rounded text-sm select-none touch-none
+        ${state.success ? 'fixed left-4 right-4 mx-auto bottom-before-bottombar mb-4 max-w-150 items-center touch-none' : 'mx-4 my-1 min-h-12 max-h-[25dvh] overflow-y-auto items-center touch-pan-y'}
+        px-1 flex gap-2 box-border
+        rounded text-sm select-none
         transition-all duration-200 ease-out
         ${state.success ? 'bg-inverse-surface text-inverse-on-surface' : 'bg-error-container text-on-error-container'}
         ${animate === 'hide' ? 'scale-90 opacity-0 pointer-events-none' : ''}
       `}
-      style={fabVisible ? { marginBottom: 'calc(16px + 56px + 8px)' } : undefined}
+      style={state.success && fabVisible ? { marginBottom: 'calc(16px + 56px + 8px)' } : undefined}
       onPointerDown={handlePointerDown}
     >
-      <span className="flex-1 py-4 ps-2">{state.message}</span>
+      <span className={`min-w-0 flex-1 ${state.success ? 'py-4' : 'py-2'} ps-2 wrap-break-word`}>{state.message}</span>
       {state.action && (
         <md-text-button
           slot="action"
           className="shrink-0"
-          style={{ '--md-sys-color-primary': 'var(--md-sys-color-inverse-primary)' } as React.CSSProperties}
+          style={{ '--md-sys-color-primary': state.success ? 'var(--md-sys-color-inverse-primary)' : 'var(--md-sys-color-on-error-container)' } as React.CSSProperties}
           onClick={() => {
             state.action!.callback()
             onHide()
@@ -191,6 +197,9 @@ export default function SnackBar({ state, onHide, fabVisible = true }: SnackBarP
           {state.action.text}
         </md-text-button>
       )}
+      <md-icon-button aria-label="Close message" onClick={onHide}><md-icon>close</md-icon></md-icon-button>
     </div>
   )
+  const target = !state.success ? document.getElementById('notice-root') : null
+  return target ? createPortal(message, target) : message
 }

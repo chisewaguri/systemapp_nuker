@@ -12,6 +12,7 @@ export function customizeDialogAnimation(dialog: MdDialog): void {
 
   const defaultOpenAnim = dialog.getOpenAnimation
   const defaultCloseAnim = dialog.getCloseAnimation
+  const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 300
 
   dialog.getOpenAnimation = () => {
     document.body.style.overflow = 'hidden'
@@ -21,13 +22,13 @@ export function customizeDialogAnimation(dialog: MdDialog): void {
       dialog: [
         [
           [{ opacity: 0, transform: 'translateY(50px)' }, { opacity: 1, transform: 'translateY(0)' }],
-          { duration: 300, easing: 'ease' },
+          { duration, easing: 'ease' },
         ],
       ],
       scrim: [
         [
           [{ opacity: 0 }, { opacity: 0.32 }],
-          { duration: 300, easing: 'linear' },
+          { duration, easing: 'linear' },
         ],
       ],
       container: [],
@@ -42,13 +43,13 @@ export function customizeDialogAnimation(dialog: MdDialog): void {
       dialog: [
         [
           [{ opacity: 1, transform: 'translateY(0)' }, { opacity: 0, transform: 'translateY(-50px)' }],
-          { duration: 300, easing: 'ease' },
+          { duration, easing: 'ease' },
         ],
       ],
       scrim: [
         [
           [{ opacity: 0.32 }, { opacity: 0 }],
-          { duration: 300, easing: 'linear' },
+          { duration, easing: 'linear' },
         ],
       ],
       container: [],

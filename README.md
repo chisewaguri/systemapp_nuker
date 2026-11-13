@@ -23,7 +23,17 @@ On KernelSU and APatch, open the WebUI from the module page.
 
 On Magisk, press the module action button. It opens [KSUWebUIStandalone](https://github.com/KOWX712/KsuWebUIStandalone) or [WebUI X](https://github.com/MMRLApp/WebUI-X-Portable). If neither is installed, it installs KSUWebUIStandalone first.
 
-To hide apps, select them on **Home**, press the nuke button, and reboot. To bring apps back, do the same from **Restore**.
+To remove apps, select their checkboxes on **Remove apps**, press **Review removals**, and confirm the list. Reboot when prompted. To bring apps back, select them on **Restore apps** and confirm the restores. Tap an app name to read its description and removal rating.
+
+App selections, searches and filters stay in place when you switch tabs. Review the full list before applying it. You can deselect apps inside the review. A notice stays visible while changes need a reboot.
+
+Tap the pending count in that notice to undo individual app or path changes, or select several to undo together.
+
+Importing a removal list opens a review before applying it. Exports contain app package names only. They do not include settings or hidden paths.
+
+If applying changes fails, open **Details** on the error message or **Settings → Last operation log**. Copy the log or save it to Downloads when reporting a problem.
+
+After bootloop protection runs, the saved recovery list contains the setup that was rolled back. Review it carefully before reapplying it.
 
 ## Features
 

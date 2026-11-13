@@ -126,9 +126,11 @@ export function getUad(pkg: string): { removal: Removal, description: string | n
   return { removal: toRemoval(entry[0]), description: description || null }
 }
 
-export function removalCounts(apps: { packageName: string }[]): Partial<Record<Removal, number>> {
+export function removalCounts(apps: { packageName: string, appLabel?: string }[], query = ''): Partial<Record<Removal, number>> {
   const counts: Partial<Record<Removal, number>> = {}
+  const search = query.toLowerCase()
   for (const app of apps) {
+    if (search && !app.packageName.toLowerCase().includes(search) && !app.appLabel?.toLowerCase().includes(search)) continue
     const { removal } = getUad(app.packageName)
     counts[removal] = (counts[removal] ?? 0) + 1
   }

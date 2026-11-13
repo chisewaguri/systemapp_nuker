@@ -1,66 +1,33 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useEffect, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 interface FabProps {
   onClick: () => void
   icon: string
   label: string
-  variant?: 'primary' | 'secondary' | 'tertiary'
   open?: boolean
   onVisibilityChange?: (visible: boolean) => void
+  disabled?: boolean
+  secondaryAction?: ReactNode
 }
 
-export default function Fab({ onClick, icon, label, variant, open = true, onVisibilityChange }: FabProps) {
-  const [scrollVisible, setScrollVisible] = useState(true)
-  const lastScrollTop = useRef(0)
-  const ticking = useRef(false)
-
-  const handleScroll = useCallback((container: HTMLElement) => {
-    if (ticking.current) return
-
-    ticking.current = true
-    requestAnimationFrame(() => {
-      const scrollTop = container.scrollTop
-      const delta = scrollTop - lastScrollTop.current
-
-      if (delta > 10) {
-        setScrollVisible(false)
-      } else if (delta < -10) {
-        setScrollVisible(true)
-      }
-
-      lastScrollTop.current = scrollTop
-      ticking.current = false
-    })
-  }, [])
+export default function Fab({ onClick, icon, label, open = true, onVisibilityChange, disabled = false, secondaryAction }: FabProps) {
 
   useEffect(() => {
-    const container = document.querySelector<HTMLElement>('main.overflow-y-auto')
-    if (!container) return
+    onVisibilityChange?.(open)
+  }, [open, onVisibilityChange])
 
-    const onScroll = () => handleScroll(container)
-    container.addEventListener('scroll', onScroll, { passive: true })
-    return () => container.removeEventListener('scroll', onScroll)
-  }, [handleScroll])
+  if (!open) return null
 
-  const visible = open && scrollVisible
-
-  useEffect(() => {
-    onVisibilityChange?.(visible)
-  }, [visible, onVisibilityChange])
-
-  if (!visible) return null
-
-  return (
-    <div
-      className={`
-        fixed inset-e-4 z-30 bottom-before-bottombar mb-4
-        transition-all duration-300 ease-out
-        translate-y-0 opacity-100 scale-100
-      `}
-    >
-      <md-fab aria-label={label} onClick={onClick} {...(variant && { variant })}>
+  const action = (
+    <div className="flex items-center justify-end gap-2 bg-surface-container-low px-4 py-1">
+      {secondaryAction}
+      <md-filled-button class="flex-1 sm:flex-none" aria-label={label} disabled={disabled} onClick={onClick} style={{'--md-filled-button-container-height': '48px', '--md-filled-button-container-shape': '16px'} as React.CSSProperties}>
         <md-icon slot="icon">{icon}</md-icon>
-      </md-fab>
+        {label}
+      </md-filled-button>
     </div>
   )
+  const target = document.getElementById('page-action-root')
+  return target ? createPortal(action, target) : action
 }
